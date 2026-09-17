@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   type VillageContext,
-  getStoredGeminiKey,
-  saveStoredGeminiKey,
-  callLiveGeminiAPI,
-  generatePrecomputedBriefing,
-  getNearestSafeSites
-} from '../../services/geminiService';
+  BriefingService,
+  getNearestSafeSites,
+} from '../../services/briefing.service';
+import { USE_MOCK_API } from '../../services/config';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 
 interface LiveAIAnalysisPanelProps {
@@ -14,9 +12,6 @@ interface LiveAIAnalysisPanelProps {
 }
 
 export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ context }) => {
-  const [apiKey, setApiKey] = useState<string>(getStoredGeminiKey);
-  const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
-  const [tempKeyInput, setTempKeyInput] = useState<string>(getStoredGeminiKey);
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [analysisText, setAnalysisText] = useState<string>('');
@@ -31,11 +26,24 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
   );
 
   useEffect(() => {
-    const key = getStoredGeminiKey();
-    setApiKey(key);
-    setTempKeyInput(key);
-    // Initial briefing
-    setAnalysisText(generatePrecomputedBriefing(context));
+    let isCancelled = false;
+    setIsGenerating(true);
+    BriefingService.generateCommandBrief(context, 'dossier')
+      .then((brief) => {
+        if (!isCancelled) {
+          setAnalysisText(brief);
+          setIsGenerating(false);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setIsGenerating(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [context.id, context.roadR12Blocked]);
 
   const handleGenerate = async (topic: string, customQuery?: string) => {
@@ -52,21 +60,14 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
     );
 
     try {
-      const result = await callLiveGeminiAPI(apiKey, context, query, topic);
+      const result = await BriefingService.generateCommandBrief(context, topic, query);
       setAnalysisText(result);
-    } catch {
-      // Instant fallback without hesitation
-      setAnalysisText(generatePrecomputedBriefing(context, topic));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Briefing generation failed';
+      setApiError(message);
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handleSaveKey = () => {
-    saveStoredGeminiKey(tempKeyInput);
-    setApiKey(tempKeyInput.trim());
-    setShowKeyModal(false);
-    handleGenerate(activeTopic);
   };
 
   const handleCopy = () => {
@@ -88,13 +89,9 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
               <h3 className="font-bold text-xs sm:text-sm tracking-wide">
                 Live AI Tactical Briefing &amp; Recommendations
               </h3>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-                apiKey
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
-              }`}>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold flex items-center gap-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                 <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
-                {apiKey ? 'Gemini 2.5 Flash Lite (Live)' : 'Tactical LLM (Simulated)'}
+                {USE_MOCK_API ? 'Tactical Scenario Engine (Deterministic)' : 'Central AI Service (Active)'}
               </span>
             </div>
             <p className="text-[11px] text-slate-300 mt-0.5">
@@ -103,15 +100,9 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowKeyModal(true)}
-            className="h-8 px-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded text-xs font-semibold flex items-center gap-1.5 transition text-white"
-            title="Configure Gemini API Key"
-          >
-            <span className="material-symbols-outlined text-[15px]">key</span>
-            <span>{apiKey ? 'API Key Active' : 'Set Gemini Key'}</span>
-          </button>
+        <div className="flex items-center gap-2 text-xs text-slate-300">
+          <span className="material-symbols-outlined text-[16px] text-indigo-400">verified</span>
+          <span className="font-mono text-[11px]">NDMA Protocol §34</span>
         </div>
       </div>
 
@@ -209,7 +200,7 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                 <span className="text-[11px] font-mono">
-                  {apiKey ? 'Live Generated with Gemini' : 'Simulated Disaster Model Output'}
+                  {USE_MOCK_API ? 'Simulated Chamoli Command Telemetry' : 'Live Central Intelligence Backend'}
                 </span>
               </div>
 
@@ -262,62 +253,6 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
           </button>
         </form>
       </div>
-
-      {/* ── GEMINI API KEY MODAL ── */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 overflow-hidden">
-            <div className="bg-[#003366] text-white p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px]">key</span>
-                <h4 className="font-bold text-sm">Gemini API Key Configuration</h4>
-              </div>
-              <button
-                onClick={() => setShowKeyModal(false)}
-                className="text-white/80 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-4 sm:p-5 space-y-3 text-xs text-slate-600">
-              <p>
-                Enter your Google Gemini API key to activate live LLM generation for incident briefings and evacuation advisory responses.
-              </p>
-              <div className="space-y-1">
-                <label className="font-bold text-slate-800 text-[11px] uppercase font-mono">
-                  Gemini API Key:
-                </label>
-                <input
-                  type="password"
-                  value={tempKeyInput}
-                  onChange={(e) => setTempKeyInput(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded text-xs font-mono outline-none focus:ring-1 focus:ring-[#003366]"
-                />
-              </div>
-              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900 leading-relaxed">
-                💡 Your key is securely saved locally in your browser (LocalStorage). If left empty, VISTHAAPAN will automatically run the high-fidelity tactical disaster simulator.
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setShowKeyModal(false)}
-                className="px-3 py-1.5 border border-slate-300 hover:bg-slate-100 rounded text-xs font-semibold text-slate-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveKey}
-                className="px-4 py-1.5 bg-[#003366] hover:bg-[#002244] text-white rounded text-xs font-bold shadow-xs"
-              >
-                Save &amp; Connect
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

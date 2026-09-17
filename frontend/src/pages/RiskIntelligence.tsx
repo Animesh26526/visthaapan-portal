@@ -2,7 +2,7 @@ import React from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import { mockRiskIntelligence, mockHabitations } from '../mock/data';
 import { LiveAIAnalysisPanel } from '../components/ai/LiveAIAnalysisPanel';
-import type { VillageContext } from '../services/geminiService';
+import type { VillageContext } from '../services/briefing.service';
 
 export const RiskIntelligence: React.FC = () => {
   const { habitations, selectedHabitationId, setSelectedHabitationId, roadR12Blocked } = useAppStore();

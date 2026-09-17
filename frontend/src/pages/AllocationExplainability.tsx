@@ -2,7 +2,7 @@ import React from 'react';
 import { mockAllocationExplanation, mockHabitations } from '../mock/data';
 import { useAppStore } from '../stores/useAppStore';
 import { LiveAIAnalysisPanel } from '../components/ai/LiveAIAnalysisPanel';
-import type { VillageContext } from '../services/geminiService';
+import type { VillageContext } from '../services/briefing.service';
 
 export const AllocationExplainability: React.FC = () => {
   const explanation = mockAllocationExplanation;

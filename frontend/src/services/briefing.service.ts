@@ -1,7 +1,12 @@
-// VISTHAAPAN Gemini Intelligence Service
-// Connects to Google Generative AI (Gemini 2.5 Flash Lite) with nearest safe-site intelligence and instant fallback.
+// VISTHAAPAN Executive Briefing & Conversational Assistant Service
+// Clean domain service boundary isolating generative AI operations.
+// All browser-direct generative AI calls and API keys are eliminated.
+// In Mock Mode: Serves high-fidelity, deterministic Chamoli command briefings and chatbot guidance.
+// In Live Mode: Relays queries through apiClient to backend intelligence endpoints.
 
 import { mockSites } from '../mock/data';
+import { USE_MOCK_API, MOCK_DELAY_MS } from './config';
+import { apiClient } from './apiClient';
 
 export interface VillageContext {
   id: string;
@@ -43,26 +48,14 @@ export interface ComputedSafeSite {
   isRecommended: boolean;
 }
 
-export function getStoredGeminiKey(): string {
-  if (typeof window === 'undefined') return DEFAULT_GEMINI_KEY;
-  return (
-    localStorage.getItem('visthaapan_gemini_api_key') ||
-    import.meta.env.VITE_GEMINI_API_KEY ||
-    DEFAULT_GEMINI_KEY
-  );
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
 }
 
-export function saveStoredGeminiKey(key: string): void {
-  if (typeof window !== 'undefined') {
-    if (key.trim()) {
-      localStorage.setItem('visthaapan_gemini_api_key', key.trim());
-    } else {
-      localStorage.removeItem('visthaapan_gemini_api_key');
-    }
-  }
-}
-
-// Compute geodesic mountain distance between coordinates
+// Compute geodesic mountain distance between coordinates with mountain curvature factor
 function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth's radius in km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -76,7 +69,7 @@ function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
   return Math.round(R * c * roadWindingFactor * 10) / 10;
 }
 
-// Calculate and rank the nearest safe sites for any target habitation
+// Calculate and rank candidate safe sites for target habitation context
 export function getNearestSafeSites(
   villageLat = 30.556,
   villageLng = 79.563,
@@ -119,23 +112,8 @@ export function getNearestSafeSites(
   }).sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
-// Format safe sites for Gemini context
-function formatSafeSitesPrompt(sites: ComputedSafeSite[]): string {
-  return sites
-    .map(
-      (s, idx) =>
-        `${idx + 1}. **${s.name}** (${s.code})\n` +
-        `   - Proximity: ${s.distanceKm} km (~${s.transitTimeMin} min convoy)\n` +
-        `   - Available Effective Capacity: ${s.effectiveCapacity.toLocaleString()} persons\n` +
-        `   - Route Corridor Status: ${s.routeStatus}\n` +
-        `   - Critical Bottleneck: ${s.bottleneck}\n` +
-        `   - Recommendation Flag: ${s.isRecommended ? '⭐ PREFERRED SAFE DESTINATION' : 'Secondary Fallback'}`
-    )
-    .join('\n');
-}
-
-// Tactical Pre-computed LLM fallback (outputs realistic, authoritative disaster directives)
-export function generatePrecomputedBriefing(context: VillageContext, queryTopic?: string): string {
+// Deterministic high-stakes tactical disaster briefing generator (Chamoli demo scenario)
+export function generateDeterministicBriefing(context: VillageContext, queryTopic?: string): string {
   const isR12 = !!context.roadR12Blocked;
   const elderly = context.vulnerableGroups?.elderly || 1240;
   const children = context.vulnerableGroups?.children || 1980;
@@ -197,7 +175,7 @@ ${safeSites
 - **Transit Escort:** Assign NDRF 8th Battalion medical corps to lead convoy waves 1 & 2.`;
   }
 
-  // Default Comprehensive AI Tactical Briefing
+  // Default Comprehensive Executive Disaster Adjudication Dossier
   return `### 📋 EXECUTIVE DISASTER ADJUDICATION DOSSIER
 
 **Settlement:** ${context.name} (${context.code})  
@@ -228,202 +206,10 @@ Satellite InSAR displacement maps and geological borehole sensors indicate groun
 *In accordance with Section 34 of the Disaster Management Act 2005, this automated risk assessment has been validated against ISRO-Bhuvan and Census telemetry. Formal adjudication pending Incident Commander signature.*`;
 }
 
-// Live Gemini API caller with automatic fallback to pre-programmed response on any failure
-export async function callLiveGeminiAPI(
-  apiKey: string,
-  context: VillageContext,
-  userPrompt: string,
-  topic = 'dossier'
-): Promise<string> {
-  const effectiveKey = (apiKey || getStoredGeminiKey() || DEFAULT_GEMINI_KEY).trim();
+// Deterministic chatbot response generator for Chamoli operational inquiries
+export function generateDeterministicChatReply(userMessage: string): string {
+  const lower = userMessage.toLowerCase();
 
-  // Compute nearest safe sites with real distances
-  const safeSites = getNearestSafeSites(
-    context.coordinates?.lat || 30.556,
-    context.coordinates?.lng || 79.563,
-    !!context.roadR12Blocked
-  );
-
-  const safeSitesFormatted = formatSafeSitesPrompt(safeSites);
-
-  const systemPrompt = `You are VISTHAAPAN-AI, the official Disaster Intelligence & Relocation Assistant for the National Disaster Management Authority (NDMA) and Govt of Uttarakhand.
-You analyze geospatial telemetry, geological subsidence, and evacuation logistics for Chamoli District.
-You have access to real-time nearest safe relocation hubs, their exact road distances, capacities, and bottlenecks.
-Always output crisp, authoritative, professional government disaster directives formatted with clean markdown headings, bullet points, and quantitative metrics.`;
-
-  const contextPrompt = `CURRENT OPERATIONAL CONTEXT:
-- Target Habitation: ${context.name} (${context.code})
-- Coordinates: ${context.coordinates?.lat ?? 30.556}°N, ${context.coordinates?.lng ?? 79.563}°E
-- Population: ${(context.population || 8240).toLocaleString()} citizens
-- Priority Tier: ${context.priority || 'Immediate'}
-- Composite Risk Score: ${((context.riskScore || 0.94) * 100).toFixed(1)}%
-- Slope Declivity: ${context.slopeDegrees || 34.2}°
-- Primary Hazard: ${context.primaryHazard || 'Subsidence'}
-- Vulnerable Citizens: ${context.vulnerableGroups?.elderly || 1240} elderly, ${context.vulnerableGroups?.children || 1980} children, ${context.vulnerableGroups?.disabled || 310} disabled
-- Road R12 Corridor Status: ${context.roadR12Blocked ? 'BLOCKED / IMPASSIBLE' : 'NORMAL / OPEN'}
-- Healthcare Facility: ${context.infrastructure?.healthcare || 'Primary Health Post'}
-- Access Road Status: ${context.infrastructure?.roads || 'Severely Compromised'}
-
-COMPUTED NEAREST SAFE RELOCATION SITES (SORTED BY PROXIMITY):
-${safeSitesFormatted}
-
-TASK:
-${userPrompt}
-
-Please provide an actionable, structured, high-stakes tactical disaster briefing. Explicitly cite the nearest safe sites, their distances, travel times, and recommended route actions.`;
-
-  const requestBody = {
-    contents: [
-      {
-        parts: [
-          { text: `${systemPrompt}\n\n${contextPrompt}` }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.25,
-      maxOutputTokens: 1024,
-    }
-  };
-
-  // Model list to try: prioritize gemini-3.5-flash-lite, then gemini-3-flash-preview, then gemini-2.5-flash-lite
-  const modelsToTry = [
-    'gemini-3.5-flash-lite',
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash-lite',
-    'gemini-flash-lite-latest',
-    'gemini-2.5-flash'
-  ];
-
-  for (const model of modelsToTry) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`;
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text && text.trim().length > 0) {
-          return text;
-        }
-      }
-    } catch {
-      // If this model timed out or failed, try next model
-      continue;
-    }
-  }
-
-  // If all models failed or network issue: IMMEDIATELY return pre-computed briefing without hesitation
-  console.warn('[Gemini AI] Online generation unavailable, seamlessly serving tactical LLM briefing');
-  return generatePrecomputedBriefing(context, topic);
-}
-
-// ── CONVERSATIONAL CHATBOT FOR LANDING HOME PAGE ──
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  text: string;
-  timestamp: string;
-}
-
-export async function callGeminiChatBot(
-  history: ChatMessage[],
-  newMessage: string
-): Promise<string> {
-  const effectiveKey = getStoredGeminiKey();
-
-  const systemInstructions = `You are VISTHAAPAN Sahayak, the conversational AI Assistant for VISTHAAPAN (National Disaster Operations & Relocation Intelligence System).
-VISTHAAPAN was built by Team "KyuNahiHoRahiCoding" for the Smart India Hackathon (SIH), partnered with NDMA and the Government of Uttarakhand.
-
-PLATFORM KNOWLEDGE BASE:
-- VISTHAAPAN unifies Operations Research (MILP), InSAR satellite deformation monitoring, and real-time GIS for disaster evacuation in Chamoli District (Joshimath, Malari, Helang, Raini).
-- 5 Consolidated Operational Workspaces:
-  1. Operations & GIS (/operations): Real-time spatial maps, red-zone contours, telemetry markers, habitation dossiers.
-  2. Capacity & Risk (/capacity-intelligence): Shelter capacity audits, bottleneck analysis, explainable AI (SHAP weights).
-  3. Allocation Engine (/allocation-engine): Mixed-Integer Linear Programming (MILP) solver, Road R12 obstruction simulator, scenario stress testing.
-  4. Statutory Adjudication (/adjudication): Chronological 0-24h Phased Plan, Incident Commander review gate, legal audit ledger.
-  5. Evidence & Data (/system-intelligence): Data provenance atlas (ISRO, SOI, CWC, Census), system architecture.
-- Relocation Hubs:
-  - Safe Site Alpha (Highland Ridge): 9,200 capacity, primary ridge hub.
-  - Safe Site Beta (Gauchar Aerodrome): 4,500 capacity, air-evacuation runway link.
-  - Safe Site Gamma (Ghingran Plateau): 6,100 capacity, alternate diversion hub when Road R12 is blocked.
-- Team: KyuNahiHoRahiCoding for SIH.
-
-Respond warmly, authoritatively, and informatively using clean markdown. Keep answers focused and actionable.`;
-
-  const contents = [
-    {
-      role: 'user',
-      parts: [{ text: systemInstructions }]
-    },
-    {
-      role: 'model',
-      parts: [{ text: 'Understood. I am VISTHAAPAN Sahayak, ready to assist citizens, field officers, and coordinators.' }]
-    },
-    ...history.slice(-6).map((m) => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.text }]
-    })),
-    {
-      role: 'user',
-      parts: [{ text: newMessage }]
-    }
-  ];
-
-  const modelsToTry = [
-    'gemini-3.5-flash-lite',
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash-lite',
-    'gemini-flash-lite-latest',
-    'gemini-2.5-flash'
-  ];
-
-  for (const model of modelsToTry) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`;
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6500);
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          generationConfig: { temperature: 0.4, maxOutputTokens: 800 }
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply && reply.trim().length > 0) {
-          return reply;
-        }
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  // Pre-computed fallback responses for common landing page inquiries
-  const lower = newMessage.toLowerCase();
   if (lower.includes('what is') || lower.includes('about') || lower.includes('how does')) {
     return `### 🏛️ Welcome to VISTHAAPAN
 
@@ -457,6 +243,15 @@ VISTHAAPAN coordinates 3 verified, disaster-resilient shelter hubs:
 *Explore all shelter resource audits under **Workspace 2: Capacity & Risk**.*`;
   }
 
+  if (lower.includes('milp') || lower.includes('algorithm') || lower.includes('optimization') || lower.includes('engine')) {
+    return `### ⚙️ Operations Research (MILP) Allocation Engine
+
+The VISTHAAPAN Allocation Engine models the relocation problem as a **Mixed-Integer Linear Program (MILP)**:
+- **Objective Function:** Minimize total civilian transit risk, travel time, and logistics cost while strictly enforcing carrying capacity limits.
+- **Hard Constraints:** Shelter safe capacity ceilings, road corridor throughput, zero family-splitting rules, and high-dependency priority scheduling.
+- **Dynamic Re-optimization:** Recalculates globally optimal assignments within seconds when road corridors (such as Road R12) are obstructed.`;
+  }
+
   return `### 🛡️ VISTHAAPAN Platform Intelligence
 
 Thank you for your inquiry regarding the **Chamoli Disaster Relocation Operation**.
@@ -468,3 +263,57 @@ Thank you for your inquiry regarding the **Chamoli Disaster Relocation Operation
 *Built with precision for SIH by **KyuNahiHoRahiCoding**.*`;
 }
 
+// Briefing Service API methods
+export const BriefingService = {
+  getNearestSafeSites,
+
+  generateCommandBrief: async (
+    context: VillageContext,
+    topic = 'dossier',
+    customQuery?: string
+  ): Promise<string> => {
+    if (USE_MOCK_API) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(generateDeterministicBriefing(context, topic));
+        }, MOCK_DELAY_MS);
+      });
+    }
+
+    try {
+      const response = await apiClient.post<{ brief: string }>('/intelligence/briefing', {
+        context,
+        topic,
+        customQuery,
+      });
+      return response.brief || generateDeterministicBriefing(context, topic);
+    } catch (err) {
+      console.warn('[BriefingService] Live briefing API call failed, falling back to deterministic brief:', err);
+      return generateDeterministicBriefing(context, topic);
+    }
+  },
+
+  callAssistant: async (
+    messages: ChatMessage[],
+    userMessage: string
+  ): Promise<string> => {
+    if (USE_MOCK_API) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(generateDeterministicChatReply(userMessage));
+        }, MOCK_DELAY_MS);
+      });
+    }
+
+    try {
+      const response = await apiClient.post<{ reply: string }>('/intelligence/chat', {
+        messages,
+        userMessage,
+      });
+      return response.reply || generateDeterministicChatReply(userMessage);
+    } catch (err) {
+      console.warn('[BriefingService] Live assistant API call failed, falling back to deterministic reply:', err);
+      return generateDeterministicChatReply(userMessage);
+    }
+  },
+};

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { callGeminiChatBot, type ChatMessage } from '../../services/geminiService';
+import { BriefingService, type ChatMessage } from '../../services/briefing.service';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 
 export const HomeAIChatbot: React.FC = () => {
@@ -7,7 +7,7 @@ export const HomeAIChatbot: React.FC = () => {
     {
       id: 'msg-welcome',
       role: 'assistant',
-      text: `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant powered by **Gemini 3.5 Flash Lite**.\n\nI can explain our mathematical evacuation algorithms (MILP), live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`,
+      text: `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant.\n\nI can explain our mathematical evacuation algorithms (MILP), live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -51,7 +51,7 @@ export const HomeAIChatbot: React.FC = () => {
     setIsTyping(true);
 
     try {
-      const response = await callGeminiChatBot(messages, messageText);
+      const response = await BriefingService.callAssistant(messages, messageText);
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
