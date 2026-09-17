@@ -16,7 +16,9 @@
     "db:test": "tsx test/db.test.ts",
     "ingest:disasters": "tsx src/pipeline/runIngest.ts",
     "seed:benchmark": "tsx src/pipeline/runBenchmark.ts",
-    "pipeline:test": "tsx test/pipeline.test.ts"
+    "pipeline:test": "tsx test/pipeline.test.ts",
+    "ingest:enrichment": "tsx src/pipeline/runEnrichment.ts",
+    "enrichment:test": "tsx test/enrichment.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
