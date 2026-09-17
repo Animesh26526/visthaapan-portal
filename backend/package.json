@@ -13,7 +13,10 @@
     "test": "tsx test/foundation.test.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:status": "tsx src/db/status.ts",
-    "db:test": "tsx test/db.test.ts"
+    "db:test": "tsx test/db.test.ts",
+    "ingest:disasters": "tsx src/pipeline/runIngest.ts",
+    "seed:benchmark": "tsx src/pipeline/runBenchmark.ts",
+    "pipeline:test": "tsx test/pipeline.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

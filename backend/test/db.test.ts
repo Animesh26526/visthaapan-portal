@@ -46,6 +46,8 @@ const EXPECTED_TABLES = [
   'officer_decisions',
   'decision_history',
   'system_update_logs',
+  'district_disaster_events',
+  'district_hazard_profiles',
 ];
 
 async function runDbTests(): Promise<void> {

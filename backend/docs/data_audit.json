@@ -1,0 +1,351 @@
+{
+  "filename": "disaster-report (3).csv",
+  "file_size_bytes": 4121518,
+  "total_rows": 47626,
+  "total_columns": 23,
+  "columns": [
+    "State",
+    "Date",
+    "District Affected",
+    "Name of Disaster",
+    "No. of Villages Affected",
+    "Population Affected",
+    "No. of Deaths:Male",
+    "No. of Deaths:Female",
+    "No. of Deaths:Total",
+    "Injured",
+    "Missing",
+    "Animal Deaths:Big",
+    "Animal Deaths:Small",
+    "Crop Area Affected (Ha):Agri",
+    "Crop Area Affected (Ha):Horti",
+    "House Damaged (Fully):Pakka",
+    "House Damaged (Fully):Kacchha",
+    "House Damaged (Partially):Pakka",
+    "House Damaged (Partially):Kacchha",
+    "Persons Evacuated",
+    "Relief Camps in Operation",
+    "People in Relief Camps",
+    "Infrastructure Affected"
+  ],
+  "column_types": {
+    "State": "VARCHAR / TEXT",
+    "Date": "DATE (YYYY-MM-DD)",
+    "District Affected": "VARCHAR / TEXT",
+    "Name of Disaster": "VARCHAR / TEXT",
+    "No. of Villages Affected": "INTEGER",
+    "Population Affected": "INTEGER",
+    "No. of Deaths:Male": "INTEGER",
+    "No. of Deaths:Female": "INTEGER",
+    "No. of Deaths:Total": "INTEGER",
+    "Injured": "INTEGER",
+    "Missing": "INTEGER",
+    "Animal Deaths:Big": "INTEGER",
+    "Animal Deaths:Small": "INTEGER",
+    "Crop Area Affected (Ha):Agri": "NUMERIC(12,2)",
+    "Crop Area Affected (Ha):Horti": "NUMERIC(12,2)",
+    "House Damaged (Fully):Pakka": "INTEGER",
+    "House Damaged (Fully):Kacchha": "INTEGER",
+    "House Damaged (Partially):Pakka": "INTEGER",
+    "House Damaged (Partially):Kacchha": "INTEGER",
+    "Persons Evacuated": "INTEGER",
+    "Relief Camps in Operation": "INTEGER",
+    "People in Relief Camps": "INTEGER",
+    "Infrastructure Affected": "INTEGER"
+  },
+  "malformed_rows": 0,
+  "exact_duplicate_rows": 1,
+  "composite_key_duplicate_rows": 3,
+  "min_date": "2024-04-01",
+  "max_date": "\ud83d\udd34 TOTAL UNTIL 2026-09-17",
+  "unique_states": 37,
+  "unique_districts": 614,
+  "unique_state_district_pairs": 637,
+  "unique_disasters": 665,
+  "no_event_rows": 36183,
+  "active_hazard_rows": 11443,
+  "top_disasters": [
+    [
+      "No Event",
+      36183
+    ],
+    [
+      "Heavy Rain",
+      3206
+    ],
+    [
+      "Air, Road and Rail Accidents",
+      1032
+    ],
+    [
+      "Other :",
+      1002
+    ],
+    [
+      "Others",
+      999
+    ],
+    [
+      "Floods",
+      980
+    ],
+    [
+      "Thunder and Lightening",
+      845
+    ],
+    [
+      "Landslides and Mudflows",
+      356
+    ],
+    [
+      "Other : 0",
+      280
+    ],
+    [
+      "Other : Drowning",
+      261
+    ],
+    [
+      "",
+      227
+    ],
+    [
+      "Electrical Disasters and fires",
+      129
+    ],
+    [
+      "Village Fire",
+      102
+    ],
+    [
+      "Hailstorm",
+      91
+    ],
+    [
+      "Other : Storm",
+      89
+    ],
+    [
+      "Other : Erosion",
+      86
+    ],
+    [
+      "Cyclones",
+      85
+    ],
+    [
+      "Other",
+      76
+    ],
+    [
+      "Earthquakes",
+      69
+    ],
+    [
+      "Forest Fires",
+      42
+    ],
+    [
+      "Drowning",
+      41
+    ],
+    [
+      "Urban Fires",
+      34
+    ],
+    [
+      "Other : Light Rain",
+      29
+    ],
+    [
+      "Heat Wave and Cold Wave",
+      29
+    ],
+    [
+      "Other : DROWNING",
+      28
+    ],
+    [
+      "Other : Accidental Drowning",
+      28
+    ],
+    [
+      "Other : Snake Bite",
+      27
+    ],
+    [
+      "Droughts",
+      27
+    ],
+    [
+      "Other : drowning",
+      20
+    ],
+    [
+      "Other : Thunderstorm",
+      20
+    ]
+  ],
+  "top_states": [
+    [
+      "Gujarat",
+      6094
+    ],
+    [
+      "Assam",
+      4374
+    ],
+    [
+      "Karnataka",
+      4091
+    ],
+    [
+      "Jammu and Kashmir",
+      3902
+    ],
+    [
+      "Himachal Pradesh",
+      3171
+    ],
+    [
+      "West Bengal",
+      2867
+    ],
+    [
+      "Chhattisgarh",
+      2522
+    ],
+    [
+      "Punjab",
+      2339
+    ],
+    [
+      "Kerala",
+      2188
+    ],
+    [
+      "Mizoram",
+      1900
+    ],
+    [
+      "Nagaland",
+      1664
+    ],
+    [
+      "Bihar",
+      1598
+    ],
+    [
+      "Puducherry",
+      1314
+    ],
+    [
+      "Tripura",
+      1276
+    ],
+    [
+      "Arunachal Pradesh",
+      1195
+    ]
+  ],
+  "empty_counts": {
+    "State": 2,
+    "Date": 1,
+    "District Affected": 95,
+    "Name of Disaster": 227,
+    "No. of Villages Affected": 1,
+    "Population Affected": 1,
+    "No. of Deaths:Male": 1,
+    "No. of Deaths:Female": 1,
+    "No. of Deaths:Total": 1,
+    "Injured": 1,
+    "Missing": 1,
+    "Animal Deaths:Big": 1,
+    "Animal Deaths:Small": 1,
+    "Crop Area Affected (Ha):Agri": 1,
+    "Crop Area Affected (Ha):Horti": 1,
+    "House Damaged (Fully):Pakka": 1,
+    "House Damaged (Fully):Kacchha": 1,
+    "House Damaged (Partially):Pakka": 1,
+    "House Damaged (Partially):Kacchha": 1,
+    "Persons Evacuated": 1,
+    "Relief Camps in Operation": 1,
+    "People in Relief Camps": 1,
+    "Infrastructure Affected": 1
+  },
+  "zero_counts": {
+    "State": 0,
+    "Date": 0,
+    "District Affected": 0,
+    "Name of Disaster": 4,
+    "No. of Villages Affected": 44767,
+    "Population Affected": 45663,
+    "No. of Deaths:Male": 45591,
+    "No. of Deaths:Female": 47051,
+    "No. of Deaths:Total": 45232,
+    "Injured": 46324,
+    "Missing": 47453,
+    "Animal Deaths:Big": 46834,
+    "Animal Deaths:Small": 47199,
+    "Crop Area Affected (Ha):Agri": 47040,
+    "Crop Area Affected (Ha):Horti": 47503,
+    "House Damaged (Fully):Pakka": 47192,
+    "House Damaged (Fully):Kacchha": 46975,
+    "House Damaged (Partially):Pakka": 46348,
+    "House Damaged (Partially):Kacchha": 46354,
+    "Persons Evacuated": 47259,
+    "Relief Camps in Operation": 47081,
+    "People in Relief Camps": 47037,
+    "Infrastructure Affected": 46714
+  },
+  "non_zero_numeric_counts": {
+    "State": 0,
+    "Date": 0,
+    "District Affected": 0,
+    "Name of Disaster": 0,
+    "No. of Villages Affected": 2858,
+    "Population Affected": 1962,
+    "No. of Deaths:Male": 2034,
+    "No. of Deaths:Female": 574,
+    "No. of Deaths:Total": 2393,
+    "Injured": 1301,
+    "Missing": 172,
+    "Animal Deaths:Big": 791,
+    "Animal Deaths:Small": 426,
+    "Crop Area Affected (Ha):Agri": 585,
+    "Crop Area Affected (Ha):Horti": 122,
+    "House Damaged (Fully):Pakka": 433,
+    "House Damaged (Fully):Kacchha": 650,
+    "House Damaged (Partially):Pakka": 1277,
+    "House Damaged (Partially):Kacchha": 1271,
+    "Persons Evacuated": 366,
+    "Relief Camps in Operation": 544,
+    "People in Relief Camps": 588,
+    "Infrastructure Affected": 911
+  },
+  "non_numeric_counts": {
+    "State": 47624,
+    "Date": 47625,
+    "District Affected": 47531,
+    "Name of Disaster": 47395,
+    "No. of Villages Affected": 0,
+    "Population Affected": 0,
+    "No. of Deaths:Male": 0,
+    "No. of Deaths:Female": 0,
+    "No. of Deaths:Total": 0,
+    "Injured": 0,
+    "Missing": 0,
+    "Animal Deaths:Big": 0,
+    "Animal Deaths:Small": 0,
+    "Crop Area Affected (Ha):Agri": 0,
+    "Crop Area Affected (Ha):Horti": 0,
+    "House Damaged (Fully):Pakka": 0,
+    "House Damaged (Fully):Kacchha": 0,
+    "House Damaged (Partially):Pakka": 0,
+    "House Damaged (Partially):Kacchha": 0,
+    "Persons Evacuated": 0,
+    "Relief Camps in Operation": 0,
+    "People in Relief Camps": 0,
+    "Infrastructure Affected": 0
+  }
+}
