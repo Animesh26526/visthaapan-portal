@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <title>VISTHAAPAN — Rashtriya Disaster Operations & Intelligence System</title>
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#003366" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="VISTHAAPAN" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Early capture of beforeinstallprompt to ensure it is never missed -->
+    <script>
+      window.deferredPWAInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.deferredPWAInstallPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+      });
+      window.addEventListener('appinstalled', function () {
+        window.deferredPWAInstallPrompt = null;
+        window.dispatchEvent(new CustomEvent('pwa-installed'));
+      });
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Google Material Symbols Outlined -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <!-- Tailwind CSS with Forms and Container Queries plugins -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#002541",
+              "primary-container": "#0b3b60",
+              "on-primary-container": "#7fa6d0",
+              "on-primary": "#ffffff",
+              "secondary": "#d9531e",
+              "secondary-container": "#ff6e38",
+              "on-secondary-container": "#611b00",
+              "tertiary": "#002a0d",
+              "tertiary-container": "#004318",
+              "on-tertiary-container": "#5db56c",
+              "surface": "#f8fafc",
+              "surface-dim": "#e2e8f0",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f1f5f9",
+              "surface-container": "#e2e8f0",
+              "surface-container-high": "#cbd5e1",
+              "surface-container-highest": "#94a3b8",
+              "on-surface": "#0f172a",
+              "on-surface-variant": "#334155",
+              "outline": "#64748b",
+              "outline-variant": "#cbd5e1",
+              "gov-navy": "#0b3b60",
+              "gov-navy-dark": "#002541",
+              "india-saffron": "#d9531e",
+              "india-green": "#1b7837",
+              "slate-ink": "#0f172a",
+              "slate-muted": "#334155",
+              "slate-subtle": "#64748b",
+              "error": "#ba1a1a",
+              "error-container": "#ffdad6"
+            },
+            fontFamily: {
+              sans: ["Public Sans", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"]
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .tricolor-stripe {
+        height: 3px;
+        background: linear-gradient(90deg, #d9531e 0%, #d9531e 33.33%, #ffffff 33.33%, #ffffff 66.66%, #1b7837 66.66%, #1b7837 100%);
+      }
+    </style>
+  </head>
+  <body class="bg-[#f8fafc] text-[#0f172a] antialiased min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

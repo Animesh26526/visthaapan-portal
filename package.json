@@ -1,0 +1,49 @@
+{
+  "name": "visthaapan-portal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "This is the frontend foundation for the VISTHAAPAN Portal, designed for the Smart India Hackathon.",
+  "homepage": "https://github.com/AdityaDoshi/visthaapan-portal#readme",
+  "bugs": {
+    "url": "https://github.com/AdityaDoshi/visthaapan-portal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdityaDoshi/visthaapan-portal.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.102.8",
+    "@types/leaflet": "^1.9.22",
+    "classnames": "^2.5.1",
+    "leaflet": "^1.9.4",
+    "marked": "^18.0.12",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.18.3",
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.6",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "oxlint": "^1.79.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2",
+    "wrangler": "^4.130.0"
+  }
+}
