@@ -1,5 +1,13 @@
 export type Environment = 'development' | 'production' | 'test';
 
+export interface DatabaseDependencyStatus {
+  status: 'connected' | 'unavailable' | 'not_configured';
+  engine?: string;
+  version?: string;
+  postgisVersion?: string;
+  error?: string;
+}
+
 export interface AppConfig {
   env: Environment;
   port: number;
@@ -9,6 +17,12 @@ export interface AppConfig {
   isDev: boolean;
   isProd: boolean;
   isTest: boolean;
+  databaseUrl: string;
+  dbHost: string;
+  dbPort: number;
+  dbName: string;
+  dbUser: string;
+  dbPassword?: string;
 }
 
 export interface ApiSuccessResponse<T = unknown> {
@@ -36,6 +50,9 @@ export interface HealthCheckResponse {
   timestamp: string;
   uptimeSeconds: number;
   environment: Environment;
+  dependencies?: {
+    database: DatabaseDependencyStatus;
+  };
 }
 
 export interface ApiInfoResponse {

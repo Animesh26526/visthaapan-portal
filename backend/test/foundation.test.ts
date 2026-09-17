@@ -1,4 +1,5 @@
 import { createApp } from '../src/app.js';
+import { pool } from '../src/db/pool.js';
 import type { Server } from 'http';
 
 async function runTests(): Promise<void> {
@@ -47,13 +48,16 @@ async function runTests(): Promise<void> {
     const res = await fetch(`${baseUrl}/api/v1/health`);
     if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);
 
-    const data = await res.json() as Record<string, unknown>;
+    const data = await res.json() as Record<string, any>;
     if (data.success !== true) throw new Error('Expected success: true');
     if (data.service !== 'VISTHAAPAN API') throw new Error(`Unexpected service: ${data.service}`);
     if (data.status !== 'healthy') throw new Error(`Unexpected status: ${data.status}`);
     if (data.version !== 'v1') throw new Error(`Unexpected version: ${data.version}`);
     if (typeof data.timestamp !== 'string') throw new Error('Missing timestamp string');
     if (typeof data.uptimeSeconds !== 'number') throw new Error('Missing uptimeSeconds');
+    if (data.dependencies?.database?.status !== 'connected') {
+      throw new Error(`Expected database status 'connected', got '${data.dependencies?.database?.status}'`);
+    }
 
     const requestId = res.headers.get('x-request-id');
     if (!requestId) throw new Error('Missing X-Request-Id header on response');
@@ -128,6 +132,8 @@ async function runTests(): Promise<void> {
       else resolve();
     });
   });
+
+  await pool.end();
 
   console.log(`\nAll ${passed}/${total} foundation verification tests passed successfully!`);
 }

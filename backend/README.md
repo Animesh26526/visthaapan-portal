@@ -4,7 +4,7 @@ This service provides the core application and API gateway layer for the **VISTH
 
 ## Architecture & Current Status
 
-This service is currently at **Phase 2: Node.js + Express Backend Foundation**.
+This service is currently at **Phase 3: PostgreSQL + PostGIS Database Foundation**.
 
 ```text
 STATUS BY SUBSYSTEM:
@@ -12,9 +12,9 @@ STATUS BY SUBSYSTEM:
 ├── Standard Response Envs:  ✅ OPERATIONAL (Uniform success & error envelope)
 ├── Request Logging & ID:    ✅ OPERATIONAL (Pino + X-Request-Id correlation)
 ├── CORS & Security:         ✅ OPERATIONAL (Bounded to FRONTEND_ORIGIN)
-├── Health Verification:     ✅ OPERATIONAL (GET /api/v1/health)
+├── Health Verification:     ✅ OPERATIONAL (GET /api/v1/health with Live DB Check)
+├── DATABASE (PostgreSQL):   ✅ OPERATIONAL (PostgreSQL 16.4 + PostGIS 3.4.3, 43 Tables)
 │
-├── DATABASE (PostgreSQL):   ⏳ NOT IMPLEMENTED YET (Phase 3)
 ├── AI RISK ENGINE (ML):     ⏳ NOT IMPLEMENTED YET (Phase 5)
 ├── GIS SPATIAL ENGINE:      ⏳ NOT IMPLEMENTED YET (Phase 6)
 ├── CARRYING CAPACITY:       ⏳ NOT IMPLEMENTED YET (Phase 7)
@@ -22,7 +22,7 @@ STATUS BY SUBSYSTEM:
 ```
 
 > [!IMPORTANT]
-> **No Mock Computation in Backend**: Unlike previous prototypes, this backend does not simulate mathematical optimization using greedy heuristics or static hardcoded arrays. Real optimization will be executed in Phase 8 via a dedicated Python OR-Tools solver.
+> **No Mock Computation in Backend**: Unlike previous prototypes, this backend does not simulate mathematical optimization using greedy heuristics or static hardcoded arrays. Real optimization will be executed in Phase 8 via a dedicated Python OR-Tools solver. Full schema documentation is available in [database.md](docs/database.md).
 
 ## Prerequisites
 
