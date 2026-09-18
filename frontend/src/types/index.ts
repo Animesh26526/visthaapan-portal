@@ -241,3 +241,5 @@ export interface DataQualityBenchmark {
 export type Allocation = AllocationItem;
 export type Scenario = ScenarioModification;
 
+export * from './gis';
+

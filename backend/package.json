@@ -21,7 +21,10 @@
     "enrichment:test": "tsx test/enrichment.test.ts",
     "ai:train": "python -m ai.risk.train",
     "test:ai": "tsx test/ai.test.ts",
-    "test:validation": "tsx test/ai_validation.test.ts"
+    "test:validation": "tsx test/ai_validation.test.ts",
+    "gis:setup": "tsx src/pipeline/runGisSetup.ts",
+    "test:gis": "tsx test/gis.test.ts",
+    "test:all": "tsx test/foundation.test.ts && tsx test/db.test.ts && tsx test/pipeline.test.ts && tsx test/enrichment.test.ts && tsx test/ai.test.ts && tsx test/ai_validation.test.ts && tsx test/gis.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

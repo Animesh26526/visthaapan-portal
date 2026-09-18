@@ -64,3 +64,6 @@ export interface ApiInfoResponse {
   pipelineStage: string;
   modules: Record<string, string>;
 }
+
+export * from './gis.js';
+

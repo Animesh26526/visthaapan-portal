@@ -11,3 +11,4 @@ export * from './intelligence.service';
 export * from './briefing.service';
 export * from './decisions.service';
 export * from './geminiService';
+export * from './gis.service';
