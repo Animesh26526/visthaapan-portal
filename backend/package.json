@@ -18,7 +18,9 @@
     "seed:benchmark": "tsx src/pipeline/runBenchmark.ts",
     "pipeline:test": "tsx test/pipeline.test.ts",
     "ingest:enrichment": "tsx src/pipeline/runEnrichment.ts",
-    "enrichment:test": "tsx test/enrichment.test.ts"
+    "enrichment:test": "tsx test/enrichment.test.ts",
+    "ai:train": "python ai/risk/train.py",
+    "test:ai": "tsx test/ai.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -1,0 +1,234 @@
+{
+  "model_version": "v1.0.0-xgb-district-risk",
+  "feature_schema_version": "v5.1.0-temporal-biweekly",
+  "git_commit": "8efa2dfba77488404939028e10e811ed0ae416a3",
+  "artifact_path": "C:\\Users\\Lenovo\\Desktop\\Projects\\VISTHAAPAN-PORTAL\\visthaapan-portal\\backend\\ai\\artifacts\\v1.0.0-xgb-district-risk.joblib",
+  "artifact_checksum": "4509682e3a06c30e5595ce3ca62704eea549bb54966ccf303b7c51cbeeb743a2",
+  "training_timestamp": "2026-09-18T06:04:59Z",
+  "metrics": {
+    "dataset": {
+      "total_canonical_districts": 785,
+      "total_samples_generated": 17270,
+      "observation_cadence_days": 14,
+      "prediction_horizon_days": 14,
+      "train_samples": 10990,
+      "val_samples": 3925,
+      "test_samples": 2355,
+      "class_prevalence": 0.1563
+    },
+    "baseline_logistic": {
+      "val": {
+        "accuracy": 0.5248,
+        "precision": 0.3517,
+        "recall": 0.9348,
+        "f1": 0.5111,
+        "roc_auc": 0.8698,
+        "pr_auc": 0.7821,
+        "brier_score": 0.2986,
+        "confusion_matrix": [
+          [
+            1085,
+            1797
+          ],
+          [
+            68,
+            975
+          ]
+        ],
+        "threshold": 0.5,
+        "sample_count": 3925,
+        "positive_count": 1043,
+        "negative_count": 2882
+      },
+      "test": {
+        "accuracy": 0.535,
+        "precision": 0.3941,
+        "recall": 0.9301,
+        "f1": 0.5536,
+        "roc_auc": 0.8643,
+        "pr_auc": 0.8021,
+        "brier_score": 0.3225,
+        "confusion_matrix": [
+          [
+            581,
+            1044
+          ],
+          [
+            51,
+            679
+          ]
+        ],
+        "threshold": 0.5,
+        "sample_count": 2355,
+        "positive_count": 730,
+        "negative_count": 1625
+      }
+    },
+    "xgboost": {
+      "val": {
+        "accuracy": 0.8318,
+        "precision": 0.6649,
+        "recall": 0.7402,
+        "f1": 0.7005,
+        "roc_auc": 0.8839,
+        "pr_auc": 0.7624,
+        "brier_score": 0.1197,
+        "confusion_matrix": [
+          [
+            2493,
+            389
+          ],
+          [
+            271,
+            772
+          ]
+        ],
+        "threshold": 0.5,
+        "sample_count": 3925,
+        "positive_count": 1043,
+        "negative_count": 2882
+      },
+      "test": {
+        "accuracy": 0.7881,
+        "precision": 0.6262,
+        "recall": 0.7849,
+        "f1": 0.6967,
+        "roc_auc": 0.8545,
+        "pr_auc": 0.7549,
+        "brier_score": 0.1537,
+        "confusion_matrix": [
+          [
+            1283,
+            342
+          ],
+          [
+            157,
+            573
+          ]
+        ],
+        "threshold": 0.5,
+        "sample_count": 2355,
+        "positive_count": 730,
+        "negative_count": 1625
+      },
+      "calibration_test": {
+        "raw_brier_score": 0.1537,
+        "calibrated_brier_score": 0.1381,
+        "brier_improvement": 0.0156,
+        "calibration_curve": {
+          "empirical_prob_true": [
+            0.0957,
+            0.228,
+            0.4065,
+            0.5829,
+            0.8338
+          ],
+          "mean_predicted_prob": [
+            0.0824,
+            0.2866,
+            0.496,
+            0.7249,
+            0.8314
+          ]
+        }
+      },
+      "top_gain_features": [
+        [
+          "events_last_30d",
+          0.28016
+        ],
+        [
+          "days_since_last_active_event",
+          0.27911
+        ],
+        [
+          "cumulative_active_events_to_date",
+          0.04134
+        ],
+        [
+          "surveillance_reports_last_30d",
+          0.03376
+        ],
+        [
+          "events_last_365d",
+          0.03321
+        ],
+        [
+          "month_cos",
+          0.0318
+        ],
+        [
+          "census_child_share",
+          0.03058
+        ],
+        [
+          "geocoded_hospital_count",
+          0.03054
+        ],
+        [
+          "events_last_90d",
+          0.02856
+        ],
+        [
+          "month_sin",
+          0.02824
+        ]
+      ],
+      "top_shap_features": [
+        [
+          "days_since_last_active_event",
+          0.91304
+        ],
+        [
+          "month_cos",
+          0.36677
+        ],
+        [
+          "surveillance_reports_last_30d",
+          0.31942
+        ],
+        [
+          "events_last_365d",
+          0.29627
+        ],
+        [
+          "geocoded_hospital_count",
+          0.23139
+        ],
+        [
+          "events_last_30d",
+          0.16307
+        ],
+        [
+          "census_literacy_rate",
+          0.15868
+        ],
+        [
+          "events_last_90d",
+          0.14782
+        ],
+        [
+          "census_population_total_log",
+          0.14418
+        ],
+        [
+          "census_child_share",
+          0.14085
+        ]
+      ]
+    },
+    "rpw_breakdown": {
+      "latest_observation_date": "2026-08-22",
+      "tier_counts": {
+        "immediate": 110,
+        "short-term": 223,
+        "medium-term": 452
+      },
+      "weights": {
+        "risk": 0.5,
+        "vulnerability": 0.35,
+        "urgency": 0.15
+      }
+    }
+  }
+}

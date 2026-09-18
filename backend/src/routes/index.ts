@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { healthRouter } from './health.routes.js';
+import { intelligenceRouter } from './intelligence.routes.js';
 import { getApiInfo } from '../controllers/health.controller.js';
 
 export const apiRouter: Router = Router();
@@ -9,6 +10,9 @@ apiRouter.get('/', getApiInfo);
 
 // Health check endpoint (GET /api/v1/health)
 apiRouter.use('/', healthRouter);
+
+// Phase 5 AI Intelligence Engine (GET /api/v1/intelligence)
+apiRouter.use('/intelligence', intelligenceRouter);
 
 /**
  * ARCHITECTURAL ROUTE REGISTRATION POINT
@@ -28,7 +32,6 @@ apiRouter.use('/', healthRouter);
  * - Phase 9 (Scenario Engine):
  *   apiRouter.use('/scenarios', scenariosRouter);
  *
- * - Phase 11 (Statutory Adjudication & Intelligence):
+ * - Phase 11 (Statutory Adjudication):
  *   apiRouter.use('/decisions', decisionsRouter);
- *   apiRouter.use('/intelligence', intelligenceRouter);
  */
