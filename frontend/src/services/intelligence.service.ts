@@ -90,6 +90,57 @@ export const IntelligenceService = {
     }
   },
 
+  // ============================================================
+  // Phase 5 Authoritative District AI Intelligence Endpoints
+  // ============================================================
+
+  /**
+   * Lists district intelligence profiles with operational RPW tiers.
+   * GET /api/v1/intelligence/districts
+   */
+  getDistrictsIntelligence: async (params?: {
+    tier?: string;
+    state?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<any> => {
+    try {
+      const resp = await apiClient.get<any>('/intelligence/districts', { params });
+      return resp?.data || resp;
+    } catch (err) {
+      console.warn('[IntelligenceService] Failed to fetch district intelligence list:', err);
+      return null;
+    }
+  },
+
+  /**
+   * Detailed intelligence profile for a single district including SHAP attributions.
+   * GET /api/v1/intelligence/districts/:districtId
+   */
+  getDistrictIntelligenceDetail: async (districtId: string): Promise<any> => {
+    try {
+      const resp = await apiClient.get<any>(`/intelligence/districts/${encodeURIComponent(districtId)}`);
+      return resp?.data || resp;
+    } catch (err) {
+      console.warn(`[IntelligenceService] Failed to fetch district detail for ${districtId}:`, err);
+      return null;
+    }
+  },
+
+  /**
+   * Active model version, training metrics, and lineage.
+   * GET /api/v1/intelligence/model
+   */
+  getActiveModelInfo: async (): Promise<any> => {
+    try {
+      const resp = await apiClient.get<any>('/intelligence/model');
+      return resp?.data || resp;
+    } catch (err) {
+      console.warn('[IntelligenceService] Failed to fetch active model info:', err);
+      return null;
+    }
+  },
+
   // Backward compatibility method
   getInsightsForHabitation: async (id: string): Promise<IntelligenceInsight | null> => {
     const assessment = await IntelligenceService.getRiskAssessment(id);
@@ -105,3 +156,4 @@ export const IntelligenceService = {
     };
   },
 };
+

@@ -437,7 +437,14 @@ export async function getSiteSuitabilityAuditById(siteId: string): Promise<SiteS
     LEFT JOIN site_suitability_assessments ssa ON ssa.site_id = s.id
     LEFT JOIN hospitals h ON h.id = ssa.nearest_hospital_id
     LEFT JOIN candidate_routes cr ON cr.site_id = s.id
-    WHERE s.id = $1
+    WHERE s.id::text = $1
+       OR ($1 = 'SITE-001' AND s.name ILIKE '%Pipalkoti%')
+       OR ($1 = 'SITE-002' AND s.name ILIKE '%Gauchar%')
+       OR ($1 = 'SITE-003' AND s.name ILIKE '%Karnaprayag%')
+       OR ($1 = 'SITE-004' AND s.name ILIKE '%Rudraprayag%')
+       OR ($1 = 'SITE-005' AND s.name ILIKE '%Srinagar%')
+       OR ($1 = 'SITE-006' AND s.name ILIKE '%Rishikesh%')
+       OR s.name ILIKE ('%' || $1 || '%')
     LIMIT 1;
   `;
 

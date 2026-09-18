@@ -54,7 +54,7 @@ export const SEED_HAZARD_LAYERS = [
     confidence: 0.92,
     bufferRadiusMeters: 150,
     dataOrigin: 'SIMULATED',
-    wktGeometry: 'SRID=4326;POLYGON((79.55 30.55, 79.48 30.50, 79.43 30.43, 79.38 30.35, 79.25 30.26, 79.22 30.25, 79.24 30.27, 79.40 30.37, 79.45 30.45, 79.50 30.52, 79.57 30.56, 79.55 30.55))',
+    wktGeometry: 'SRID=4326;POLYGON((79.55 30.57, 79.48 30.52, 79.43 30.45, 79.38 30.37, 79.24 30.27, 79.22 30.25, 79.25 30.24, 79.39 30.34, 79.44 30.42, 79.49 30.49, 79.56 30.54, 79.55 30.57))',
     metadata: {
       riverBasin: 'Alaknanda',
       inundationLevelMeters: 4.5,
@@ -138,6 +138,11 @@ export async function seedHazardLayers(): Promise<number> {
       qualityScore: 0.96,
       processingNotes: 'Phase 6 6B hazard layer spatial ingestion.',
     });
+
+    // Clean up existing simulated hazard layers and derived red zones for idempotency
+    await client.query('DELETE FROM red_zone_hazards;');
+    await client.query('DELETE FROM red_zones;');
+    await client.query("DELETE FROM hazard_layers WHERE data_origin = 'SIMULATED';");
 
     let count = 0;
     for (const h of SEED_HAZARD_LAYERS) {
