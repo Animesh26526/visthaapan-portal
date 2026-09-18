@@ -1,15 +1,18 @@
 # VISTHAAPAN PORTAL — PHASE 7 & PHASE 8 DATA CONTRACT SPECIFICATION
 
 **Document ID:** VP-P7P8-CONTR-2026-09-18  
-**System Classification:** Production Architecture Interface Contract  
+**System Classification:** Decision-Support Interface Specification (SIMULATED_BENCHMARK)  
 **Modules:** Phase 7 (Capacity Assessment) & Phase 8 (OR Optimization)  
 **Target Consumers:** Phase 8 Solver, REST APIs, Frontend Portal, and Future Phase 9 Adjudication Engine  
 **Release Target:** v1.0.0-PROD  
-**Timestamp:** 2026-09-18T20:51:00+05:30  
+**Timestamp:** 2026-09-18T21:12:00+05:30  
 
 ---
 
-## 1. System Architecture & End-to-End Data Lineage
+## 1. System Architecture & Governance Scope
+
+> [!IMPORTANT]
+> **Decision-Support Classification**: This data contract governs analytical decision-support data structures. The system does NOT hold statutory or legal executive authority and does NOT establish gazetted legal zones. Usable capacities, hazard exclusions, and transit routes are computational recommendations for human disaster response officials.
 
 ```mermaid
 flowchart TD
@@ -18,9 +21,9 @@ flowchart TD
     end
 
     subgraph Phase 7: Capacity Engine
-        GIS[GIS Hazard Overlays & Rivers] -->|Hard Red Zone Exclusion| CE[Capacity Evaluation Engine]
-        SPHERE[SPHERE Lifeline Parameters] --> CE
-        DN -->|15,450 Displaced Souls| IP[OR-Tools Input Payload]
+        GIS[GIS Hazard Overlays & Rivers] -->|Hard Hazard Exclusion| CE[Capacity Evaluation Engine]
+        SPHERE[Modeled SPHERE Lifeline Benchmarks] --> CE
+        DN -->|15,450 Displaced Souls<br/>SIMULATED_BENCHMARK| IP[Solver Input Payload]
         CE -->|37,300 Usable Souls<br/>Pipalkoti = 0| IP
     end
 
@@ -33,7 +36,7 @@ flowchart TD
     subgraph Phase 8 Delivery & Consumers
         PG --> API[REST APIs /api/v1/*]
         API --> UI[Frontend Relocation & Capacity Views]
-        API --> P9[Future Phase 9 Officer Adjudication Engine]
+        API --> P9[Future Phase 9 Decision-Support Adjudication Engine]
     end
 ```
 
@@ -52,22 +55,22 @@ export interface SiteCapacityAssessment {
   state: string;                      // "Uttarakhand"
   
   // Capacity Metrics
-  nominalCapacity: number;            // Baseline physical acreage capacity
-  effectiveCapacity: number;          // min(all lifeline capacities)
+  nominalCapacity: number;            // Baseline physical acreage capacity (SIMULATED_BENCHMARK)
+  effectiveCapacity: number;          // min(all lifeline capacities) (SIMULATED_BENCHMARK)
   usableCapacity: number;             // 0 if hardHazardExclusion, else effectiveCapacity
   currentOccupancy: number;           // Currently assigned population
   availableCapacity: number;          // usableCapacity - currentOccupancy
   utilizationPercent: number;         // (currentOccupancy / usableCapacity) * 100
   
-  // Lifeline Breakdown
+  // Lifeline Breakdown (All parameters represent SIMULATED_BENCHMARK configurations)
   dimensions: {
-    physical: number;                 // SPHERE 30 m2 / person
-    water: number;                    // SPHERE 15 L / person / day
-    shelter: number;                  // SPHERE 3.5 m2 / person
-    sanitation: number;               // SPHERE 1 unit / 20 persons
-    healthcare: number;               // Onsite disaster triage (1 bed / 100 persons)
-    electricity: number;              // 0.1 kW / person
-    access: number;                   // Road ingress/egress throughput
+    physical: number;                 // Modeled space parameter (30 m2 / person)
+    water: number;                    // Configured water parameter (15 L / person / day)
+    shelter: number;                  // Configured shelter parameter (3.5 m2 / person)
+    sanitation: number;               // Configured sanitation parameter (1 unit / 20 persons)
+    healthcare: number;               // Simulated benchmark triage capacity (1 bed / 100 persons)
+    electricity: number;              // Configured power parameter (0.1 kW / person)
+    access: number;                   // Heuristic road throughput parameter
   };
   
   // Limiting Bottleneck Analysis
@@ -77,12 +80,12 @@ export interface SiteCapacityAssessment {
   limitingFactor: string;             // Plain-language administrator explanation
   capacityStatus: 'ADEQUATE' | 'SURPLUS' | 'NEAR_CAPACITY' | 'EXCEEDED' | 'RESTRICTED_BY_HAZARD';
   
-  // Governance, Compliance & Hazard Exclusion
+  // Hard Hazard Exclusion (Decision Support)
   hardHazardExclusion: boolean;       // true if intersects active hazard polygon
   hazardIntersectionDetails?: {
     hazardType: string;               // e.g. "Alaknanda Active Riverbed Red Zone"
     severity: 'CRITICAL' | 'HIGH';
-    exclusionLegalBasis: string;      // "DM Act 2005 Model Disaster Relocation Guidelines"
+    exclusionBasis: string;           // "GIS-derived hard hazard intersection with active flood/riverbed envelope"
   };
   
   // Provenance & Uncertainty Metadata
@@ -113,10 +116,10 @@ export interface RelocationDemandNode {
   stateName: string;                  // "Uttarakhand"
   
   totalPopulation: number;            // Benchmark census population
-  relocationDemand: number;           // Displaced souls requiring evacuation
+  relocationDemand: number;           // Displaced souls requiring evacuation (SIMULATED_BENCHMARK)
   
   // AI Risk Integration
-  priorityWeight: number;             // RPW from Phase 5/6 (e.g. 0.7109)
+  priorityWeight: number;             // RPW from Phase 5/6 (0.7109 for all 5 current nodes)
   operationalTier: 'immediate' | 'short-term' | 'medium-term';
   hazardExposureStatus: string;       // e.g. "SUBSIDENCE_ACTIVE_SLOPE"
   
@@ -258,7 +261,7 @@ export interface AllocationExplanationDossier {
     factor: string;                   // e.g. "HARD_HAZARD_EXCLUSION"
     weight: number;                   // e.g. 1.000
     impact: 'PREFERENTIAL_ALLOCATION' | 'ZERO_ALLOCATION_ENFORCED' | 'CAPACITY_RESTRICTED';
-    description: string;              // Statutory/operational justification
+    description: string;              // Modeled decision-support justification
   }>;
   
   confidence: number;                 // e.g. 1.000
@@ -273,7 +276,7 @@ export interface AllocationExplanationDossier {
 
 | Table Name | Primary Key | Key Foreign Keys | Purpose |
 | :--- | :--- | :--- | :--- |
-| **`site_capacities`** | `id` (UUID) | `site_id` $\to$ `relocation_sites(id)` | Stores 7-dimension carrying capacity, bottleneck dimension, limiting factor, capacity status, and hard hazard exclusion flag. |
+| **`site_capacities`** | `id` (UUID) | `site_id` $\to$ `relocation_sites(id)` | Stores 7-dimension carrying capacity, bottleneck dimension, limiting factor, capacity status, and hard hazard exclusion flag (`SIMULATED_BENCHMARK`). |
 | **`relocation_demands`** | `id` (UUID) | `habitation_id`, `canonical_district_id` | Stores standardized demand nodes, census population, displacement demand, RPW priority, and tier. |
 | **`allocation_results`** | `id` (UUID) | `scenario_id` $\to$ `scenarios(id)` | Stores solver run header: solver name, solve time, status (`OPTIMAL`), total allocated, total unmet, total cost. |
 | **`allocation_items`** | `id` (UUID) | `allocation_id`, `site_id`, `demand_node_id` | Stores individual assignment vectors $(i, j, x_{ij})$, unit transit cost, distance, travel time. |
@@ -287,7 +290,7 @@ export interface AllocationExplanationDossier {
 
 Phase 9 (Adjudication & Emergency Briefing) will consume Phase 8 records using the following invariant rules:
 1. **Read-Only Baseline**: Phase 9 must read the latest `OPTIMAL` run from `GET /api/v1/optimization/runs/latest`.
-2. **Statutory Non-Override**: If an officer attempts a manual override assigning population to Pipalkoti Safe Hub Alpha (or any site with `hardHazardExclusion = true`), the API must reject with `HTTP 403 / HAZARD_EXCLUSION_VIOLATION`.
-3. **Structured Explanation Retention**: Any manual officer override in Phase 9 must create a child explanation record linked to the original solver explanation, citing NDMA Section 34 operational discretion.
+2. **Hard Hazard Non-Override Policy**: If an officer attempts a manual override in the portal assigning population to Pipalkoti Safe Hub Alpha (or any site with `hardHazardExclusion = true`), the API must reject with `HTTP 403 / HAZARD_EXCLUSION_VIOLATION` to uphold core safety guardrails.
+3. **Structured Explanation Retention**: Any manual officer override in Phase 9 must create an audit record linked to the original solver explanation, capturing the administrative rationale and operator identity.
 
-*Specification Approved by: VISTHAAPAN Data Governance Board*
+*Specification Maintained by: VISTHAAPAN Data Governance Board*

@@ -186,7 +186,7 @@ export async function evaluateAllSiteCapacities(): Promise<SiteCapacityAssessmen
 
       if (isHardExcluded) {
         status = 'RESTRICTED_BY_HAZARD';
-        limitingFactorText = `HARD HAZARD EXCLUSION: Site intersects active hazard exclusion envelope (safety score: ${Number(row.safety_score || 0).toFixed(2)}). Zero population allocation permitted under DM Act 2005.`;
+        limitingFactorText = `GIS-DERIVED HARD HAZARD EXCLUSION: Site intersects active hazard exclusion envelope (safety score: ${Number(row.safety_score || 0).toFixed(2)}). Decision-support model enforces zero usable capacity after hazard exclusion.`;
       } else if (bottleneckVal < physical * 0.6) {
         status = 'CRITICALLY_LIMITED';
         limitingFactorText = `Critical bottleneck in ${bottleneckDim}: Safe capacity limited to ${bottleneckVal} souls (${Math.round((bottleneckVal / physical) * 100)}% of ${physical} physical capacity).`;
@@ -634,10 +634,10 @@ export async function getCapacitySummary(): Promise<CapacitySummary> {
     operationalTierDemand: tierDemand,
     dataOrigin: 'SIMULATED_BENCHMARK',
     uncertaintyNotes: [
-      'All candidate sites are simulated benchmark facilities for Chamoli planning demonstration.',
-      'Healthcare bed numbers in national directory are quarantined; facility existence and level used.',
-      'Cartosat-1 DEM terrain slope is unavailable for Chamoli; neutral slope factor applied with audit flag.',
-      'Pipalkoti Transit Shelter Hub is inside active hazard zone and hard-excluded from safe capacity under DM Act 2005.',
+      'All candidate sites are simulated benchmark facilities for Chamoli planning demonstration (SIMULATED_BENCHMARK).',
+      'Healthcare bed numbers in national directory are quarantined; candidate sites use simulated benchmark disaster triage capacities (SIMULATED_BENCHMARK), not observed facility bed counts.',
+      'Cartosat-1 DEM terrain slope is unavailable for Chamoli; neutral heuristic slope factor applied with TERRAIN_ELEVATION_UNAVAILABLE audit flag.',
+      'Pipalkoti Transit Shelter Hub is inside GIS-derived active hazard zone; decision-support model enforces hard hazard exclusion (usable capacity after hazard exclusion = 0). This is a decision-support calculation, not a statutory legal designation.',
     ],
   };
 }

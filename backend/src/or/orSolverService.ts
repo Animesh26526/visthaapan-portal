@@ -401,8 +401,8 @@ export async function runOptimization(options: OptimizationOptions = {}): Promis
           );
         `, [
           expId,
-          `${a.site_name} (Sanitation Bottleneck)`,
-          `Destination hub ${a.site_name} effective capacity is constrained by sanitation infrastructure. Allocated ${a.population_allocated} within safe limits.`,
+          `${a.site_name} (Modeled Benchmark Limit)`,
+          `Destination hub ${a.site_name} capacity is constrained by simulated benchmark infrastructure parameters (SIMULATED_BENCHMARK). Allocated ${a.population_allocated} within configured limits.`,
         ]);
       }
     }

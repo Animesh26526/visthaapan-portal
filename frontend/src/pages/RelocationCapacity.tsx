@@ -38,9 +38,9 @@ export const RelocationCapacity: React.FC = () => {
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 flex items-start gap-2.5">
         <span className="text-base leading-none">⚠️</span>
         <div>
-          <strong className="font-semibold">SIMULATED BENCHMARK INFRASTRUCTURE (NOT STATUTORY EXECUTIVE ORDERS)</strong>
+          <strong className="font-semibold">DECISION SUPPORT ONLY — SIMULATED BENCHMARK INFRASTRUCTURE</strong>
           <p className="mt-0.5 text-amber-800 leading-normal">
-            Relocation sites SITE-001 through SITE-006 and candidate corridors represent deterministic simulated test fixtures for Chamoli. National hospital bed counts are quarantined and excluded from carrying capacity calculations. Cartosat-1 DEM terrain slope is recorded as UNAVAILABLE outside western Gujarat.
+            Relocation sites SITE-001 through SITE-006, lifeline parameters, and candidate corridors represent deterministic simulated benchmark test fixtures for Chamoli (SIMULATED_BENCHMARK). This system provides analytical decision support and does NOT create statutory legal orders or official gazetted designations. National hospital bed counts are quarantined and excluded from capacity math; triage capacities reflect simulated benchmark configurations. Cartosat-1 DEM terrain slope is recorded as UNAVAILABLE outside western Gujarat.
           </p>
         </div>
       </div>
@@ -55,7 +55,7 @@ export const RelocationCapacity: React.FC = () => {
             Effective Capacity = MIN( Physical Area, Water Supply, Shelter Beds, Sanitation, Healthcare )
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            A site cannot house 15,000 citizens if sanitation or potable water only supports 9,200. The strict limiting bottleneck dictates statutory safe capacity.
+            A site cannot house 15,000 citizens if sanitation or potable water only supports 9,200. The strict limiting bottleneck dictates modeled safe carrying capacity.
           </p>
         </div>
 
@@ -184,7 +184,7 @@ export const RelocationCapacity: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div>
             <span className="text-[11px] font-mono text-[#003366] font-bold uppercase">
-              Statutory Shelter Capacity Audit: {activeSite.name} ({activeSite.code})
+              Shelter Capacity Assessment (Decision Support — SIMULATED_BENCHMARK): {activeSite.name} ({activeSite.code})
             </span>
             <h2 className="text-xl font-bold text-slate-900 mt-0.5">{activeSite.name}</h2>
             <p className="text-xs text-slate-500">
@@ -205,7 +205,7 @@ export const RelocationCapacity: React.FC = () => {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-mono text-[10px] uppercase">
                 <th className="p-2.5">Resource Dimension</th>
-                <th className="p-2.5">Raw Physical Limit</th>
+                <th className="p-2.5">Configured Limit (SIMULATED_BENCHMARK)</th>
                 <th className="p-2.5">Supported Headcount</th>
                 <th className="p-2.5">Standard Criterion</th>
                 <th className="p-2.5">Status / Bottleneck Flag</th>
@@ -274,7 +274,7 @@ export const RelocationCapacity: React.FC = () => {
       {/* 5. NEXT WORKFLOW ACTIONS */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-white border border-slate-200 rounded-lg shadow-xs">
         <div className="text-xs text-slate-600">
-          Capacity audit confirmed against <strong>NDMA / Sphere Humanitarian Standards</strong>. Effective limits are enforced in all solver simulations.
+          Capacity assessment formulated against <strong>NDMA / Sphere Humanitarian Standards (Modeled Decision Support)</strong>. Benchmark limits are enforced in all solver simulations.
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded border border-slate-200">
           <span className="material-symbols-outlined text-[16px] text-emerald-700">verified</span>

@@ -48,7 +48,7 @@ export const OperationsResearch: React.FC = () => {
             <div>• <strong className="text-slate-900">xᵢⱼ:</strong> Number of citizens routed from habitation i to safe hub j</div>
             <div>• <strong className="text-slate-900">cᵢⱼ:</strong> Composite transit distance &amp; hazard exposure cost between i and j</div>
             <div>• <strong className="text-slate-900">uᵢ:</strong> Unmet population deficit for habitation i</div>
-            <div>• <strong className="text-slate-900">Pᵢ:</strong> Statutory penalty multiplier proportional to Multi-Hazard Vulnerability Score</div>
+            <div>• <strong className="text-slate-900">Pᵢ:</strong> Modeled penalty multiplier proportional to Relocation Priority Weight (RPW)</div>
           </div>
           <div className="text-slate-700 text-[11px] pt-1 border-t border-slate-200 font-mono">
             <span className="text-[#003366] font-bold">Subject to:</span> (1) Demand: ∑ⱼ xᵢⱼ + uᵢ = Dᵢ &nbsp;&nbsp;|&nbsp;&nbsp; (2) Capacity: ∑ᵢ xᵢⱼ ≤ C_eff(j) &nbsp;&nbsp;|&nbsp;&nbsp; (3) Integrity: xᵢⱼ ≥ 0
