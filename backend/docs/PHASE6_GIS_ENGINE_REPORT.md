@@ -204,7 +204,52 @@ All endpoints deliver RFC 7946 compliant GeoJSON FeatureCollections:
 ----------------------------------------------------------------
   TOTAL AUTOMATED TESTS:                           200 / 200 PASS
   TypeScript Compilation (Backend):                 0 Errors
-  Frontend Build (Vite + React 19):                ✓ built in 2.50s
+  Frontend Build (Vite + React 19):                ✓ Clean build
   Frontend Linting (oxlint):                        0 Errors
 ================================================================
 ```
+
+---
+
+### 10. Spatial Dataset Provenance & Semantic Integrity Audit
+
+Prior to advancing to Phase 7 (Operations Research & Transit Optimization), an exhaustive provenance and semantic integrity audit was conducted across all spatial assets, database tables, API responses, and frontend visualizations. The purpose of this audit is to strictly eliminate unsupported claims (such as live satellite InSAR ingestion, gazetted executive orders, or surveyed road centerlines) and ensure radical truth-in-advertising across the system.
+
+#### 10.1 Spatial Dataset Classification Matrix
+
+| Dataset Component | Database Table / Entity | Current Source / Geometry | Classification | Semantic Truth & Caveats |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ingested Hazard Layers (4 Layers)** | `hazard_layers` (`HAZ-JOSHIMATH-*`, `HAZ-ALAKNANDA-*`, etc.) | Synthetic polygon envelopes seeded in `hazardLayerService.ts` | **SIMULATED BENCHMARK** | Parameterized from historical Uttarakhand events (2021 Chamoli flood, 2023 Joshimath subsidence). No raw ISRO NRSC InSAR rasters or live radar feeds are connected. |
+| **Candidate Relocation Sites (SITE-001–006)** | `relocation_sites`, `site_capacities` | Synthetic prototype planning hubs seeded in `seedBenchmark.ts` | **SIMULATED BENCHMARK** | Prototype test fixtures parameterized with multi-dimensional resource bottlenecks (water, sanitation, shelter). Not official state-notified relief camps. |
+| **Road Proximity & Corridors** | `candidate_routes` | Straight-line Euclidean vectors (`ST_MakeLine`) with heuristic math | **SIMULATED / HEURISTIC** | Distances computed using a **1.6x mountain winding factor**; transit times computed at a **35 km/h mountain speed benchmark**. Road accessibility (`all-weather`) is an assumed scenario parameter pending PWD field survey. |
+| **District Boundary Coverage** | `canonical_districts.boundary_geometry` | PostGIS `MULTIPOLYGON` column in `canonical_districts` | **UNAVAILABLE (0 of 785)** | PostgreSQL audit confirmed **0 of 785 boundaries populated** (all are NULL). Spatial anchoring is 100% point centroids (300 facility medians, 10 official HQ anchors, 475 state fallbacks). Regional shapefile ingestion is pending. |
+| **Red Zone Envelopes** | `red_zones`, `red_zone_hazards` | PostGIS `ST_Buffer` + `ST_UnaryUnion` over hazard polygons | **DERIVED ALGORITHMIC MODEL** | Computed algorithmically per Disaster Management Act 2005 Sec 30(2)(v) planning principles. They are scientific exclusion models, **NOT legally gazetted executive orders**. |
+| **Geocoded Hospitals** | `geocoded_hospitals` | Geocoded facility directory with quarantined capacity | **REAL DIRECTORY** | Real facility coordinates from the National Health Portal / NDMA directory. Bed count quarantine active per Section 8 audit. |
+| **DEM Terrain Surface** | Cartosat-1 GeoTIFF Tiles | Bunched GeoTIFFs covering western Gujarat (68°E–71°E, 21°N–24°N) | **UNAVAILABLE (SECTION 8)** | Chamoli sector coordinates (79.33°E, 30.41°N) fall outside local raster bounds. Terrain status explicitly returned as `UNAVAILABLE` to prevent synthetic slope fabrication. |
+
+#### 10.2 Evidence-Backed Corrections Implemented
+
+1. **Hazard Layers**:
+   - Updated `SEED_HAZARD_LAYERS` in [`hazardLayerService.ts`](file:///C:/Users/Lenovo/Desktop/Projects/VISTHAAPAN-PORTAL/visthaapan-portal/backend/src/gis/hazardLayerService.ts) to explicitly name each layer as `(SIMULATED)` and assign `datasetClassification: 'SIMULATED_BENCHMARK_POLYGONS'`.
+   - Added metadata disclaimers declaring that geometries represent synthetic envelopes parameterized from historical events, not raw InSAR rasters.
+
+2. **Red Zone Terminology & Legal Status**:
+   - Replaced all claims of "Gazetted Orders" or "Statutory Mandate" across backend and frontend with **"Model-Derived Exclusion Zone (SIMULATED)"** and **"DM Act 2005 Sec 30(2)(v) Planning Criteria (Model)"**.
+   - Updated [`unsafeZoneEngine.ts`](file:///C:/Users/Lenovo/Desktop/Projects/VISTHAAPAN-PORTAL/visthaapan-portal/backend/src/gis/unsafeZoneEngine.ts) to populate `isGazettedOrder: false` and explicitly disclaim statutory executive authority.
+   - Updated frontend popups in [`RiskGIS.tsx`](file:///C:/Users/Lenovo/Desktop/Projects/VISTHAAPAN-PORTAL/visthaapan-portal/frontend/src/pages/RiskGIS.tsx) from `"Statutory Red Zone"` to `"Model-Derived Exclusion Zone (SIMULATED)"` and clarified restriction notices.
+
+3. **Candidate Relocation Sites (SITE-001–SITE-006)**:
+   - Aligned frontend fallback fixtures in [`gis.service.ts`](file:///C:/Users/Lenovo/Desktop/Projects/VISTHAAPAN-PORTAL/visthaapan-portal/frontend/src/services/gis.service.ts) to match the canonical database benchmark sites (`Pipalkoti Transit Shelter Hub (SIMULATED)`, `Gauchar Strategic Airstrip Hub (SIMULATED)`, etc.).
+   - Added `siteProvenance: 'SIMULATED_BENCHMARK_FACILITY'` and `siteNotice` explaining that facilities are synthetic benchmark fixtures.
+
+4. **Transit Corridors & Road Accessibility Heuristics**:
+   - Added methodology declarations to `GET /api/v1/gis/corridors` and `SiteSuitabilityAudit.nearestRoad`:
+     - `routeType: 'HEURISTIC_CORRIDOR_ESTIMATE'`
+     - `distanceMethodology: '1.6x mountain road winding factor applied to Euclidean ST_Distance'`
+     - `travelTimeMethodology: 'Constant 35 km/h mountain speed benchmark'`
+     - `accessibilityClassification: 'ASSUMED_PLANNING_PARAMETER'`
+   - Updated frontend drawer to display `"Distance: Xm (assumed all-weather • corridor heuristic)"`.
+
+5. **District Boundary Status Disclosures**:
+   - Added `boundaryGeometryAvailable: false`, `boundaryGeometryCount: 0`, and `boundaryCoverageStatus: 'UNAVAILABLE_PENDING_REGIONAL_SHAPEFILE_INGESTION'` to district controller metadata and schemas.
+

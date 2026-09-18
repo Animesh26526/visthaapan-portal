@@ -80,6 +80,9 @@ export interface SiteSuitabilityAudit {
     distanceMeters: number | null;
     distanceKm: number | null;
     accessibility: string | null;
+    routeType?: string;
+    accessibilityClassification?: string;
+    planningNotice?: string;
   };
   terrain: {
     elevationMeters: number | null;
@@ -102,6 +105,8 @@ export interface SiteSuitabilityAudit {
   };
   dataProvenance: {
     siteSource: string;
+    siteProvenance?: string;
+    siteNotice?: string;
     hospitalSource: string;
     demStatus: string;
     assessedAt: string;
@@ -115,6 +120,8 @@ export interface DistrictGisFeatureProperties {
   stateCode: string;
   stateName: string;
   centroidProvenance: string;
+  boundaryGeometryAvailable?: boolean;
+  boundaryStatus?: string;
   // Phase 5 AI Attributes
   riskScore: number | null;
   calibratedRiskProbability: number | null;

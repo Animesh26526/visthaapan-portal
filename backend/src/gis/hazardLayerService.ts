@@ -38,8 +38,11 @@ export const SEED_HAZARD_LAYERS = [
     wktGeometry: 'SRID=4326;POLYGON((79.535 30.575, 79.575 30.570, 79.590 30.545, 79.575 30.525, 79.540 30.520, 79.520 30.535, 79.515 30.560, 79.535 30.575))',
     metadata: {
       displacementRateMmPerMonth: 14.5,
-      sourceInstrument: 'InSAR Synthetic Aperture Radar Benchmark Model',
-      statutoryExclusion: 'Permanent Human Habitation Prohibited',
+      sourceInstrument: 'InSAR Synthetic Aperture Radar Benchmark Model (SIMULATED)',
+      statutoryExclusion: 'Permanent Human Habitation Prohibited under DM Act 2005 Model Criteria',
+      isSimulated: true,
+      datasetClassification: 'SIMULATED_BENCHMARK',
+      empiricalBasis: 'Parameterized from 2023 Joshimath subsidence technical reports; geometry is a benchmark simulation envelope.',
     },
   },
   {
@@ -56,6 +59,9 @@ export const SEED_HAZARD_LAYERS = [
       riverBasin: 'Alaknanda',
       inundationLevelMeters: 4.5,
       drainageBufferRequiredMeters: 150,
+      isSimulated: true,
+      datasetClassification: 'SIMULATED_BENCHMARK',
+      empiricalBasis: 'Parameterized after 2021 Chamoli riverine flash flood corridor; geometry is a benchmark simulation envelope.',
     },
   },
   {
@@ -71,6 +77,9 @@ export const SEED_HAZARD_LAYERS = [
     metadata: {
       geomorphicFeature: 'Steep Talus Cone & Glacial Outwash',
       slopeInstabilityIndex: 0.84,
+      isSimulated: true,
+      datasetClassification: 'SIMULATED_BENCHMARK',
+      empiricalBasis: 'Parameterized after 2022 Malari debris flow events; geometry is a benchmark simulation envelope.',
     },
   },
   {
@@ -85,7 +94,10 @@ export const SEED_HAZARD_LAYERS = [
     wktGeometry: 'SRID=4326;POLYGON((79.41 30.42, 79.42 30.41, 79.44 30.43, 79.43 30.44, 79.41 30.42))',
     metadata: {
       corridorImpact: 'NH-07 Transit Vulnerability Point',
-      monitoringStatus: 'Active Extensometer Radar',
+      monitoringStatus: 'Benchmark Simulation Model (Extensometer Radar Prototype)',
+      isSimulated: true,
+      datasetClassification: 'SIMULATED_BENCHMARK',
+      empiricalBasis: 'Parameterized after unstable highway bluff slopes along the Alaknanda gorge; geometry is a benchmark simulation envelope.',
     },
   },
 ];
@@ -225,7 +237,9 @@ export async function getHazardLayersGeoJson(
     metadata: {
       count: features.length,
       filterType: hazardType || 'all',
-      source: 'PostGIS hazard_layers',
+      source: 'PostGIS hazard_layers (SIMULATED)',
+      datasetClassification: 'SIMULATED_BENCHMARK_POLYGONS',
+      semanticNotice: 'Hazard polygons represent synthetic benchmark footprints parameterized after historical events for prototype testing, not live satellite SAR feeds.',
     },
   };
 }

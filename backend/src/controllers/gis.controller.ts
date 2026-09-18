@@ -113,7 +113,16 @@ export async function getGisDistricts(
         offset,
         tierFilter,
         stateFilter,
-        source: 'PostGIS canonical_districts + Phase 5 AI risk engine',
+        geometryType: 'POINT_CENTROID',
+        boundaryGeometryCount: 0,
+        boundaryCoverageStatus: 'UNAVAILABLE_PENDING_REGIONAL_SHAPEFILE_INGESTION',
+        source: 'PostGIS canonical_districts centroids + Phase 5 AI risk engine',
+        provenanceBreakdown: {
+          facilityDerivedMedian: 300,
+          officialDistrictHqAnchors: 10,
+          stateCapitalFallbacks: 475,
+          boundaryPolygonsAvailable: 0,
+        },
       },
     };
 
@@ -204,6 +213,8 @@ export async function getGisDistrictById(
         stateCode: r.state_code,
         stateName: r.state_name,
         centroidProvenance: r.centroid_provenance,
+        boundaryGeometryAvailable: false,
+        boundaryStatus: 'UNAVAILABLE_PENDING_REGIONAL_SHAPEFILE_INGESTION',
         riskScore: r.risk_score ? parseFloat(r.risk_score) : null,
         calibratedRiskProbability: r.calibrated_risk_probability ? parseFloat(r.calibrated_risk_probability) : null,
         vulnerabilityScore: r.vulnerability_score ? parseFloat(r.vulnerability_score) : null,
@@ -239,7 +250,11 @@ export async function getHazardLayers(
   try {
     const hazardType = req.query.type ? String(req.query.type) : undefined;
     const collection = await getHazardLayersGeoJson(hazardType);
-    sendSuccess(res, collection, { count: collection.features.length });
+    sendSuccess(res, collection, {
+      count: collection.features.length,
+      datasetClassification: 'SIMULATED_BENCHMARK_POLYGONS',
+      semanticNotice: 'Hazard polygons are benchmark modeling footprints parameterized after historical events; not raw satellite InSAR rasters or live hydro telemetry feeds.',
+    });
   } catch (err) {
     next(err);
   }
@@ -247,7 +262,7 @@ export async function getHazardLayers(
 
 /**
  * GET /api/v1/gis/red-zones
- * Returns derived statutory Red Zones as GeoJSON.
+ * Returns model-derived Red Zones as GeoJSON (benchmarked planning model).
  */
 export async function getRedZones(
   _req: Request,
@@ -256,7 +271,12 @@ export async function getRedZones(
 ): Promise<void> {
   try {
     const collection = await getRedZonesGeoJson();
-    sendSuccess(res, collection, { count: collection.features.length });
+    sendSuccess(res, collection, {
+      count: collection.features.length,
+      datasetClassification: 'DERIVED_BENCHMARK_ENVELOPES',
+      statutoryAuthorityBasis: 'Disaster Management Act 2005 Sec 30(2)(v) Model Planning Criteria (SIMULATED BENCHMARK)',
+      statutoryDisclaimer: 'Exclusion zones are algorithmically derived spatial models for disaster mitigation planning; NOT legally gazetted executive orders.',
+    });
   } catch (err) {
     next(err);
   }
@@ -273,7 +293,11 @@ export async function getRelocationSites(
 ): Promise<void> {
   try {
     const collection = await getRelocationSitesGeoJson();
-    sendSuccess(res, collection, { count: collection.features.length });
+    sendSuccess(res, collection, {
+      count: collection.features.length,
+      datasetClassification: 'SIMULATED_BENCHMARK_FACILITIES',
+      siteProvenanceNotice: 'Candidate relocation sites and capacities are synthetic planning fixtures from the Chamoli demonstration benchmark, not gazetted disaster relief camps.',
+    });
   } catch (err) {
     next(err);
   }
@@ -444,6 +468,10 @@ export async function getGisCorridors(
         distanceKm: parseFloat(r.distance_km),
         travelTimeMinutes: r.travel_time_minutes ? parseFloat(r.travel_time_minutes) : null,
         accessibility: r.road_accessibility || 'all-weather',
+        accessibilityClassification: 'ASSUMED_PLANNING_PARAMETER',
+        distanceMethodology: '1.6x mountain winding factor over straight-line distance (HEURISTIC)',
+        travelTimeMethodology: 'Estimated via 35 km/h mountain evacuation benchmark speed (HEURISTIC)',
+        geometryType: 'STRAIGHT_LINE_INDICATIVE_VECTOR',
         feasible: r.feasible,
         blocked: r.blocked,
         safetySatisfied: r.safety_constraint_satisfied,
@@ -455,7 +483,8 @@ export async function getGisCorridors(
       features,
       metadata: {
         count: features.length,
-        source: 'PostGIS candidate_routes',
+        source: 'PostGIS candidate_routes (SIMULATED BENCHMARK)',
+        corridorNotice: 'Corridor lines are straight-line demonstration vectors; distances and travel times are benchmark heuristics (1.6x winding factor, 35 km/h assumed transit speed) without live traffic or surveyed road centerlines.',
       },
     };
 

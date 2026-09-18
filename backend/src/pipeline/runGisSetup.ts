@@ -35,9 +35,9 @@ export async function runGisSetup(): Promise<void> {
     const hazardCount = await seedHazardLayers();
     logger.info({ count: hazardCount }, 'Step 3/5: Spatial hazard layers seeded.');
 
-    // 4. Derive Statutory Red Zones
+    // 4. Derive Model Red Zones
     const rzRes = await deriveRedZonesFromHazards();
-    logger.info({ count: rzRes.redZonesDerived }, 'Step 4/5: Statutory Red Zones derived.');
+    logger.info({ count: rzRes.redZonesDerived }, 'Step 4/5: Model Red Zones derived (planning envelopes).');
 
     // 5. Evaluate Relocation Site Suitability
     const suitRes = await evaluateAllSiteSuitability();

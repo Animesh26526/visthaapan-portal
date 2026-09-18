@@ -1,6 +1,6 @@
 /**
  * VISTHAAPAN Phase 6 GIS Spatial Intelligence Routes
- * API endpoint definitions for GeoJSON layers, statutory red zones, and site suitability.
+ * API endpoint definitions for GeoJSON layers, model-derived red zones, and site suitability.
  */
 
 import { Router } from 'express';
@@ -24,7 +24,7 @@ gisRouter.get('/districts/:id', getGisDistrictById);
 // Active spatial hazard layers (polygons, buffer radius)
 gisRouter.get('/hazard-layers', getHazardLayers);
 
-// Derived statutory Red Zones (multi-hazard union)
+// Model-derived Red Zones (multi-hazard buffer union benchmark)
 gisRouter.get('/red-zones', getRedZones);
 
 // Candidate safe relocation sites & suitability

@@ -80,6 +80,9 @@ export interface SiteSuitabilityAudit {
     distanceMeters: number | null;
     distanceKm: number | null;
     accessibility: string | null;
+    routeType?: string;
+    accessibilityClassification?: string;
+    planningNotice?: string;
   };
   terrain: {
     elevationMeters: number | null;
@@ -102,6 +105,8 @@ export interface SiteSuitabilityAudit {
   };
   dataProvenance: {
     siteSource: string;
+    siteProvenance?: string;
+    siteNotice?: string;
     hospitalSource: string;
     demStatus: string;
     assessedAt: string;
@@ -115,6 +120,8 @@ export interface DistrictGisFeatureProperties {
   stateCode: string;
   stateName: string;
   centroidProvenance: string;
+  boundaryGeometryAvailable?: boolean;
+  boundaryStatus?: string;
   riskScore: number | null;
   calibratedRiskProbability: number | null;
   vulnerabilityScore: number | null;
@@ -162,7 +169,7 @@ export interface RelocationSiteFeatureProperties {
   siteType: string;
   district: string;
   state: string;
-  elevationMeters: number;
+  elevationMeters: number | null;
   areaHectares: number;
   effectiveCapacity: number;
   suitabilityScore: number;
@@ -172,6 +179,8 @@ export interface RelocationSiteFeatureProperties {
   nearestRoadKm: number | null;
   hardHazardExclusionPass: boolean;
   status: string;
+  siteProvenance?: string;
+  siteNotice?: string;
 }
 
 export interface HazardLayerFeatureProperties {

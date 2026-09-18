@@ -622,7 +622,7 @@ export const RiskGIS: React.FC = () => {
               );
             })}
 
-            {/* ── SECTOR LEVEL: STATUTORY POSTGIS MULTIPOLYGON RED ZONES ── */}
+            {/* ── SECTOR LEVEL: MODEL-DERIVED POSTGIS MULTIPOLYGON RED ZONES ── */}
             {mapFilters.showRedZones && viewLevel === 'district' && redZonesData?.features?.map((rz) => {
               const polygonRings = geoJsonGeometryToPolygons(rz.geometry);
               return polygonRings.map((ring, rIdx) => (
@@ -641,11 +641,11 @@ export const RiskGIS: React.FC = () => {
                     <div className="text-xs font-sans min-w-[220px]">
                       <div className="font-bold text-red-800 text-sm flex items-center gap-1">
                         <span className="material-symbols-outlined text-[16px]">warning</span>
-                        Statutory Red Zone
+                        Model-Derived Exclusion Zone (SIMULATED)
                       </div>
                       <div className="text-slate-800 font-semibold mt-1">{rz.properties.name}</div>
                       <div className="text-slate-500 font-mono text-[10px] mt-0.5">
-                        Mandate: {rz.properties.mandateReference}
+                        Planning Basis: {rz.properties.mandateReference}
                       </div>
                       <div className="mt-2 border-t border-slate-200 pt-1 space-y-0.5">
                         <div className="flex justify-between">
@@ -662,7 +662,7 @@ export const RiskGIS: React.FC = () => {
                         </div>
                       </div>
                       <div className="mt-2 text-[10px] font-bold bg-red-100 text-red-800 px-2 py-1 rounded text-center">
-                        PROHIBITED: Habitational development banned
+                        EXCLUSION: Habitational relocation restricted under DM Act 2005 model planning criteria
                       </div>
                     </div>
                   </Popup>
@@ -770,7 +770,7 @@ export const RiskGIS: React.FC = () => {
                     <div className={`mt-2 text-[10px] font-bold px-2 py-1 rounded text-center ${
                       hab.isInsideRedZone ? 'bg-red-100 text-red-800' : 'bg-amber-50 text-amber-800'
                     }`}>
-                      {hab.isInsideRedZone ? '⚠ INSIDE STATUTORY RED ZONE' : `${hab.redZoneDistanceKm} km from Red Zone`}
+                      {hab.isInsideRedZone ? '⚠ INSIDE MODEL-DERIVED RED ZONE' : `${hab.redZoneDistanceKm} km from Red Zone`}
                     </div>
                   </div>
                 </Popup>
@@ -963,7 +963,7 @@ export const RiskGIS: React.FC = () => {
                           Hard Hazard Exclusion
                         </div>
                         <p className="text-[10px] text-slate-500 mt-0.5">
-                          Statutory red zones (subsidence, flood, avalanche buffers)
+                          Model-derived red zones (subsidence, flood, avalanche buffers)
                         </p>
                       </div>
                       <span className={`px-2 py-0.5 text-[10px] font-bold font-mono rounded ${
@@ -983,7 +983,7 @@ export const RiskGIS: React.FC = () => {
                           Road Accessibility
                         </div>
                         <p className="text-[10px] text-slate-500 mt-0.5">
-                          Distance: {selectedSiteAudit?.nearestRoad?.distanceMeters ?? 150}m ({selectedSiteAudit?.nearestRoad?.accessibility || 'all-weather'})
+                          Distance: {selectedSiteAudit?.nearestRoad?.distanceMeters ?? 150}m ({selectedSiteAudit?.nearestRoad?.accessibility || 'assumed all-weather'} • corridor heuristic)
                         </p>
                       </div>
                       <span className="px-2 py-0.5 text-[10px] font-bold font-mono rounded bg-emerald-100 text-emerald-800">
@@ -1045,7 +1045,8 @@ export const RiskGIS: React.FC = () => {
 
                   {/* Statutory & Provenance Details */}
                   <div className="text-[10px] font-mono text-slate-500 space-y-0.5 bg-slate-50 p-2 border border-slate-200 rounded-sm">
-                    <div>Statutory Mandate: Section 30(2) DM Act 2005</div>
+                    <div>Planning Basis: DM Act 2005 Sec 30(2) Planning Criteria (Model)</div>
+                    <div>Site Provenance: {selectedSiteAudit?.dataProvenance?.siteSource || 'SIMULATED_BENCHMARK_FACILITY'}</div>
                     <div>Site Geometry: PostGIS ST_Point (EPSG:4326)</div>
                     <div>Healthcare Directory: Quarantined bed count</div>
                   </div>
