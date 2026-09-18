@@ -62,6 +62,20 @@ export async function seedDemonstrationBenchmark(): Promise<BenchmarkSummary> {
 
     // Clean up existing benchmark entities for idempotency
     await client.query(`
+      DELETE FROM allocation_explanation_factors WHERE explanation_id IN (
+        SELECT id FROM allocation_explanations WHERE habitation_id IN (
+          SELECT id FROM habitations WHERE name LIKE '%(SIMULATED)%'
+        )
+      );
+      DELETE FROM allocation_explanations WHERE habitation_id IN (
+        SELECT id FROM habitations WHERE name LIKE '%(SIMULATED)%'
+      );
+      DELETE FROM allocation_items WHERE site_id IN (
+        SELECT id FROM relocation_sites WHERE name LIKE '%(SIMULATED)%'
+      ) OR habitation_id IN (
+        SELECT id FROM habitations WHERE name LIKE '%(SIMULATED)%'
+      );
+      DELETE FROM relocation_demands WHERE data_origin = 'SIMULATED' OR demand_node_id LIKE 'DN-%';
       DELETE FROM candidate_routes WHERE habitation_id IN (
         SELECT id FROM habitations WHERE name LIKE '%(SIMULATED)%'
       );

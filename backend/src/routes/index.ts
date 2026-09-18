@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { healthRouter } from './health.routes.js';
 import { intelligenceRouter } from './intelligence.routes.js';
 import { gisRouter } from './gis.routes.js';
+import { capacityRouter } from './capacity.routes.js';
+import { optimizationRouter } from './optimization.routes.js';
+import { allocationsRouter } from './allocations.routes.js';
 import { getApiInfo } from '../controllers/health.controller.js';
 
 export const apiRouter: Router = Router();
@@ -18,24 +21,12 @@ apiRouter.use('/intelligence', intelligenceRouter);
 // Phase 6 GIS Spatial Intelligence Engine (GET /api/v1/gis)
 apiRouter.use('/gis', gisRouter);
 
-/**
- * ARCHITECTURAL ROUTE REGISTRATION POINT
- * Future domain routes will be mounted here in subsequent phases:
- *
- * - Phase 3 (Database):
- *   apiRouter.use('/auth', authRouter);
- *   apiRouter.use('/habitations', habitationsRouter);
- *   apiRouter.use('/sites', sitesRouter);
- *
- * - Phase 6 (GIS Engine):
- *   apiRouter.use('/gis', gisRouter);
- *
- * - Phase 8 (OR-Tools Engine):
- *   apiRouter.use('/optimization', optimizationRouter);
- *
- * - Phase 9 (Scenario Engine):
- *   apiRouter.use('/scenarios', scenariosRouter);
- *
- * - Phase 11 (Statutory Adjudication):
- *   apiRouter.use('/decisions', decisionsRouter);
- */
+// Phase 7 Capacity Assessment & Bottlenecks Engine (GET /api/v1/capacity)
+apiRouter.use('/capacity', capacityRouter);
+
+// Phase 8 Operations Research Allocation Engine (GET/POST /api/v1/optimization)
+apiRouter.use('/optimization', optimizationRouter);
+
+// Frontend Allocations Compatibility Gateway (GET/POST /api/v1/allocations)
+apiRouter.use('/allocations', allocationsRouter);
+

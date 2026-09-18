@@ -29,15 +29,14 @@ export function getApiInfo(req: Request, res: Response): void {
     version: 'v1',
     environment: config.env,
     description: 'Vulnerability Intelligence and Spatial Transit for Hazard Affected Population Allocation Network',
-    docs: 'Authoritative specification in docs/',
-    pipelineStage: 'Phase 5 & Phase 6: AI Risk, Vulnerability & GIS Spatial Intelligence Engine',
+    pipelineStage: 'Phase 5 - Phase 8: AI Intelligence, GIS Spatial, Capacity Assessment & OR Allocation Engine',
     modules: {
       health: 'operational',
       database: 'operational (PostgreSQL 16 + PostGIS 3.4)',
       ai_risk_engine: 'operational (XGBoost + Platt Calibration + TreeSHAP)',
       gis_spatial_engine: 'operational (PostGIS 3.4 + Multi-Hazard Layers + Red Zones + Site Suitability)',
-      carrying_capacity: 'unconfigured (Phase 7 pending)',
-      or_tools_solver: 'unconfigured (Phase 8 pending)',
+      carrying_capacity: 'operational (Phase 7 Resource Bottlenecks & Hard Hazard Exclusion)',
+      or_tools_solver: 'operational (Phase 8 Google OR-Tools SCIP Allocation Solver)',
     },
   });
 }

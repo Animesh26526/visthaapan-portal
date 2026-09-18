@@ -19,6 +19,7 @@ import { HabitationsService } from '../services/habitations.service';
 import { SitesService } from '../services/sites.service';
 import { ScenariosService } from '../services/scenarios.service';
 import { DecisionsService } from '../services/decisions.service';
+import { AllocationsService } from '../services/allocations.service';
 
 interface AppState {
   // Authentication & Officer Context
@@ -116,9 +117,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchApiData: async () => {
     set({ isLoading: true });
     try {
-      const [habData, siteData] = await Promise.all([
+      const [habData, siteData, allocData, summaryData] = await Promise.all([
         HabitationsService.getHabitations(),
         SitesService.getSites(),
+        AllocationsService.getAllocations(),
+        AllocationsService.getAllocationSummary(),
       ]);
 
       set({
@@ -126,6 +129,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedHabitationId: habData[0]?.id || 'HAB-001',
         sites: siteData,
         selectedSiteId: siteData[0]?.id || 'SITE-001',
+        allocations: allocData && allocData.length > 0 ? allocData : get().allocations,
+        allocationSummary: summaryData ? {
+          ...get().allocationSummary,
+          ...summaryData,
+          totalTargetPopulation: (summaryData as any).totalDemand ?? get().allocationSummary.totalTargetPopulation,
+          totalAllocatedPopulation: (summaryData as any).totalAllocated ?? get().allocationSummary.totalAllocatedPopulation,
+          unmetDemandTotal: (summaryData as any).totalUnmet ?? get().allocationSummary.unmetDemandTotal,
+          totalDistanceKm: (summaryData as any).totalDistanceKm ?? get().allocationSummary.totalDistanceKm,
+        } : get().allocationSummary,
       });
     } catch (e) {
       console.warn('[AppStore] Sync failed, maintaining fallback state:', e);

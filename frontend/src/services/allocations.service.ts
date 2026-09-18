@@ -116,4 +116,51 @@ export const AllocationsService = {
       };
     }
   },
+
+  // ============================================================
+  // Canonical Phase 8 REST Endpoints (/api/v1/optimization)
+  // ============================================================
+
+  /**
+   * Fetches latest OR-Tools optimization run with full allocations, explanations, and constraint audit.
+   * GET /api/v1/optimization/runs/latest
+   */
+  getLatestOptimizationRun: async (): Promise<any> => {
+    try {
+      const resp = await apiClient.get<any>('/optimization/runs/latest');
+      return resp?.data || resp;
+    } catch (err) {
+      console.warn('[AllocationsService] Failed to fetch latest optimization run:', err);
+      return null;
+    }
+  },
+
+  /**
+   * Triggers a new optimization run with custom constraints.
+   * POST /api/v1/optimization/run
+   */
+  runOrToolsOptimization: async (options?: any): Promise<any> => {
+    try {
+      const resp = await apiClient.post<any>('/optimization/run', options || {});
+      return resp?.data || resp;
+    } catch (err) {
+      console.warn('[AllocationsService] Failed to run OR-Tools optimization:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Lists past optimization runs.
+   * GET /api/v1/optimization/runs
+   */
+  listOptimizationRuns: async (): Promise<any[]> => {
+    try {
+      const resp = await apiClient.get<any>('/optimization/runs');
+      return resp?.data || resp || [];
+    } catch (err) {
+      console.warn('[AllocationsService] Failed to list optimization runs:', err);
+      return [];
+    }
+  },
 };
+

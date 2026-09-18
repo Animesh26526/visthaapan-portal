@@ -12,3 +12,4 @@ export * from './briefing.service';
 export * from './decisions.service';
 export * from './geminiService';
 export * from './gis.service';
+export * from './capacity.service';

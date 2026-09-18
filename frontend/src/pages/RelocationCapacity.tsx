@@ -34,6 +34,17 @@ export const RelocationCapacity: React.FC = () => {
         </div>
       </div>
 
+      {/* 1B. PROVENANCE & GOVERNANCE NOTICE */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 flex items-start gap-2.5">
+        <span className="text-base leading-none">⚠️</span>
+        <div>
+          <strong className="font-semibold">SIMULATED BENCHMARK INFRASTRUCTURE (NOT STATUTORY EXECUTIVE ORDERS)</strong>
+          <p className="mt-0.5 text-amber-800 leading-normal">
+            Relocation sites SITE-001 through SITE-006 and candidate corridors represent deterministic simulated test fixtures for Chamoli. National hospital bed counts are quarantined and excluded from carrying capacity calculations. Cartosat-1 DEM terrain slope is recorded as UNAVAILABLE outside western Gujarat.
+          </p>
+        </div>
+      </div>
+
       {/* 2. CARRYING CAPACITY BOTTLENECK FORMULA BANNER */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-5">
         <div className="space-y-1.5">
