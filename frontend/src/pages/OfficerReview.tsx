@@ -13,19 +13,26 @@ export const OfficerReview: React.FC = () => {
   const [statutoryChecked, setStatutoryChecked] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmitDecision = (e: React.FormEvent) => {
+  const handleSubmitDecision = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!statutoryChecked) {
       alert('Please check the statutory declaration checkbox before signing the official record.');
       return;
     }
+    if (!rationale.trim()) {
+      alert('A detailed operational rationale is mandatory for all officer adjudications.');
+      return;
+    }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      recordOfficerDecision(selectedAction, rationale);
+    try {
+      await recordOfficerDecision(selectedAction, rationale.trim());
       setIsSubmitting(false);
       navigate('/adjudication?tab=audit');
-    }, 400);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      alert(`Failed to record decision: ${err?.message || 'Server error'}`);
+    }
   };
 
   return (

@@ -29,3 +29,7 @@ dist-ssr/
 Thumbs.db
 __pycache__/
 *.py[cod]
+
+# Raw Data Archives & Geospatial Downloads
+backend/data/*.zip
+backend/data/*.xlsx

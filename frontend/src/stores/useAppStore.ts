@@ -117,11 +117,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchApiData: async () => {
     set({ isLoading: true });
     try {
-      const [habData, siteData, allocData, summaryData] = await Promise.all([
+      const [habData, siteData, allocData, summaryData, decisionData] = await Promise.all([
         HabitationsService.getHabitations(),
         SitesService.getSites(),
         AllocationsService.getAllocations(),
         AllocationsService.getAllocationSummary(),
+        DecisionsService.getDecisions().catch(() => []),
       ]);
 
       set({
@@ -129,6 +130,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedHabitationId: habData[0]?.id || 'HAB-001',
         sites: siteData,
         selectedSiteId: siteData[0]?.id || 'SITE-001',
+        decisions: decisionData && decisionData.length > 0 ? decisionData : get().decisions,
         allocations: allocData && allocData.length > 0 ? allocData : get().allocations,
         allocationSummary: summaryData ? {
           ...get().allocationSummary,

@@ -6,7 +6,7 @@ import { mockDecisions } from '../mock/data';
 import { USE_MOCK_API, MOCK_DELAY_MS } from './config';
 import { apiClient } from './apiClient';
 
-// In-memory mock store for session modifications
+// In-memory fallback only when explicitly in mock mode
 let inMemoryDecisions: OfficerDecision[] = [...mockDecisions];
 
 export const DecisionsService = {
@@ -19,10 +19,13 @@ export const DecisionsService = {
 
     try {
       const data = await apiClient.get<OfficerDecision[]>('/decisions');
-      return Array.isArray(data) && data.length > 0 ? data : inMemoryDecisions;
-    } catch (err) {
-      console.warn('[DecisionsService] Failed to fetch decisions from backend, using local store:', err);
+      if (Array.isArray(data)) {
+        return data;
+      }
       return inMemoryDecisions;
+    } catch (err) {
+      console.error('[DecisionsService] Failed to fetch decisions from backend database:', err);
+      throw err;
     }
   },
 
@@ -57,13 +60,13 @@ export const DecisionsService = {
     }
 
     try {
-      const saved = await apiClient.post<OfficerDecision>('/decisions', newDecision);
+      const res = await apiClient.post<any>('/decisions', newDecision);
+      const saved: OfficerDecision = res?.data || res;
       inMemoryDecisions = [saved, ...inMemoryDecisions];
       return saved;
     } catch (err) {
-      console.warn('[DecisionsService] Failed to record decision to backend, saving locally:', err);
-      inMemoryDecisions = [newDecision, ...inMemoryDecisions];
-      return newDecision;
+      console.error('[DecisionsService] Failed to record decision in PostgreSQL audit trail:', err);
+      throw err;
     }
   },
 };

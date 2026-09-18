@@ -13,3 +13,4 @@ export * from './decisions.service';
 export * from './geminiService';
 export * from './gis.service';
 export * from './capacity.service';
+export * from './evidence.service';

@@ -16,10 +16,13 @@ export const SitesService = {
 
     try {
       const data = await apiClient.get<RelocationSite[]>('/sites');
-      return Array.isArray(data) && data.length > 0 ? data : mockSites;
-    } catch (err) {
-      console.warn('[SitesService] Remote fetch failed, using offline fallback:', err);
+      if (Array.isArray(data) && data.length > 0) {
+        return data;
+      }
       return mockSites;
+    } catch (err) {
+      console.error('[SitesService] Remote fetch failed from backend database:', err);
+      throw err;
     }
   },
 
@@ -35,8 +38,8 @@ export const SitesService = {
     try {
       return await apiClient.get<RelocationSite>(`/sites/${encodeURIComponent(id)}`);
     } catch (err) {
-      console.warn(`[SitesService] Failed to fetch site ${id}, using fallback:`, err);
-      return mockSites.find((s) => s.id === id);
+      console.error(`[SitesService] Failed to fetch site ${id} from backend:`, err);
+      throw err;
     }
   },
 };

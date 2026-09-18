@@ -1,7 +1,7 @@
 // VISTHAAPAN Client Configuration
 // Controls mock fallback and backend API targeting
 
-export const USE_MOCK_API: boolean = import.meta.env.VITE_USE_MOCK_API !== 'false';
+export const USE_MOCK_API: boolean = import.meta.env.VITE_USE_MOCK_API === 'true';
 
 export const API_BASE_URL: string = (
   import.meta.env.VITE_API_BASE_URL && typeof import.meta.env.VITE_API_BASE_URL === 'string'

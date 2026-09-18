@@ -16,10 +16,13 @@ export const HabitationsService = {
 
     try {
       const data = await apiClient.get<Habitation[]>('/habitations');
-      return Array.isArray(data) && data.length > 0 ? data : mockHabitations;
-    } catch (err) {
-      console.warn('[HabitationsService] Remote fetch failed, using offline fallback:', err);
+      if (Array.isArray(data) && data.length > 0) {
+        return data;
+      }
       return mockHabitations;
+    } catch (err) {
+      console.error('[HabitationsService] Failed to fetch habitations from database:', err);
+      throw err;
     }
   },
 
@@ -35,8 +38,8 @@ export const HabitationsService = {
     try {
       return await apiClient.get<Habitation>(`/habitations/${encodeURIComponent(id)}`);
     } catch (err) {
-      console.warn(`[HabitationsService] Failed to fetch habitation ${id}, using fallback:`, err);
-      return mockHabitations.find((h) => h.id === id);
+      console.error(`[HabitationsService] Failed to fetch habitation ${id} from database:`, err);
+      throw err;
     }
   },
 };

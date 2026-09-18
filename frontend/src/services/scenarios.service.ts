@@ -16,6 +16,18 @@ export interface ReoptimizeScenarioResult {
   allocations: AllocationItem[];
   allocationSummary: AllocationSummary;
   activeScenarioName: string;
+  comparison?: {
+    baselineAllocated: number;
+    scenarioAllocated: number;
+    allocatedPopulationDelta: number;
+    baselineDistanceKm: number;
+    scenarioDistanceKm: number;
+    transitDistanceDeltaKm: number;
+    unmetDemandDelta: number;
+    divertedHabitationsCount: number;
+    divertedHabitations: string[];
+    operationalImpactSummary: string;
+  };
 }
 
 export const ScenariosService = {
@@ -28,10 +40,13 @@ export const ScenariosService = {
 
     try {
       const data = await apiClient.get<ScenarioModification[]>('/scenarios');
-      return Array.isArray(data) && data.length > 0 ? data : mockScenarios;
-    } catch (err) {
-      console.warn('[ScenariosService] Remote fetch failed, using offline mock:', err);
+      if (Array.isArray(data) && data.length > 0) {
+        return data;
+      }
       return mockScenarios;
+    } catch (err) {
+      console.error('[ScenariosService] Remote fetch failed from backend database:', err);
+      throw err;
     }
   },
 
@@ -43,10 +58,11 @@ export const ScenariosService = {
     }
 
     try {
-      return await apiClient.post<ScenarioModification>('/scenarios', scenario);
+      const res = await apiClient.post<any>('/scenarios', scenario);
+      return res?.data || res;
     } catch (err) {
-      console.warn('[ScenariosService] Remote save failed, using local fallback:', err);
-      return scenario;
+      console.error('[ScenariosService] Remote save failed in database:', err);
+      throw err;
     }
   },
 
@@ -66,7 +82,7 @@ export const ScenariosService = {
                 habitationName: 'Village A (Malari Upper)',
                 sourcePopulation: 8240,
                 priority: 'Immediate',
-                siteId: 'SITE-003', // Diverted from Alpha to Gamma because Road R12 was blocked!
+                siteId: 'SITE-003',
                 siteName: 'Safe Site Gamma (Ghingran Plateau)',
                 allocatedPopulation: 4800,
                 unmetDemand: 0,
@@ -102,31 +118,14 @@ export const ScenariosService = {
                 priority: 'Immediate',
                 siteId: 'SITE-002',
                 siteName: 'Safe Site Beta (Gauchar Aerodrome)',
-                allocatedPopulation: 2060,
+                allocatedPopulation: 6700,
                 unmetDemand: 0,
                 distanceKm: 46.2,
                 travelTimeMin: 78,
-                costInLakhs: 8.4,
+                costInLakhs: 21.0,
                 transitStatus: 'Standby',
                 transportMode: 'Convoy Bus',
-                assignedAgency: 'District Transport Corp',
-              },
-              {
-                id: 'AL-SCEN-004',
-                habitationId: 'HAB-002',
-                habitationName: 'Village B (Helang Valley)',
-                sourcePopulation: 6700,
-                priority: 'Immediate',
-                siteId: 'SITE-001',
-                siteName: 'Safe Site Alpha (Highland Ridge)',
-                allocatedPopulation: Math.min(siteAlphaCapacityOverride, 4640),
-                unmetDemand: 0,
-                distanceKm: 21.0,
-                travelTimeMin: 48,
-                costInLakhs: 9.8,
-                transitStatus: 'Staged',
-                transportMode: 'Convoy Bus',
-                assignedAgency: 'NDRF 8th Bn',
+                assignedAgency: 'ITBP Force',
               },
             ];
 
@@ -162,16 +161,16 @@ export const ScenariosService = {
     }
 
     try {
-      return await apiClient.post<ReoptimizeScenarioResult>('/scenarios/reoptimize', params);
-    } catch (err) {
-      console.warn('[ScenariosService] Remote reoptimize failed, applying offline model:', err);
-      // Deterministic Chamoli calculation fallback
-      const totalAllocated = 23940;
+      const res = await apiClient.post<any>('/scenarios/reoptimize', params);
       return {
-        allocations: [...mockAllocations],
-        allocationSummary: { ...mockAllocationSummary, totalAllocatedPopulation: totalAllocated },
-        activeScenarioName: 'Dynamic Stress Re-Optimization (Offline Fallback)',
+        allocations: res.allocations || [],
+        allocationSummary: res.allocationSummary || res.summary,
+        activeScenarioName: res.activeScenarioName || 'Dynamic Re-Optimization',
+        comparison: res.comparison,
       };
+    } catch (err) {
+      console.error('[ScenariosService] Remote reoptimize failed from OR solver:', err);
+      throw err;
     }
   },
 };
