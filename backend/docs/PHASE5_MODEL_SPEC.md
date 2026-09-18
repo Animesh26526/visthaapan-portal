@@ -69,7 +69,7 @@ All features for an observation $(i, t)$ are computed strictly from information 
 - `events_last_30d`: Active event count in $[t - 30\text{d}, t]$
 - `events_last_90d`: Active event count in $[t - 90\text{d}, t]$
 - `events_last_365d`: Active event count in $[t - 365\text{d}, t]$
-- `surveillance_reports_last_30d`: DDMA reporting compliance / active monitoring signal in $[t - 30\text{d}, t]$
+- `surveillance_reports_last_30d`: Routine DDMA surveillance situation filings (quiescence / 'No Event' records) in past 30 days $[t - 30\text{d}, t]$ (measures recent monitoring report activity)
 - `historical_active_events_cumulative`: Cumulative active events in district from start of dataset up to $t$
 - `days_since_last_active_event`: Days elapsed between $t$ and the most recent active event in the district prior to $t$ (capped at 365)
 - `hazard_diversity_365d`: Distinct canonical hazard categories observed in $[t - 365\text{d}, t]$
@@ -118,11 +118,11 @@ Disaster occurrence in the Indian subcontinent follows strong monsoon and climat
 
 Because disaster records are time-series in nature, **random K-fold cross-validation is strictly forbidden**. Chronological partitioning prevents lookahead bias:
 
-| Split | Temporal Range | Observation Steps | % of Timeline | Purpose |
-| :--- | :--- | :--- | :--- | :--- |
-| **TRAIN** | `2025-11-01` to `2026-05-15` | 14 bi-weekly steps | ~63.6% | Model fitting (Logistic Regression & XGBoost) |
-| **VALIDATION** | `2026-05-15` to `2026-07-15` | 4 bi-weekly steps | ~18.2% | Threshold tuning, calibration fitting, early stopping |
-| **TEST** | `2026-07-15` to `2026-09-01` | 4 bi-weekly steps | ~18.2% | Unbiased held-out evaluation during peak monsoon |
+| Split | Temporal Range | Observation Steps | % of Timeline | Samples | Positive Rate | Purpose |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TRAIN** | `2025-11-01` to `2026-05-02` | 14 bi-weekly steps | 63.6% | 10,990 | 8.43% (927 pos) | Model fitting (Logistic Regression & XGBoost) |
+| **VALIDATION** | `2026-05-16` to `2026-07-11` | 5 bi-weekly steps | 22.7% | 3,925 | 26.57% (1,043 pos) | Threshold tuning & Platt probability calibration |
+| **TEST** | `2026-07-25` to `2026-08-22` | 3 bi-weekly steps | 13.6% | 2,355 | 31.00% (730 pos) | Unbiased held-out evaluation during peak monsoon |
 
 ---
 
@@ -135,7 +135,7 @@ Because disaster records are time-series in nature, **random K-fold cross-valida
    - Fixed seed: `random_state = 42`
    - Deterministic tree depth and learning rate to control overfitting on moderate sample size.
 3. **Probability Calibration**:
-   - Evaluated using Sigmoid (Platt scaling) and Isotonic regression fit on the VALIDATION split only.
+   - Evaluated using Sigmoid (Platt scaling) fit strictly on the VALIDATION split only.
    - Brier score evaluated before and after calibration.
 
 ---
@@ -149,7 +149,7 @@ To preserve transparent governance, the system decouples risk, vulnerability, an
        
    ┌────────────────────────────────────────┐
    │  1. HAZARD EVENT RISK (ML Model)       │
-   │  P(qualifying hazard in next 14 days)  │
+   │  P(qualifying report in next 14 days)  │
    │  Score: risk_score in [0.0, 1.0]       │
    └───────────────────┬────────────────────┘
                        │
@@ -175,9 +175,12 @@ To preserve transparent governance, the system decouples risk, vulnerability, an
 
 ### 8.1 Transparent Vulnerability Index ($V_i$)
 Derived from socio-demographic indicators and emergency healthcare access deficit:
-- **Demographic Vulnerability ($V_{\text{demo}}$)**: Composite of child dependency share, illiterate population share, and marginalized social group share.
-- **Healthcare Access Deficit ($V_{\text{health}}$)**: $1.0 - \text{emergency\_hospital\_share}$ (higher deficit if fewer hospitals have emergency services).
-- **Normalized Score**: $V_i = 0.6 \cdot V_{\text{demo}} + 0.4 \cdot V_{\text{health}} \in [0.0, 1.0]$.
+- **Demographic Vulnerability ($V_{\text{demo}}$)**: Composite of child dependency share (weight 0.35), illiterate population share (weight 0.40), and marginalized social group share (SC+ST, weight 0.25). Default uninformative prior is 0.50 if demographic baseline is unmapped.
+- **Healthcare Access Deficit ($V_{\text{health}}$)**:
+  - When facilities are observed: $0.60 \cdot (1.0 - \text{emergency\_hospital\_share}) + 0.40 \cdot (1.0 - \text{ambulance\_hospital\_share})$.
+  - When confirmed zero facilities are recorded: $V_{\text{health}} = 1.0$ (complete facility deficit).
+  - When district is unmapped in National Hospital Directory (UNKNOWN, 212 districts): Assigned neutral median baseline deficit prior $V_{\text{health}} = 0.50$ (matching demographic missingness prior) with `has_health = False` to prevent artificial vulnerability inflation.
+- **Normalized Score**: $V_i = 0.60 \cdot V_{\text{demo}} + 0.40 \cdot V_{\text{health}} \in [0.0, 1.0]$.
 
 ### 8.2 Operational Urgency ($U_i$)
 Reflects recent momentum or acceleration in $[t - 14\text{d}, t]$ relative to 90-day baseline:
@@ -191,13 +194,26 @@ $$\text{RPW}_{i, t} = 0.50 \cdot R_{i, t} + 0.35 \cdot V_i + 0.15 \cdot U_{i, t}
   - **Immediate**: $\text{RPW} \ge 0.70$
   - **Short-Term**: $0.40 \le \text{RPW} < 0.70$
   - **Medium-Term**: $\text{RPW} < 0.40$
+- **Governance Semantics**: RPW is an engineered decision-support planning index under the Disaster Management Act, 2005. It is NOT statutory relocation authority, does NOT trigger autonomous evacuation, and does NOT generate Red Zones.
 
 ---
 
 ## 9. Explainability & SHAP Architecture
 
 - Model predictions are explained via TreeSHAP (`shap.TreeExplainer`).
-- For each prediction, SHAP values quantify exact additive log-odds contributions:
+- For each prediction, SHAP values quantify exact additive log-odds margin contributions:
   $$\ln\left(\frac{P}{1-P}\right) = \phi_0 + \sum_{j=1}^M \phi_j$$
-- Feature contributions are persisted into table `risk_feature_contributions` with direction (`positive` vs `negative`), feature value, and raw contribution value.
-- Officers receive plain-language summaries derived directly from the top SHAP contributors.
+- Feature contributions are persisted into table `risk_feature_contributions` with direction (`positive` vs `negative`), feature value, and log-odds contribution value.
+- Officers receive plain-language association summaries derived from top SHAP contributors using non-causal phrasing (e.g. "feature was associated with a positive contribution to the predicted hazard-report likelihood").
+
+---
+
+## 10. Phase 5.1 Audit Corrections & Semantic Grounding
+
+In Phase 5.1, an independent audit of implementation vs documentation established:
+1. **Epoch Reconciliation**: Documented 14/4/4 steps corrected to actual 14/5/3 steps (10,990 / 3,925 / 2,355 samples; total 17,270 observations across 22 bi-weekly epochs).
+2. **Report vs Physical Event Semantics**: Clarified that target $Y$ predicts the occurrence of a qualifying NDEM active-event situation report within $(t, t + 14\text{d}]$, not reconstructed physical disasters.
+3. **Surveillance Signal Semantics**: Refined description of `surveillance_reports_last_30d` from "reporting compliance" to "routine surveillance monitoring activity" (daily quiescence filings).
+4. **Missing Healthcare Neutrality**: Replaced punitive 0.85 deficit for unmapped healthcare districts with neutral 0.50 baseline prior, eliminating artificial vulnerability inflation while preserving `has_health = False`.
+5. **Non-Causal Association Language**: Updated SHAP natural-language generators to eliminate causal claims ("caused/causes") in favor of verified statistical association with the model's log-odds output.
+6. **Temporal Panel vs Production Snapshot**: Clarified that training operates on the full $N \times K = 17,270$ longitudinal panel, whereas production database persistence stores the latest $N = 785$ operational snapshot.

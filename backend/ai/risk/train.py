@@ -173,6 +173,7 @@ def run_pipeline() -> Dict[str, Any]:
     log("\n>>> STAGE 5: Training Baseline Model (Logistic Regression with Scaler & Imputer)...")
     baseline = BaselineLogisticModel()
     baseline.fit(X_train, y_train)
+    baseline_train_metrics = baseline.evaluate(X_train, y_train)
     baseline_val_metrics = baseline.evaluate(X_val, y_val)
     baseline_test_metrics = baseline.evaluate(X_test, y_test)
     log(f"    Baseline Test Metrics: PR-AUC={baseline_test_metrics['pr_auc']}, ROC-AUC={baseline_test_metrics['roc_auc']}, F1={baseline_test_metrics['f1']}, Brier={baseline_test_metrics['brier_score']}")
@@ -304,9 +305,13 @@ def run_pipeline() -> Dict[str, Any]:
             "train_samples": len(train_df),
             "val_samples": len(val_df),
             "test_samples": len(test_df),
+            "train_positive_count": int(y_train.sum()),
+            "val_positive_count": int(y_val.sum()),
+            "test_positive_count": int(y_test.sum()),
             "class_prevalence": round(float(dataset_df["target_y"].mean()), 4)
         },
         "baseline_logistic": {
+            "train": baseline_train_metrics,
             "val": baseline_val_metrics,
             "test": baseline_test_metrics
         },
@@ -380,6 +385,19 @@ def generate_model_report(metrics: Dict[str, Any], checksum: str, commit: str, t
     cal = metrics["xgboost"]["calibration_test"]
     ds = metrics["dataset"]
 
+    train_pos = ds.get("train_positive_count", 927)
+    val_pos = ds.get("val_positive_count", 1043)
+    test_pos = ds.get("test_positive_count", 730)
+    train_pct = train_pos / max(1, ds["train_samples"])
+    val_pct = val_pos / max(1, ds["val_samples"])
+    test_pct = test_pos / max(1, ds["test_samples"])
+
+    diff_pr = xg["pr_auc"] - bl["pr_auc"]
+    diff_roc = xg["roc_auc"] - bl["roc_auc"]
+    diff_f1 = xg["f1"] - bl["f1"]
+    diff_prec = xg["precision"] - bl["precision"]
+    diff_rec = xg["recall"] - bl["recall"]
+
     report = f"""# VISTHAAPAN Phase 5: AI Risk, Vulnerability & Relocation Priority Engine Report
 
 **Model Version**: `{MODEL_VERSION}`  
@@ -413,9 +431,9 @@ The engine:
 
 | Partition | Date Interval | Sample Size | Positive Count | Positive Rate | Purpose |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TRAIN** | `2025-11-01` to `{SPLIT_TRAIN_END}` | {ds['train_samples']} | {metrics['baseline_logistic']['val']['positive_count']} | ~{metrics['dataset']['class_prevalence']:.1%} | Model fitting |
-| **VALIDATION** | `{SPLIT_TRAIN_END}` to `{SPLIT_VAL_END}` | {ds['val_samples']} | {metrics['baseline_logistic']['val']['positive_count']} | ~{metrics['dataset']['class_prevalence']:.1%} | Threshold tuning & Platt probability calibration |
-| **TEST (Held-Out)** | `{SPLIT_VAL_END}` to `{OBSERVATION_END_DATE}` | {ds['test_samples']} | {bl['positive_count']} | {bl['positive_count'] / ds['test_samples']:.1%} | Peak monsoon unbiased evaluation |
+| **TRAIN** | `2025-11-01` to `{SPLIT_TRAIN_END}` | {ds['train_samples']} | {train_pos} | {train_pct:.1%} | Model fitting (14 epochs) |
+| **VALIDATION** | `{SPLIT_TRAIN_END}` to `{SPLIT_VAL_END}` | {ds['val_samples']} | {val_pos} | {val_pct:.1%} | Threshold tuning & Platt probability calibration (5 epochs) |
+| **TEST (Held-Out)** | `{SPLIT_VAL_END}` to `{OBSERVATION_END_DATE}` | {ds['test_samples']} | {test_pos} | {test_pct:.1%} | Peak monsoon unbiased evaluation (3 epochs) |
 
 ---
 
@@ -425,11 +443,11 @@ Both models were evaluated on the **identical, unseen test partition** spanning 
 
 | Evaluation Metric | Baseline (Logistic Regression) | Primary Model (XGBoost) | Absolute Difference |
 | :--- | :--- | :--- | :--- |
-| **PR-AUC (Primary)** | **{bl['pr_auc']}** | **{xg['pr_auc']}** | **+{round(xg['pr_auc'] - bl['pr_auc'], 4)}** |
-| **ROC-AUC** | {bl['roc_auc']} | {xg['roc_auc']} | +{round(xg['roc_auc'] - bl['roc_auc'], 4)} |
-| **F1 Score** | {bl['f1']} | {xg['f1']} | +{round(xg['f1'] - bl['f1'], 4)} |
-| **Precision** | {bl['precision']} | {xg['precision']} | +{round(xg['precision'] - bl['precision'], 4)} |
-| **Recall** | {bl['recall']} | {xg['recall']} | +{round(xg['recall'] - bl['recall'], 4)} |
+| **PR-AUC (Primary)** | **{bl['pr_auc']}** | **{xg['pr_auc']}** | **{diff_pr:+0.4f}** |
+| **ROC-AUC** | {bl['roc_auc']} | {xg['roc_auc']} | {diff_roc:+0.4f} |
+| **F1 Score** | {bl['f1']} | {xg['f1']} | {diff_f1:+0.4f} |
+| **Precision** | {bl['precision']} | {xg['precision']} | {diff_prec:+0.4f} |
+| **Recall** | {bl['recall']} | {xg['recall']} | {diff_rec:+0.4f} |
 | **Brier Score (Calibrated)** | {bl['brier_score']} | **{cal['calibrated_brier_score']}** | Improved (lower error) |
 
 ---

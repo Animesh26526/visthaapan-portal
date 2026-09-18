@@ -2,8 +2,8 @@
 
 **Model Version**: `v1.0.0-xgb-district-risk`  
 **Feature Schema Version**: `v5.1.0-temporal-biweekly`  
-**Code Git Commit**: `8efa2dfba77488404939028e10e811ed0ae416a3`  
-**Artifact SHA-256**: `4509682e3a06c30e5595ce3ca62704eea549bb54966ccf303b7c51cbeeb743a2`  
+**Code Git Commit**: `eac5e0ebca56fb2823b4ca9969ad0455c425a879`  
+**Artifact SHA-256**: `dc38b740a835888ded5e1db6613e69984739e738610de60975b7779e98943c8c`  
 **Audit Status**: Verified against official NDEM Situation Reports, Census 2011 PCA, and National Hospital Directory.
 
 ---
@@ -31,9 +31,9 @@ The engine:
 
 | Partition | Date Interval | Sample Size | Positive Count | Positive Rate | Purpose |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TRAIN** | `2025-11-01` to `2026-05-15` | 10990 | 1043 | ~15.6% | Model fitting |
-| **VALIDATION** | `2026-05-15` to `2026-07-15` | 3925 | 1043 | ~15.6% | Threshold tuning & Platt probability calibration |
-| **TEST (Held-Out)** | `2026-07-15` to `2026-09-01` | 2355 | 730 | 31.0% | Peak monsoon unbiased evaluation |
+| **TRAIN** | `2025-11-01` to `2026-05-15` | 10990 | 927 | 8.4% | Model fitting (14 epochs) |
+| **VALIDATION** | `2026-05-15` to `2026-07-15` | 3925 | 1043 | 26.6% | Threshold tuning & Platt probability calibration (5 epochs) |
+| **TEST (Held-Out)** | `2026-07-15` to `2026-09-01` | 2355 | 730 | 31.0% | Peak monsoon unbiased evaluation (3 epochs) |
 
 ---
 
@@ -43,11 +43,11 @@ Both models were evaluated on the **identical, unseen test partition** spanning 
 
 | Evaluation Metric | Baseline (Logistic Regression) | Primary Model (XGBoost) | Absolute Difference |
 | :--- | :--- | :--- | :--- |
-| **PR-AUC (Primary)** | **0.8021** | **0.7549** | **+-0.0472** |
-| **ROC-AUC** | 0.8643 | 0.8545 | +-0.0098 |
+| **PR-AUC (Primary)** | **0.8021** | **0.7549** | **-0.0472** |
+| **ROC-AUC** | 0.8643 | 0.8545 | -0.0098 |
 | **F1 Score** | 0.5536 | 0.6967 | +0.1431 |
 | **Precision** | 0.3941 | 0.6262 | +0.2321 |
-| **Recall** | 0.9301 | 0.7849 | +-0.1452 |
+| **Recall** | 0.9301 | 0.7849 | -0.1452 |
 | **Brier Score (Calibrated)** | 0.3225 | **0.1381** | Improved (lower error) |
 
 ---
@@ -81,9 +81,9 @@ The calibrated output guarantees that a score of 0.70 empirically corresponds to
 ## 6. Multi-Domain Triage Distribution (Latest Observation)
 
 - **Total Canonical Districts Evaluated**: 785
-- **Immediate Triage Tier (RPW >= 0.70)**: **110 districts**
-- **Short-Term Triage Tier (0.40 <= RPW < 0.70)**: **223 districts**
-- **Medium-Term Triage Tier (RPW < 0.40)**: **452 districts**
+- **Immediate Triage Tier (RPW >= 0.70)**: **99 districts**
+- **Short-Term Triage Tier (0.40 <= RPW < 0.70)**: **231 districts**
+- **Medium-Term Triage Tier (RPW < 0.40)**: **455 districts**
 
 ---
 

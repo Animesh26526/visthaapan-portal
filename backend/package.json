@@ -19,8 +19,9 @@
     "pipeline:test": "tsx test/pipeline.test.ts",
     "ingest:enrichment": "tsx src/pipeline/runEnrichment.ts",
     "enrichment:test": "tsx test/enrichment.test.ts",
-    "ai:train": "python ai/risk/train.py",
-    "test:ai": "tsx test/ai.test.ts"
+    "ai:train": "python -m ai.risk.train",
+    "test:ai": "tsx test/ai.test.ts",
+    "test:validation": "tsx test/ai_validation.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -91,7 +91,7 @@ class SHAPExplainer:
                 "value": val,
                 "contribution": round(shap_val, 4),
                 "direction": direction,
-                "explanation": f"{desc} ({val}) {'increased' if direction == 'positive' else 'decreased'} forward hazard risk"
+                "explanation": f"{desc} (observed: {val}) was associated with a {direction} contribution ({shap_val:+.3f} log-odds) to the predicted hazard-report likelihood"
             })
 
         # Sort by absolute impact

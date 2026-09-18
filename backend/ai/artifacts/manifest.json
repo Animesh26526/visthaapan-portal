@@ -1,10 +1,10 @@
 {
   "model_version": "v1.0.0-xgb-district-risk",
   "feature_schema_version": "v5.1.0-temporal-biweekly",
-  "git_commit": "8efa2dfba77488404939028e10e811ed0ae416a3",
+  "git_commit": "eac5e0ebca56fb2823b4ca9969ad0455c425a879",
   "artifact_path": "C:\\Users\\Lenovo\\Desktop\\Projects\\VISTHAAPAN-PORTAL\\visthaapan-portal\\backend\\ai\\artifacts\\v1.0.0-xgb-district-risk.joblib",
-  "artifact_checksum": "4509682e3a06c30e5595ce3ca62704eea549bb54966ccf303b7c51cbeeb743a2",
-  "training_timestamp": "2026-09-18T06:04:59Z",
+  "artifact_checksum": "dc38b740a835888ded5e1db6613e69984739e738610de60975b7779e98943c8c",
+  "training_timestamp": "2026-09-18T09:21:57Z",
   "metrics": {
     "dataset": {
       "total_canonical_districts": 785,
@@ -14,9 +14,35 @@
       "train_samples": 10990,
       "val_samples": 3925,
       "test_samples": 2355,
+      "train_positive_count": 927,
+      "val_positive_count": 1043,
+      "test_positive_count": 730,
       "class_prevalence": 0.1563
     },
     "baseline_logistic": {
+      "train": {
+        "accuracy": 0.8892,
+        "precision": 0.4117,
+        "recall": 0.7314,
+        "f1": 0.5268,
+        "roc_auc": 0.8999,
+        "pr_auc": 0.6454,
+        "brier_score": 0.1046,
+        "confusion_matrix": [
+          [
+            9094,
+            969
+          ],
+          [
+            249,
+            678
+          ]
+        ],
+        "threshold": 0.5,
+        "sample_count": 10990,
+        "positive_count": 927,
+        "negative_count": 10063
+      },
       "val": {
         "accuracy": 0.5248,
         "precision": 0.3517,
@@ -220,9 +246,9 @@
     "rpw_breakdown": {
       "latest_observation_date": "2026-08-22",
       "tier_counts": {
-        "immediate": 110,
-        "short-term": 223,
-        "medium-term": 452
+        "immediate": 99,
+        "short-term": 231,
+        "medium-term": 455
       },
       "weights": {
         "risk": 0.5,
