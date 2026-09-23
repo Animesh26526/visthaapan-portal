@@ -12,6 +12,7 @@ import { scenariosRouter } from './scenarios.routes.js';
 import { briefingRouter } from './briefing.routes.js';
 import { habitationsRouter } from './habitations.routes.js';
 import { sitesRouter } from './sites.routes.js';
+import { operationsRouter } from './operations.routes.js';
 import { getApiInfo } from '../controllers/health.controller.js';
 
 export const apiRouter: Router = Router();
@@ -21,6 +22,9 @@ apiRouter.get('/', getApiInfo);
 
 // Health check endpoint (GET /api/v1/health)
 apiRouter.use('/', healthRouter);
+
+// PS 26191 Operations & Relocation Planning Engine (GET /api/v1/operations)
+apiRouter.use('/operations', operationsRouter);
 
 // Phase 5 AI Intelligence Engine (GET /api/v1/intelligence)
 apiRouter.use('/intelligence', intelligenceRouter);

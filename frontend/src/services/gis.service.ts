@@ -18,6 +18,9 @@ import type {
   CensusSettlementProperties,
   OsmRoadProperties,
   OsmFacilityProperties,
+  HazardEvidenceFeatureProperties,
+  SettlementIntelligenceResponse,
+  SettlementSearchResult,
 } from '../types/gis';
 
 // Offline / Mock Fallbacks
@@ -623,6 +626,69 @@ export const GisService = {
     } catch (err) {
       console.warn('[GisService] Failed to fetch OSM facilities:', err);
       return { type: 'FeatureCollection', features: [] };
+    }
+  },
+
+  /**
+   * Phase 10: Fetch verified spatial hazard evidence features (landslides, earthquakes, river corridors, subsidence)
+   */
+  getHazardEvidence: async (params?: {
+    hazard_type?: string;
+    semantic_type?: string;
+    data_origin?: string;
+    bbox?: string;
+  }): Promise<GeoJsonFeatureCollection<HazardEvidenceFeatureProperties>> => {
+    try {
+      const resp = await apiClient.get<any>('/gis/hazard-evidence', { params });
+      const data = resp?.data || resp;
+      if (data && data.type === 'FeatureCollection') {
+        return data as GeoJsonFeatureCollection<HazardEvidenceFeatureProperties>;
+      }
+      return { type: 'FeatureCollection', features: [] };
+    } catch (err) {
+      console.warn('[GisService] Failed to fetch hazard evidence:', err);
+      return { type: 'FeatureCollection', features: [] };
+    }
+  },
+
+  /**
+   * Phase 10: Search Census settlements with hazard exposure status
+   */
+  searchSettlements: async (params: {
+    q?: string;
+    district_code?: string;
+    subdistrict_code?: string;
+    limit?: number;
+  }): Promise<SettlementSearchResult[]> => {
+    try {
+      const resp = await apiClient.get<any>('/gis/settlements/search', { params });
+      const data = resp?.data || resp;
+      if (Array.isArray(data)) {
+        return data as SettlementSearchResult[];
+      }
+      return [];
+    } catch (err) {
+      console.warn('[GisService] Failed to search settlements:', err);
+      return [];
+    }
+  },
+
+  /**
+   * Phase 10: Fetch comprehensive settlement exposure intelligence
+   */
+  getSettlementIntelligence: async (
+    settlementId: string
+  ): Promise<SettlementIntelligenceResponse | null> => {
+    try {
+      const resp = await apiClient.get<any>(`/gis/settlements/${settlementId}/intelligence`);
+      const data = resp?.data || resp;
+      if (data && data.settlement) {
+        return data as SettlementIntelligenceResponse;
+      }
+      return null;
+    } catch (err) {
+      console.warn(`[GisService] Failed to fetch intelligence for settlement ${settlementId}:`, err);
+      return null;
     }
   },
 };

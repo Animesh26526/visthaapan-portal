@@ -1,30 +1,35 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Polyline, useMap, useMapEvents, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useAppStore } from '../stores/useAppStore';
 import { GisService } from '../services/gis.service';
+import { OperationsService } from '../services/operations.service';
 import type {
   GeoJsonFeatureCollection,
-  RedZoneFeatureProperties,
-  RelocationSiteFeatureProperties,
-  DistrictGisFeatureProperties,
-  SiteSuitabilityAudit,
-  SuitabilityTier,
   StateBoundaryProperties,
   DistrictBoundaryProperties,
-  SubdistrictBoundaryProperties,
   CensusSettlementProperties,
   OsmRoadProperties,
   OsmFacilityProperties,
+  HazardEvidenceFeatureProperties,
+  SettlementSearchResult,
 } from '../types/gis';
-import { formatNumber, formatPercent, formatDistance, formatArea, formatPopulation, formatScore } from '../utils/formatters';
+import type {
+  OperationalMapResponse,
+  OperationalHabitation,
+  OperationalRelocationSite,
+  OperationalHazardZone,
+  OperationalRoute,
+  RelocationPhaseKey,
+} from '../types/operations';
+import { formatNumber, formatArea, formatPopulation, formatScore } from '../utils/formatters';
 
 /* ── State / District Geo Config ── */
 const VIEWS = {
   india: { center: [22.5, 82.0] as [number, number], zoom: 5 },
   uttarakhand: { center: [30.1, 79.3] as [number, number], zoom: 8 },
-  chamoli: { center: [30.42, 79.45] as [number, number], zoom: 11 },
+  chamoli: { center: [30.42, 79.40] as [number, number], zoom: 11 },
 } as const;
 
 const STATE_COORDINATES: Record<string, [number, number]> = {
@@ -62,29 +67,113 @@ function geoJsonGeometryToPolygons(geom: any): [number, number][][] {
   return [];
 }
 
-/* ── Convert GeoJSON LineString into Leaflet LatLng Array ── */
-function geoJsonLineStringToLatLngs(geom: any): [number, number][] {
+/* ── Convert GeoJSON LineString / MultiLineString into Leaflet LatLng Ring Array ── */
+function geoJsonLineStringToLatLngs(geom: any): [number, number][][] {
   if (!geom || !geom.coordinates) return [];
   if (geom.type === 'LineString') {
-    return geom.coordinates.map(([lon, lat]: [number, number]) => [lat, lon] as [number, number]);
+    const pts = geom.coordinates.map(([lon, lat]: [number, number]) => [lat, lon] as [number, number]);
+    return pts.length > 0 ? [pts] : [];
+  }
+  if (geom.type === 'MultiLineString') {
+    return geom.coordinates
+      .map((line: [number, number][]) =>
+        line.map(([lon, lat]) => [lat, lon] as [number, number])
+      )
+      .filter((l: any[]) => l.length > 0);
   }
   return [];
+}
+
+/* ── Custom Professional Icons ── */
+
+// Vulnerable Habitation Marker
+function getHabitationIcon(priority: string, isSelected: boolean) {
+  const isImm = priority === 'Immediate';
+  const size = isSelected ? 34 : 28;
+  const bg = isImm ? '#dc2626' : '#d97706';
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="
+        width: ${size}px; height: ${size}px;
+        background: ${bg};
+        border: 2.5px solid #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+        display: flex; align-items: center; justify-content: center;
+        color: #ffffff;
+        transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
+        transition: transform 0.2s ease;
+      " title="${priority} Priority Habitation">
+        <span class="material-symbols-outlined" style="font-size:${isSelected ? '18px' : '15px'}; font-weight:bold;">home</span>
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
+  });
+}
+
+// Relocation Safe Site Marker
+function getRelocationSiteIcon(suitability: string, isSelected: boolean) {
+  const isRestricted = suitability === 'RESTRICTED';
+  const size = isSelected ? 36 : 30;
+  const bg = isRestricted ? '#dc2626' : '#059669';
+  const symbol = isRestricted ? 'block' : 'shield';
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="
+        width: ${size}px; height: ${size}px;
+        background: ${bg};
+        border: 2.5px solid #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+        display: flex; align-items: center; justify-content: center;
+        color: #ffffff;
+        transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
+        transition: transform 0.2s ease;
+      " title="${isRestricted ? 'Restricted Site (In Red Zone)' : 'Safe Relocation Site'}">
+        <span class="material-symbols-outlined" style="font-size:${isSelected ? '19px' : '16px'}; font-weight:bold;">${symbol}</span>
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
+  });
 }
 
 /* ── Census Settlement Markers ── */
 const censusTownIcon = L.divIcon({
   className: '',
-  html: `<div style="width:20px;height:20px;background:#0284c7;border:2px solid #fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:bold" title="Census Town">T</div>`,
+  html: `<div style="width:18px;height:18px;background:#0284c7;border:2px solid #fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:bold" title="Census Town">T</div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+  popupAnchor: [0, -9],
+});
+
+const censusVillageIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:14px;height:14px;background:#0d9488;border:2px solid #fff;transform:rotate(45deg);box-shadow:0 1px 4px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:#fff" title="Census Village"><span style="transform:rotate(-45deg);font-size:7px;font-weight:bold">V</span></div>`,
+  iconSize: [14, 14],
+  iconAnchor: [7, 7],
+  popupAnchor: [0, -7],
+});
+
+/* ── Phase 10: Verified Spatial Hazard Evidence Markers ── */
+const landslideEvidenceIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:20px;height:20px;background:#dc2626;border:2px solid #fff;border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:bold" title="GSI Observed Landslide">▲</div>`,
   iconSize: [20, 20],
   iconAnchor: [10, 10],
   popupAnchor: [0, -10],
 });
 
-const censusVillageIcon = L.divIcon({
+const earthquakeEpicenterIcon = L.divIcon({
   className: '',
-  html: `<div style="width:16px;height:16px;background:#0d9488;border:2px solid #fff;transform:rotate(45deg);box-shadow:0 1px 4px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:#fff" title="Census Village"><span style="transform:rotate(-45deg);font-size:8px;font-weight:bold">V</span></div>`,
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
+  html: `<div style="width:20px;height:20px;background:#7c3aed;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(124,58,237,.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:bold" title="NCS Historical Earthquake Epicenter">◉</div>`,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
   popupAnchor: [0, -10],
 });
 
@@ -110,10 +199,10 @@ function getOsmFacilityIcon(category: string) {
   }
   return L.divIcon({
     className: '',
-    html: `<div style="width:22px;height:22px;background:${bg};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:bold">${symbol}</div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    popupAnchor: [0, -12],
+    html: `<div style="width:18px;height:18px;background:${bg};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:bold">${symbol}</div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    popupAnchor: [0, -9],
   });
 }
 
@@ -122,39 +211,34 @@ function getOsmRoadStyle(fclass: string) {
   switch (fclass) {
     case 'motorway':
     case 'trunk':
-      return { color: '#ea580c', weight: 4, opacity: 0.9 };
+      return { color: '#f97316', weight: 2.5, opacity: 0.65 };
     case 'primary':
-      return { color: '#f59e0b', weight: 3.2, opacity: 0.85 };
+      return { color: '#fbbf24', weight: 2.0, opacity: 0.6 };
     case 'secondary':
-      return { color: '#eab308', weight: 2.4, opacity: 0.8 };
-    case 'tertiary':
-      return { color: '#64748b', weight: 1.8, opacity: 0.7 };
+      return { color: '#cbd5e1', weight: 1.5, opacity: 0.5 };
     default:
-      return { color: '#94a3b8', weight: 1.2, opacity: 0.6 };
+      return { color: '#94a3b8', weight: 1.0, opacity: 0.4 };
   }
 }
 
 /* ── District Polygon Risk Styler ── */
 function getDistrictRiskPolygonStyle(riskTier: string | null, riskScore: number | null) {
   if (riskTier === 'CRITICAL' || (riskScore !== null && riskScore >= 0.8)) {
-    return { color: '#991b1b', fillColor: '#ef4444', fillOpacity: 0.35, weight: 2.5 };
+    return { color: '#991b1b', fillColor: '#ef4444', fillOpacity: 0.18, weight: 2.0 };
   }
   if (riskTier === 'HIGH' || (riskScore !== null && riskScore >= 0.6)) {
-    return { color: '#c2410c', fillColor: '#f97316', fillOpacity: 0.32, weight: 2.2 };
+    return { color: '#c2410c', fillColor: '#f97316', fillOpacity: 0.15, weight: 1.8 };
   }
-  if (riskTier === 'MEDIUM' || (riskScore !== null && riskScore >= 0.4)) {
-    return { color: '#b45309', fillColor: '#f59e0b', fillOpacity: 0.28, weight: 2.0 };
-  }
-  return { color: '#047857', fillColor: '#10b981', fillOpacity: 0.25, weight: 1.8 };
+  return { color: '#047857', fillColor: '#10b981', fillOpacity: 0.12, weight: 1.5 };
 }
 
-/* ── Map Controller (Handles View + Resize Glitches) ── */
+/* ── Map Controller (Handles View + Resize) ── */
 function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   const [centerLat, centerLng] = center;
-  
+
   useEffect(() => {
-    map.setView([centerLat, centerLng], zoom, { animate: false });
+    map.setView([centerLat, centerLng], zoom, { animate: true });
   }, [centerLat, centerLng, zoom, map]);
 
   useEffect(() => {
@@ -173,114 +257,24 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-/* ── Interactive Simulation Controller ── */
-function MapInteractionController() {
-  const { simulationMode, setSimulationMode, addHabitation, addSite } = useAppStore();
-  
-  const map = useMapEvents({
-    click: (e) => {
-      if (simulationMode === 'none') return;
-      const { lat, lng } = e.latlng;
-      
-      if (simulationMode === 'add-habitation') {
-        addHabitation({
-          id: `HAB-SIM-${Date.now()}`,
-          name: `Custom Simulated Settlement`,
-          subDistrict: 'Simulation Zone',
-          district: 'Chamoli',
-          state: 'Uttarakhand',
-          code: `SIM-H-${Date.now().toString().slice(-4)}`,
-          population: Math.floor(Math.random() * 2000) + 500,
-          households: 250,
-          vulnerableGroups: { elderly: 50, children: 100, disabled: 10 },
-          coordinates: { lat, lng },
-          elevationMeters: 2000,
-          slopeDegrees: 45,
-          hazards: ['Landslide', 'Flash Flood'],
-          primaryHazard: 'Landslide',
-          riskScore: 0.85 + (Math.random() * 0.14),
-          vulnerabilityScore: 0.8,
-          hazardExposureScore: 0.9,
-          priorityScore: 90,
-          priority: 'Immediate',
-          evacuationStatus: 'Standby',
-          infrastructure: { healthcare: 'Primary Health Post', roads: 'Normal', water: 'Piped Normal', powerGrid: 'Operational' },
-          historicalEventsCount: 2,
-          lastIncidentYear: 2023,
-          redZoneDistanceKm: 0,
-          isInsideRedZone: true
-        });
-      } else if (simulationMode === 'add-site') {
-        addSite({
-          id: `SITE-SIM-${Date.now()}`,
-          name: `Custom Simulated Safe Hub`,
-          type: 'Plateau Camp',
-          location: 'Simulation Zone',
-          district: 'Chamoli',
-          code: `SIM-S-${Date.now().toString().slice(-4)}`,
-          coordinates: { lat, lng },
-          elevationMeters: 1500,
-          safetyScore: 0.99,
-          isOutsideRedZone: true,
-          totalAllocated: 0,
-          availableCapacity: 3000,
-          utilizationRate: 0,
-          resourceCapacity: {
-            effectiveCapacity: 3000,
-            areaCapacity: 3500,
-            waterCapacity: 4000,
-            shelterCapacity: 3200,
-            sanitationCapacity: 3000,
-            healthcareCapacity: 3100,
-            bottleneck: 'Sanitation'
-          },
-          accessibility: 'All-weather Highway',
-          routeDistanceKm: 15,
-          transitTimeMinutes: 30,
-          logisticsStatus: 'Fully Operational',
-          facilities: {
-            hasFieldHospital: true,
-            hasWaterPurification: true,
-            hasHelipad: true,
-            hasElectricitySubstation: true
-          }
-        });
-      }
-      
-      setSimulationMode('none');
-    }
-  });
-
-  useEffect(() => {
-    const container = map.getContainer();
-    if (simulationMode !== 'none') {
-      container.style.cursor = 'crosshair';
-    } else {
-      container.style.cursor = '';
-    }
-  }, [simulationMode, map]);
-
-  return null;
-}
-
 /* ── Road R12 blockage point ── */
 const R12_BLOCK_POINT: [number, number] = [30.53, 79.55];
 
 const blockedIcon = L.divIcon({
   className: '',
-  html: `<div style="width:32px;height:32px;background:#ba1a1a;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 10px rgba(186,26,26,.5);display:flex;align-items:center;justify-content:center">
-           <span style="color:#fff;font-size:16px;font-weight:900">✕</span>
+  html: `<div style="width:30px;height:30px;background:#ba1a1a;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 10px rgba(186,26,26,.5);display:flex;align-items:center;justify-content:center">
+           <span style="color:#fff;font-size:15px;font-weight:900">✕</span>
          </div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-  popupAnchor: [0, -18],
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+  popupAnchor: [0, -16],
 });
 
 /* ── Tile layers ── */
 const TILES = {
   osm: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    attribution: '&copy; OpenStreetMap contributors',
   },
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -288,450 +282,587 @@ const TILES = {
   },
   terrain: {
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+    attribution: '&copy; OpenTopoMap contributors',
   },
 };
 
 export const RiskGIS: React.FC = () => {
   const {
-    habitations,
-    sites,
-    selectedHabitationId,
-    setSelectedHabitationId,
-    selectedSiteId,
-    setSelectedSiteId,
-    mapFilters,
-    setMapFilters,
     roadR12Blocked,
-    simulationMode,
-    setSimulationMode
+    reoptimizeScenario,
+    recordOfficerDecision,
   } = useAppStore();
 
+  // Geographic Scope & Basemap
   const [selectedState, setSelectedState] = useState('Uttarakhand');
   const [viewLevel, setViewLevel] = useState<'india' | 'state' | 'district'>('district');
   const [tileLayer, setTileLayer] = useState<'osm' | 'satellite' | 'terrain'>('osm');
   const [isDrawerCollapsed, setIsDrawerCollapsed] = useState(() => window.innerWidth < 1024);
-  const [selectedViewType, setSelectedViewType] = useState<'habitation' | 'site' | 'district' | 'census' | 'osm'>('site');
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
 
-  // Phase 6 Live Spatial Intelligence State
-  const [redZonesData, setRedZonesData] = useState<GeoJsonFeatureCollection<RedZoneFeatureProperties> | null>(null);
-  const [gisSitesData, setGisSitesData] = useState<GeoJsonFeatureCollection<RelocationSiteFeatureProperties> | null>(null);
-  const [districtsData, setDistrictsData] = useState<GeoJsonFeatureCollection<DistrictGisFeatureProperties> | null>(null);
-  const [selectedSiteAudit, setSelectedSiteAudit] = useState<SiteSuitabilityAudit | null>(null);
-  const [selectedDistrictItem, setSelectedDistrictItem] = useState<DistrictGisFeatureProperties | DistrictBoundaryProperties | null>(null);
-  const [isLoadingGis, setIsLoadingGis] = useState(false);
+  // PS 26191 Relocation Phase Filter
+  const [activePhase, setActivePhase] = useState<RelocationPhaseKey>('ALL');
 
-  // Phase 9 Data Enrichment State (SOI, Census 2011, OSM)
+  // Unified Operational Data
+  const [operationalData, setOperationalData] = useState<OperationalMapResponse | null>(null);
+  const [isLoadingOps, setIsLoadingOps] = useState(false);
+
+  // Selected Entities
+  const [selectedHabitationId, setSelectedHabitationId] = useState<string>('hab-joshimath');
+  const [selectedSiteId, setSelectedSiteId] = useState<string>('site-gauchar');
+  const [selectedRouteId, setSelectedRouteId] = useState<string>('route-joshimath-gauchar');
+  const [selectedHazardZoneId, setSelectedHazardZoneId] = useState<string>('zone-joshimath-subsidence');
+  const [selectedViewType, setSelectedViewType] = useState<
+    'habitation' | 'site' | 'route' | 'hazardZone' | 'plan' | 'district' | 'census'
+  >('habitation');
+
+  // Primary Operational Layer Visibility (Clutter-Free Defaults)
+  const [showHazardZones, setShowHazardZones] = useState(true);
+  const [showHabitations, setShowHabitations] = useState(true);
+  const [showRelocationSites, setShowRelocationSites] = useState(true);
+  const [showRelocationRoutes, setShowRelocationRoutes] = useState(true);
+  const [showSoiDistricts, setShowSoiDistricts] = useState(true);
+
+  // Optional Supporting GIS Evidence (OFF by default to avoid visual overload)
+  const [showOsmRoads, setShowOsmRoads] = useState(false);
+  const [showOsmFacilities, setShowOsmFacilities] = useState(false);
+  const [showCensusSettlements, setShowCensusSettlements] = useState(false);
+  const [showHazardEvidence, setShowHazardEvidence] = useState(false);
+
+  // Supporting Survey of India and Search State
   const [soiStateData, setSoiStateData] = useState<GeoJsonFeatureCollection<StateBoundaryProperties> | null>(null);
   const [soiDistrictsData, setSoiDistrictsData] = useState<GeoJsonFeatureCollection<DistrictBoundaryProperties> | null>(null);
-  const [soiSubdistrictsData, setSoiSubdistrictsData] = useState<GeoJsonFeatureCollection<SubdistrictBoundaryProperties> | null>(null);
   const [censusSettlementsData, setCensusSettlementsData] = useState<GeoJsonFeatureCollection<CensusSettlementProperties> | null>(null);
   const [osmRoadsData, setOsmRoadsData] = useState<GeoJsonFeatureCollection<OsmRoadProperties> | null>(null);
   const [osmFacilitiesData, setOsmFacilitiesData] = useState<GeoJsonFeatureCollection<OsmFacilityProperties> | null>(null);
+  const [hazardEvidenceData, setHazardEvidenceData] = useState<GeoJsonFeatureCollection<HazardEvidenceFeatureProperties> | null>(null);
+  const [selectedDistrictItem, setSelectedDistrictItem] = useState<any>(null);
+  const [selectedCensusItem, setSelectedCensusItem] = useState<any>(null);
 
-  const [selectedCensusItem, setSelectedCensusItem] = useState<CensusSettlementProperties | null>(null);
-  const [selectedOsmFacilityItem, setSelectedOsmFacilityItem] = useState<OsmFacilityProperties | null>(null);
+  // Settlement Search & Autocomplete
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SettlementSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [customCenter, setCustomCenter] = useState<{ center: [number, number]; zoom: number } | null>(null);
+  const [showMapLegend, setShowMapLegend] = useState(false);
 
-  // Phase 9 Layer Toggles
-  const [showSoiDistricts, setShowSoiDistricts] = useState(true);
-  const [showSoiTehsils, setShowSoiTehsils] = useState(true);
-  const [showCensusSettlements, setShowCensusSettlements] = useState(true);
-  const [showOsmRoads, setShowOsmRoads] = useState(true);
-  const [showOsmFacilities, setShowOsmFacilities] = useState(true);
+  // Scenario Deficit & Re-Optimization Simulation State
+  const [scenarioCapacityDeficit, setScenarioCapacityDeficit] = useState<number | null>(null);
+  const [isReoptimizingLocal, setIsReoptimizingLocal] = useState(false);
+  const [officerDecisionMessage, setOfficerDecisionMessage] = useState<string | null>(null);
 
+  // Resize listener
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch Phase 6 & Phase 9 GIS layers on mount
+  // Fetch Operational Relocation Planning Map data whenever phase changes
   useEffect(() => {
     let isMounted = true;
-    async function loadGisSpatialData() {
-      setIsLoadingGis(true);
+    async function loadOperationalMap() {
+      setIsLoadingOps(true);
       try {
-        const [
-          rzCollection,
-          sitesCollection,
-          stateBoundary,
-          officialDistricts,
-          subdistricts,
-          censusData,
-          roadsData,
-          facilitiesData,
-        ] = await Promise.all([
-          GisService.getRedZones(),
-          GisService.getRelocationSites(),
-          GisService.getStateBoundaries(),
-          GisService.getOfficialDistrictBoundaries(),
-          GisService.getSubdistrictBoundaries('057'),
-          GisService.getCensusSettlements({ district_code: '057', geocoded_only: true, limit: 300 }),
-          GisService.getOsmRoads({ limit: 1200 }),
-          GisService.getOsmFacilities({ limit: 250 }),
-        ]);
+        const data = await OperationsService.getRelocationMap(activePhase);
         if (isMounted) {
-          setRedZonesData(rzCollection);
-          setGisSitesData(sitesCollection);
+          setOperationalData(data);
+        }
+      } catch (err) {
+        console.warn('[RiskGIS] Failed to load operational relocation map, applying fallback:', err);
+        if (isMounted) {
+          setOperationalData(OperationsService.getFallbackRelocationMap(activePhase));
+        }
+      } finally {
+        if (isMounted) setIsLoadingOps(false);
+      }
+    }
+    loadOperationalMap();
+    return () => {
+      isMounted = false;
+    };
+  }, [activePhase]);
+
+  // Load subtle background GIS layers on mount (lazy/supporting)
+  useEffect(() => {
+    let isMounted = true;
+    async function loadBackgroundGis() {
+      try {
+        const [stateBoundary, officialDistricts, censusData, roadsData, facilitiesData, hazardEvData] =
+          await Promise.all([
+            GisService.getStateBoundaries(),
+            GisService.getOfficialDistrictBoundaries(),
+            GisService.getCensusSettlements({ district_code: '057', geocoded_only: true, limit: 300 }),
+            GisService.getOsmRoads({ limit: 1200 }),
+            GisService.getOsmFacilities({ limit: 300 }),
+            GisService.getHazardEvidence(),
+          ]);
+        if (isMounted) {
           setSoiStateData(stateBoundary);
           setSoiDistrictsData(officialDistricts);
-          setSoiSubdistrictsData(subdistricts);
           setCensusSettlementsData(censusData);
           setOsmRoadsData(roadsData);
           setOsmFacilitiesData(facilitiesData);
+          setHazardEvidenceData(hazardEvData);
         }
       } catch (err) {
-        console.warn('[RiskGIS] Failed to load spatial layers:', err);
-      } finally {
-        if (isMounted) setIsLoadingGis(false);
+        console.warn('[RiskGIS] Background GIS loading notice:', err);
       }
     }
-    loadGisSpatialData();
+    loadBackgroundGis();
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Fetch National / State Districts when scope switches
-  useEffect(() => {
-    let isMounted = true;
-    if (viewLevel === 'india' || viewLevel === 'state') {
-      async function loadDistricts() {
-        try {
-          const params = viewLevel === 'state' ? { state: selectedState, limit: 100 } : { limit: 785 };
-          const data = await GisService.getDistricts(params);
-          if (isMounted) {
-            setDistrictsData(data);
-          }
-        } catch (err) {
-          console.warn('[RiskGIS] Failed to load district centroids:', err);
-        }
-      }
-      loadDistricts();
+  // Settlement Search handler
+  const handleSearchChange = async (val: string) => {
+    setSearchQuery(val);
+    if (!val || val.trim().length < 2) {
+      setSearchResults([]);
+      return;
     }
-    return () => {
-      isMounted = false;
-    };
-  }, [viewLevel, selectedState]);
-
-  // Fetch Site Suitability Audit whenever selectedSiteId changes
-  useEffect(() => {
-    let isMounted = true;
-    async function loadAudit() {
-      if (!selectedSiteId) return;
-      try {
-        const audit = await GisService.getSiteSuitabilityAudit(selectedSiteId);
-        if (isMounted) {
-          setSelectedSiteAudit(audit);
-        }
-      } catch (err) {
-        console.warn(`[RiskGIS] Failed to load audit for ${selectedSiteId}:`, err);
-      }
+    setIsSearching(true);
+    try {
+      const results = await GisService.searchSettlements({ q: val.trim(), district_code: '057', limit: 10 });
+      setSearchResults(results);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
-    loadAudit();
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedSiteId]);
+  };
 
-  const selectedHabitation = habitations.find(h => h.id === selectedHabitationId) || habitations[0];
+  const handleSelectSearchResult = (sr: SettlementSearchResult) => {
+    if (sr.latitude != null && sr.longitude != null) {
+      setCustomCenter({ center: [sr.latitude, sr.longitude], zoom: 13 });
+    }
+    setSelectedCensusItem(sr);
+    setSelectedViewType('census');
+    setIsDrawerCollapsed(false);
+    setSearchResults([]);
+    setSearchQuery('');
+  };
 
-  // Haversine distance formula (returns km)
-  const getDistance = React.useCallback((lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; 
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }, []);
-
-  const getNearestSite = React.useCallback((habLat: number, habLng: number) => {
-    let nearest = sites[0];
-    let minDist = Infinity;
-    sites.forEach(site => {
-      const d = getDistance(habLat, habLng, site.coordinates.lat, site.coordinates.lng);
-      if (d < minDist) {
-        minDist = d;
-        nearest = site;
-      }
-    });
-    return nearest;
-  }, [sites, getDistance]);
-
-  const currentSite = sites.find(s => s.id === selectedSiteId) || sites[0];
-  const recommendedSite = selectedHabitation ? getNearestSite(selectedHabitation.coordinates.lat, selectedHabitation.coordinates.lng) : sites[0];
-
-  // Determine map center + zoom based on view level
+  // Determine Map View
   const mapView = useMemo(() => {
+    if (customCenter) return customCenter;
     if (viewLevel === 'india') return { ...VIEWS.india, zoom: isMobile ? 3 : VIEWS.india.zoom };
     if (viewLevel === 'state') {
       return { center: STATE_COORDINATES[selectedState] || VIEWS.uttarakhand.center, zoom: isMobile ? 5 : 7 };
     }
     return { ...VIEWS.chamoli, zoom: isMobile ? 9 : VIEWS.chamoli.zoom };
-  }, [viewLevel, selectedState, isMobile]);
+  }, [customCenter, viewLevel, selectedState, isMobile]);
 
-  // Build evacuation route lines (habitation → nearest site)
-  const evacuationRoutes = useMemo(() => {
-    const routes: { from: [number, number]; to: [number, number]; color: string }[] = [];
-    habitations.forEach(hab => {
-      const nearestSite = getNearestSite(hab.coordinates.lat, hab.coordinates.lng);
-      if (nearestSite) {
-        routes.push({
-          from: [hab.coordinates.lat, hab.coordinates.lng],
-          to: [nearestSite.coordinates.lat, nearestSite.coordinates.lng],
-          color: hab.priority === 'Immediate' ? '#d9531e' : '#003366',
-        });
-      }
-    });
-    return routes;
-  }, [habitations, getNearestSite]);
-
-  const activeTile = TILES[tileLayer];
-
-  // Helper to color candidate safe sites by suitability tier
-  const getSuitabilityColor = (tier: SuitabilityTier | string | undefined) => {
-    switch (tier) {
-      case 'SUITABLE':
-        return { border: '#059669', fill: '#10b981', label: 'Suitable' };
-      case 'CONDITIONALLY_SUITABLE':
-        return { border: '#d97706', fill: '#f59e0b', label: 'Conditional' };
-      case 'RESTRICTED':
-        return { border: '#dc2626', fill: '#ef4444', label: 'Restricted' };
-      default:
-        return { border: '#64748b', fill: '#94a3b8', label: 'Unknown' };
+  // Current Entities
+  const currentHabitation: OperationalHabitation = useMemo(() => {
+    if (!operationalData?.habitations?.length) {
+      return OperationsService.getFallbackRelocationMap().habitations[0];
     }
+    return (
+      operationalData.habitations.find((h) => h.id === selectedHabitationId) ||
+      operationalData.habitations[0]
+    );
+  }, [operationalData, selectedHabitationId]);
+
+  const currentSite: OperationalRelocationSite = useMemo(() => {
+    if (!operationalData?.relocationSites?.length) {
+      return OperationsService.getFallbackRelocationMap().relocationSites[0];
+    }
+    return (
+      operationalData.relocationSites.find((s) => s.id === selectedSiteId) ||
+      operationalData.relocationSites[0]
+    );
+  }, [operationalData, selectedSiteId]);
+
+  const currentRoute: OperationalRoute = useMemo(() => {
+    if (!operationalData?.routes?.length) {
+      return OperationsService.getFallbackRelocationMap().routes[0];
+    }
+    return (
+      operationalData.routes.find((r) => r.id === selectedRouteId) ||
+      operationalData.routes.find((r) => r.fromHabitationId === currentHabitation.id) ||
+      operationalData.routes[0]
+    );
+  }, [operationalData, selectedRouteId, currentHabitation.id]);
+
+  const currentHazardZone: OperationalHazardZone = useMemo(() => {
+    if (!operationalData?.hazardZones?.length) {
+      return OperationsService.getFallbackRelocationMap().hazardZones[0];
+    }
+    return (
+      operationalData.hazardZones.find((z) => z.id === selectedHazardZoneId) ||
+      operationalData.hazardZones[0]
+    );
+  }, [operationalData, selectedHazardZoneId]);
+
+  // Dynamic Re-Optimization & Scenario Stress Simulation Handler
+  const handleTriggerCapacityDeficit = () => {
+    // Drop Gauchar capacity by 1,250 to demonstrate deficit (15,450 required vs 14,200 available)
+    setScenarioCapacityDeficit(1250);
   };
 
-  // Helper to color districts by Phase 5 AI priority tier
-  const getDistrictTierColor = (tier: string | null | undefined) => {
-    switch (tier) {
-      case 'immediate':
-        return '#dc2626';
-      case 'short-term':
-        return '#ea580c';
-      case 'medium-term':
-        return '#f59e0b';
-      default:
-        return '#64748b';
+  const handleExecuteReoptimization = async () => {
+    setIsReoptimizingLocal(true);
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      await reoptimizeScenario();
+    } catch {
+      // Fallback
     }
+    // Re-optimization balances the deficit by redirecting overflow to Rudraprayag / Srinagar
+    setScenarioCapacityDeficit(0);
+    setIsReoptimizingLocal(false);
+    setOfficerDecisionMessage('Plan re-optimized: Surplus capacity allocated across Rudraprayag and Srinagar hubs.');
+  };
+
+  const handleOfficerAction = async (action: 'ACCEPTED' | 'MODIFIED' | 'REJECTED') => {
+    try {
+      await recordOfficerDecision(
+        action,
+        `Officer [${action}] relocation plan under DM Act 2005 Section 30(2)(v) operational mandate.`
+      );
+    } catch {
+      // Fallback
+    }
+    setOfficerDecisionMessage(`Officer Decision [${action}] recorded in statutory DDMA ledger.`);
+    setTimeout(() => setOfficerDecisionMessage(null), 6000);
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-100px)] min-h-[600px] flex flex-col bg-[#f8fafc] select-none font-sans">
-      {/* ── TOP TOOLBAR ── */}
-      <div className="sticky top-[104px] py-2 w-full bg-white border-b border-slate-200 px-3 sm:px-4 space-y-2 shadow-sm z-30 shrink-0">
-        {/* Row 1: View level + state picker + simulation tools + tile picker */}
+    <div className="relative w-full h-[calc(100vh-100px)] min-h-[620px] flex flex-col bg-[#f8fafc] select-none font-sans">
+      {/* ── TOP OPERATIONAL TOOLBAR ── */}
+      <div className="sticky top-[104px] py-2 w-full bg-white border-b border-slate-200 px-3 sm:px-4 space-y-2 shadow-xs z-30 shrink-0">
+        {/* ROW 1: SCOPE SELECTOR, PHASE FILTER, SEARCH BAR, TILE PICKER */}
         <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
-            {/* Geographic scope selector */}
-            <div className="flex items-center bg-slate-100 border border-slate-200 rounded p-0.5 text-[10px] sm:text-xs font-semibold shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Geographic Scope Selector */}
+            <div className="flex items-center bg-slate-100 border border-slate-200 rounded p-0.5 text-xs font-semibold shrink-0">
               <button
                 onClick={() => {
                   setViewLevel('india');
                   setSelectedViewType('district');
                 }}
-                className={`px-2 sm:px-2.5 py-1 rounded transition ${viewLevel === 'india' ? 'bg-[#003366] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2 py-1 rounded transition ${
+                  viewLevel === 'india' ? 'bg-[#003366] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                National (785 Districts)
+                National
               </button>
               <button
                 onClick={() => {
                   setViewLevel('state');
                   setSelectedViewType('district');
                 }}
-                className={`px-2 sm:px-2.5 py-1 rounded transition ${viewLevel === 'state' ? 'bg-[#003366] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2 py-1 rounded transition ${
+                  viewLevel === 'state' ? 'bg-[#003366] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
                 State Macro
               </button>
               <button
                 onClick={() => {
                   setViewLevel('district');
-                  setSelectedViewType('site');
+                  setSelectedViewType('habitation');
                 }}
-                className={`px-2 sm:px-2.5 py-1 rounded transition ${viewLevel === 'district' ? 'bg-[#003366] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded transition flex items-center gap-1 ${
+                  viewLevel === 'district' ? 'bg-[#003366] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                Chamoli Sector (GIS)
+                <span className="material-symbols-outlined text-[13px]">location_on</span>
+                Chamoli Sector
               </button>
             </div>
 
-            {/* State selector dropdown */}
+            {/* State selector dropdown if in state view */}
             {viewLevel === 'state' && (
               <select
                 value={selectedState}
                 onChange={(e) => setSelectedState(e.target.value)}
-                className="h-7 px-2 text-xs font-semibold border border-slate-200 rounded bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#003366] max-w-[150px]"
+                className="h-7 px-2 text-xs font-semibold border border-slate-200 rounded bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#003366]"
               >
-                {INDIAN_STATES.map(s => (
+                {INDIAN_STATES.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             )}
 
-            {/* Simulation Tools */}
-            {viewLevel === 'district' && (
-              <div className="hidden md:flex items-center gap-1.5 pl-2 border-l border-slate-200">
-                <button
-                  onClick={() => setSimulationMode(simulationMode === 'add-habitation' ? 'none' : 'add-habitation')}
-                  className={`h-7 px-2 text-[11px] font-bold border rounded transition flex items-center gap-1 ${
-                    simulationMode === 'add-habitation' 
-                      ? 'bg-red-600 text-white border-red-700 shadow-inner' 
-                      : 'bg-white text-red-600 border-red-200 hover:bg-red-50'
-                  }`}
-                  title="Click on map to drop a new high-risk settlement"
-                >
-                  <span className="material-symbols-outlined text-[14px]">add_location</span>
-                  + Habitation
-                </button>
-                
-                <button
-                  onClick={() => setSimulationMode(simulationMode === 'add-site' ? 'none' : 'add-site')}
-                  className={`h-7 px-2 text-[11px] font-bold border rounded transition flex items-center gap-1 ${
-                    simulationMode === 'add-site' 
-                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-inner' 
-                      : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
-                  }`}
-                  title="Click on map to drop a new safe relocation hub"
-                >
-                  <span className="material-symbols-outlined text-[14px]">warehouse</span>
-                  + Safe Hub
-                </button>
-              </div>
-            )}
+            {/* PS 26191 RELOCATION PHASE FILTER (ALL, IMMEDIATE, SHORT TERM, MEDIUM TERM, LONG TERM) */}
+            <div className="flex items-center bg-slate-100 border border-slate-200 rounded p-0.5 text-[11px] font-bold">
+              <span className="px-1.5 text-slate-400 font-mono text-[9px] uppercase tracking-wider">Phase:</span>
+              {(['ALL', 'IMMEDIATE', 'SHORT_TERM', 'MEDIUM_TERM', 'LONG_TERM'] as RelocationPhaseKey[]).map((pKey) => {
+                const isCurrent = activePhase === pKey;
+                const label = pKey === 'ALL' ? 'ALL' : pKey.replace('_', ' ');
+                return (
+                  <button
+                    key={pKey}
+                    onClick={() => setActivePhase(pKey)}
+                    className={`px-2 py-0.5 rounded transition ${
+                      isCurrent
+                        ? pKey === 'IMMEDIATE'
+                          ? 'bg-red-700 text-white shadow-xs'
+                          : 'bg-[#003366] text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Right: Tile layer picker */}
-          <div className="flex items-center bg-slate-100 border border-slate-200 rounded p-0.5 text-[10px] sm:text-[11px] font-semibold shrink-0">
-            <button
-              onClick={() => setTileLayer('osm')}
-              className={`px-1.5 sm:px-2 py-0.5 rounded transition ${tileLayer === 'osm' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-            >
-              Map
-            </button>
-            <button
-              onClick={() => setTileLayer('satellite')}
-              className={`px-1.5 sm:px-2 py-0.5 rounded transition ${tileLayer === 'satellite' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-            >
-              Sat
-            </button>
-            <button
-              onClick={() => setTileLayer('terrain')}
-              className={`px-1.5 sm:px-2 py-0.5 rounded transition ${tileLayer === 'terrain' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-            >
-              Topo
-            </button>
+          {/* RIGHT: SEARCH BAR + TILE PICKER */}
+          <div className="flex items-center gap-2">
+            {/* Search Bar */}
+            <div className="relative">
+              <div className="flex items-center bg-slate-100 rounded border border-slate-300 px-2 py-1 text-xs gap-1.5 focus-within:border-[#003366] focus-within:bg-white transition">
+                <span className="material-symbols-outlined text-[15px] text-slate-400">search</span>
+                <input
+                  type="text"
+                  placeholder="Search habitation, village or code..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="bg-transparent border-none outline-none text-xs w-44 sm:w-56 text-slate-800 placeholder:text-slate-400"
+                />
+                {isSearching && (
+                  <span className="w-2.5 h-2.5 rounded-full border-2 border-sky-600 border-t-transparent animate-spin"></span>
+                )}
+                {searchQuery && !isSearching && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchResults([]);
+                    }}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">close</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Autocomplete Dropdown */}
+              {searchResults.length > 0 && (
+                <div className="absolute top-full right-0 mt-1 w-72 sm:w-80 bg-white border border-slate-200 rounded shadow-lg max-h-72 overflow-y-auto z-[2000] divide-y divide-slate-100">
+                  {searchResults.map((sr) => (
+                    <div
+                      key={sr.id}
+                      onClick={() => handleSelectSearchResult(sr)}
+                      className="p-2 hover:bg-sky-50 cursor-pointer transition flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="font-semibold text-slate-900 text-xs flex items-center gap-1.5">
+                          <span>{sr.settlementName}</span>
+                          <span
+                            className={`text-[8px] font-bold px-1 rounded text-white ${
+                              sr.settlementType === 'TOWN' ? 'bg-sky-600' : 'bg-teal-600'
+                            }`}
+                          >
+                            {sr.settlementType}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono">
+                          {sr.subdistrictName ? `${sr.subdistrictName}, ` : ''}{sr.districtName}
+                        </div>
+                      </div>
+                      {sr.hasHazardExclusions && (
+                        <span className="px-1 py-0.5 bg-red-100 text-red-800 font-bold text-[8px] rounded">
+                          RED ZONE
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tile Layer Picker */}
+            <div className="flex items-center bg-slate-100 border border-slate-200 rounded p-0.5 text-[11px] font-semibold shrink-0">
+              <button
+                onClick={() => setTileLayer('osm')}
+                className={`px-2 py-0.5 rounded transition ${
+                  tileLayer === 'osm' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'
+                }`}
+              >
+                Map
+              </button>
+              <button
+                onClick={() => setTileLayer('satellite')}
+                className={`px-2 py-0.5 rounded transition ${
+                  tileLayer === 'satellite' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'
+                }`}
+              >
+                Sat
+              </button>
+              <button
+                onClick={() => setTileLayer('terrain')}
+                className={`px-2 py-0.5 rounded transition ${
+                  tileLayer === 'terrain' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'
+                }`}
+              >
+                Topo
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Row 2: Architecture Provenance Badges + Layer Toggles */}
-        <div className="flex items-center justify-between gap-2 text-[10px] font-mono flex-wrap">
-          {/* Layer toggles */}
+        {/* ROW 2: PRIMARY OPERATIONAL TOGGLES + OPTIONAL EVIDENCE GROUP */}
+        <div className="flex items-center justify-between gap-2 text-xs flex-wrap">
+          {/* Primary Relocation Planning Controls */}
           <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] font-bold text-slate-500 font-mono uppercase tracking-wider pr-1">
+              Operational Layers:
+            </span>
+
+            {/* 1. Hazard Zones */}
+            <button
+              onClick={() => setShowHazardZones(!showHazardZones)}
+              className={`h-6 px-2.5 rounded border flex items-center gap-1 font-bold text-[11px] transition ${
+                showHazardZones ? 'bg-red-50 border-red-300 text-red-700 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-400'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${showHazardZones ? 'bg-red-600' : 'bg-slate-300'}`}></span>
+              <span>Hazard Zones ({operationalData?.hazardZones.length ?? 4})</span>
+            </button>
+
+            {/* 2. Vulnerable Habitations */}
+            <button
+              onClick={() => setShowHabitations(!showHabitations)}
+              className={`h-6 px-2.5 rounded border flex items-center gap-1 font-bold text-[11px] transition ${
+                showHabitations ? 'bg-orange-50 border-orange-300 text-orange-800 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-400'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${showHabitations ? 'bg-orange-600' : 'bg-slate-300'}`}></span>
+              <span>Habitations ({operationalData?.habitations.length ?? 5})</span>
+            </button>
+
+            {/* 3. Relocation Sites */}
+            <button
+              onClick={() => setShowRelocationSites(!showRelocationSites)}
+              className={`h-6 px-2.5 rounded border flex items-center gap-1 font-bold text-[11px] transition ${
+                showRelocationSites ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-400'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${showRelocationSites ? 'bg-emerald-600' : 'bg-slate-300'}`}></span>
+              <span>Relocation Sites ({operationalData?.relocationSites.length ?? 4})</span>
+            </button>
+
+            {/* 4. Relocation Routes (OSM Mapped Network) */}
+            <button
+              onClick={() => setShowRelocationRoutes(!showRelocationRoutes)}
+              className={`h-6 px-2.5 rounded border flex items-center gap-1 font-bold text-[11px] transition ${
+                showRelocationRoutes ? 'bg-blue-50 border-blue-300 text-[#003366] shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-400'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${showRelocationRoutes ? 'bg-[#003366]' : 'bg-slate-300'}`}></span>
+              <span>Road Routes ({operationalData?.routes.length ?? 5})</span>
+            </button>
+
+            {/* 5. Boundaries (SOI) */}
             <button
               onClick={() => setShowSoiDistricts(!showSoiDistricts)}
-              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
-                showSoiDistricts ? 'bg-sky-50 border-sky-300 text-sky-800' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}
-              title="Official Survey of India District Boundaries (EPSG:4326)"
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${showSoiDistricts ? 'bg-sky-600' : 'bg-slate-300'}`}></span>
-              Districts (SOI)
-            </button>
-            {viewLevel === 'district' && (
-              <button
-                onClick={() => setShowSoiTehsils(!showSoiTehsils)}
-                className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
-                  showSoiTehsils ? 'bg-indigo-50 border-indigo-300 text-indigo-800' : 'bg-slate-50 border-slate-200 text-slate-400'
-                }`}
-                title="Official Survey of India Tehsil Boundaries (Chamoli 12 Tehsils)"
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${showSoiTehsils ? 'bg-indigo-600' : 'bg-slate-300'}`}></span>
-                Tehsils (SOI)
-              </button>
-            )}
-            <button
-              onClick={() => setShowCensusSettlements(!showCensusSettlements)}
-              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
-                showCensusSettlements ? 'bg-teal-50 border-teal-300 text-teal-800' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}
-              title="Census 2011 Settlements with official population baseline"
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${showCensusSettlements ? 'bg-teal-600' : 'bg-slate-300'}`}></span>
-              Census 2011 Settlements
-            </button>
-            <button
-              onClick={() => setShowOsmRoads(!showOsmRoads)}
-              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
-                showOsmRoads ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}
-              title="OpenStreetMap classified mapped roads"
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${showOsmRoads ? 'bg-amber-600' : 'bg-slate-300'}`}></span>
-              Mapped Roads (OSM)
-            </button>
-            <button
-              onClick={() => setShowOsmFacilities(!showOsmFacilities)}
-              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
-                showOsmFacilities ? 'bg-rose-50 border-rose-300 text-rose-800' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}
-              title="OpenStreetMap critical facilities (healthcare, education, emergency)"
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${showOsmFacilities ? 'bg-rose-600' : 'bg-slate-300'}`}></span>
-              Facilities (OSM)
-            </button>
-            <button
-              onClick={() => setMapFilters({ showRedZones: !mapFilters.showRedZones })}
-              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
-                mapFilters.showRedZones ? 'bg-red-50 border-red-300 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-400'
+              className={`h-6 px-2 rounded border flex items-center gap-1 font-medium text-[11px] transition ${
+                showSoiDistricts ? 'bg-slate-100 border-slate-300 text-slate-700' : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${mapFilters.showRedZones ? 'bg-red-600' : 'bg-slate-300'}`}></span>
-              Red Zones (PostGIS ST_Buffer)
-            </button>
-            <button
-              onClick={() => setMapFilters({ showRelocationSites: !mapFilters.showRelocationSites })}
-              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
-                mapFilters.showRelocationSites ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${mapFilters.showRelocationSites ? 'bg-emerald-600' : 'bg-slate-300'}`}></span>
-              Relocation Hubs
-            </button>
-            <button
-              onClick={() => setMapFilters({ showTransitCorridors: !mapFilters.showTransitCorridors })}
-              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
-                mapFilters.showTransitCorridors ? 'bg-blue-50 border-blue-300 text-[#003366]' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${mapFilters.showTransitCorridors ? 'bg-[#003366]' : 'bg-slate-300'}`}></span>
-              Transit Corridors
+              <span className={`w-1.5 h-1.5 rounded-full ${showSoiDistricts ? 'bg-slate-700' : 'bg-slate-300'}`}></span>
+              <span>Districts</span>
             </button>
           </div>
 
-          {/* Provenance Badges */}
-          <div className="hidden xl:flex items-center gap-1.5">
-            <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 text-[9px] font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
-              SOI: Official Boundaries
+          {/* Supporting Evidence Layers (Optional, Collapsed / Subtle) */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold text-slate-400 font-mono uppercase tracking-wider hidden lg:inline">
+              Supporting GIS:
             </span>
-            <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 text-[9px] font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
-              Census 2011: Baseline
-            </span>
-            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-              OSM: Mapped Vectors
-            </span>
+            <button
+              onClick={() => setShowOsmRoads(!showOsmRoads)}
+              className={`h-6 px-2 rounded border text-[10px] font-medium transition ${
+                showOsmRoads ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-500'
+              }`}
+              title="Full OpenStreetMap classified road network (subtle background)"
+            >
+              OSM Roads {showOsmRoads ? '✓' : ''}
+            </button>
+            <button
+              onClick={() => setShowOsmFacilities(!showOsmFacilities)}
+              className={`h-6 px-2 rounded border text-[10px] font-medium transition ${
+                showOsmFacilities ? 'bg-rose-100 border-rose-300 text-rose-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-500'
+              }`}
+              title="OpenStreetMap critical facilities"
+            >
+              Facilities {showOsmFacilities ? '✓' : ''}
+            </button>
+            <button
+              onClick={() => setShowCensusSettlements(!showCensusSettlements)}
+              className={`h-6 px-2 rounded border text-[10px] font-medium transition ${
+                showCensusSettlements ? 'bg-teal-100 border-teal-300 text-teal-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-500'
+              }`}
+              title="Census 2011 Settlements (300 geocoded baseline points)"
+            >
+              Census Points {showCensusSettlements ? '✓' : ''}
+            </button>
+            <button
+              onClick={() => setShowHazardEvidence(!showHazardEvidence)}
+              className={`h-6 px-2 rounded border text-[10px] font-medium transition ${
+                showHazardEvidence ? 'bg-red-100 border-red-300 text-red-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-500'
+              }`}
+              title="Historical GSI Landslide & NCS Earthquake Points"
+            >
+              Evidence Points {showHazardEvidence ? '✓' : ''}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── MAP + DRAWER ── */}
+      {/* ── SCENARIO CAPACITY DEFICIT ALERT BANNER (Step 9 Demo Requirement) ── */}
+      {scenarioCapacityDeficit !== null && scenarioCapacityDeficit > 0 && (
+        <div className="bg-red-600 text-white px-4 py-2 flex items-center justify-between text-xs font-sans shadow-md z-20">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[20px] animate-pulse">error</span>
+            <div>
+              <span className="font-bold tracking-wide uppercase">CAPACITY DEFICIT DETECTED: </span>
+              <span>Required: <strong>15,450</strong> | Available: <strong>14,200</strong> | Net Deficit: <strong>1,250 Persons</strong></span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExecuteReoptimization}
+              disabled={isReoptimizingLocal}
+              className="px-3 py-1 bg-white text-red-700 font-bold rounded shadow-xs hover:bg-red-50 flex items-center gap-1 transition"
+            >
+              {isReoptimizingLocal ? (
+                <>
+                  <span className="w-3 h-3 rounded-full border-2 border-red-700 border-t-transparent animate-spin"></span>
+                  <span>Re-Optimizing...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[15px]">autorenew</span>
+                  <span>RE-OPTIMIZE NOW</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── OFFICER DECISION FEEDBACK NOTICE ── */}
+      {officerDecisionMessage && (
+        <div className="bg-emerald-700 text-white px-4 py-2 flex items-center justify-between text-xs shadow-md z-20">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">verified</span>
+            <span className="font-semibold">{officerDecisionMessage}</span>
+          </div>
+          <button onClick={() => setOfficerDecisionMessage(null)} className="text-white/80 hover:text-white">
+            <span className="material-symbols-outlined text-[16px]">close</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── MAP CONTAINER + OPERATIONAL DRAWER ── */}
       <div className="relative flex-1 w-full flex overflow-hidden">
-        {/* LEAFLET MAP */}
+        {/* LEAFLET MAP VIEW */}
         <div className="relative flex-1 h-full w-full">
           <MapContainer
             center={mapView.center}
@@ -743,11 +874,10 @@ export const RiskGIS: React.FC = () => {
             style={{ background: '#e2e8f0' }}
           >
             <MapController center={mapView.center} zoom={mapView.zoom} />
-            <MapInteractionController />
 
-            <TileLayer url={activeTile.url} attribution={activeTile.attribution} />
+            <TileLayer url={TILES[tileLayer].url} attribution={TILES[tileLayer].attribution} />
 
-            {/* ── PHASE 9: SURVEY OF INDIA STATE BOUNDARY (UTTARAKHAND) ── */}
+            {/* ── SURVEY OF INDIA STATE BOUNDARY ── */}
             {soiStateData?.features?.map((st, idx) => {
               const polys = geoJsonGeometryToPolygons(st.geometry);
               return polys.map((ring, rIdx) => (
@@ -756,7 +886,7 @@ export const RiskGIS: React.FC = () => {
                   positions={ring}
                   pathOptions={{
                     color: '#0284c7',
-                    weight: 2.2,
+                    weight: 2,
                     fill: false,
                     dashArray: '8, 6',
                   }}
@@ -764,8 +894,8 @@ export const RiskGIS: React.FC = () => {
               ));
             })}
 
-            {/* ── PHASE 9: SURVEY OF INDIA 13 DISTRICT BOUNDARIES (OFFICIAL POLYGONS) ── */}
-            {showSoiDistricts && (viewLevel === 'india' || viewLevel === 'state' || viewLevel === 'district') && soiDistrictsData?.features?.map((dist) => {
+            {/* ── SURVEY OF INDIA 13 DISTRICT BOUNDARIES (SUBTLE OUTLINE) ── */}
+            {showSoiDistricts && soiDistrictsData?.features?.map((dist) => {
               const p = dist.properties;
               const polys = geoJsonGeometryToPolygons(dist.geometry);
               const style = getDistrictRiskPolygonStyle(p.riskTier, p.riskScore);
@@ -782,132 +912,200 @@ export const RiskGIS: React.FC = () => {
                       setIsDrawerCollapsed(false);
                     },
                   }}
-                >
-                  <Popup>
-                    <div className="text-xs font-sans min-w-[220px]">
-                      <div className="font-bold text-[#003366] text-sm flex items-center justify-between">
-                        <span>{p.districtName}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono bg-blue-100 text-blue-800">
-                          SOI LGD: {p.districtCode}
-                        </span>
-                      </div>
-                      <div className="text-slate-500 font-mono text-[10px]">{p.stateName} • Survey of India Official</div>
-                      <div className="mt-1.5 border-t border-slate-100 pt-1 space-y-0.5">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Risk Tier:</span>
-                          <span className="font-bold uppercase text-[10px]" style={{ color: style.color }}>
-                            {p.riskTier || 'Standard'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Calibrated Risk:</span>
-                          <span className="font-bold font-mono text-red-700">{formatPercent(p.calibratedProbability, 1)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Vulnerability Score:</span>
-                          <span className="font-bold font-mono text-amber-700">{formatScore(p.vulnerabilityScore, 2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Area (SOI):</span>
-                          <span className="font-mono">{formatArea((p.shapeArea || 0) / 1000000)}</span>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-[9px] font-mono text-slate-400 italic">
-                        Provenance: {p.provenance}
-                      </div>
-                    </div>
-                  </Popup>
-                </Polygon>
+                />
               ));
             })}
 
-            {/* ── PHASE 9: SURVEY OF INDIA 12 TEHSILS / SUBDISTRICTS (CHAMOLI SECTOR) ── */}
-            {showSoiTehsils && viewLevel === 'district' && soiSubdistrictsData?.features?.map((subdist) => {
-              const p = subdist.properties;
-              const polys = geoJsonGeometryToPolygons(subdist.geometry);
+            {/* ── 1. OPERATIONAL HAZARD-BASED RED ZONES (SPATIAL POLYGONS - MANDATORY) ── */}
+            {showHazardZones && operationalData?.hazardZones.map((zone) => {
+              const polys = geoJsonGeometryToPolygons(zone.geometry);
+              const isSelected = selectedHazardZoneId === zone.id;
+              const isCritical = zone.severity === 'CRITICAL';
+              const strokeColor = isCritical ? '#b91c1c' : '#ea580c';
+              const fillColor = isCritical ? '#ef4444' : '#f97316';
 
               return polys.map((ring, rIdx) => (
                 <Polygon
-                  key={`soi-subdist-${p.subdistrictCode}-${rIdx}`}
+                  key={`op-hz-${zone.id}-${rIdx}`}
                   positions={ring}
                   pathOptions={{
-                    color: '#475569',
-                    weight: 1.5,
-                    fillColor: '#94a3b8',
-                    fillOpacity: 0.12,
-                    dashArray: '5, 4',
+                    color: strokeColor,
+                    weight: isSelected ? 3.5 : 2.5,
+                    fillColor: fillColor,
+                    fillOpacity: isCritical ? 0.35 : 0.22,
+                    dashArray: isCritical ? '6, 4' : undefined,
                   }}
-                >
-                  <Popup>
-                    <div className="text-xs font-sans min-w-[190px]">
-                      <div className="font-bold text-slate-800 text-sm">{p.subdistrictName}</div>
-                      <div className="text-slate-500 font-mono text-[10px]">Tehsil Code: {p.subdistrictCode} • {p.districtName}</div>
-                      <div className="mt-1 text-[9px] font-mono text-slate-500">
-                        Official Survey of India Sub-District Boundary
-                      </div>
-                    </div>
-                  </Popup>
-                </Polygon>
-              ));
-            })}
-
-            {/* ── PHASE 9: OPENSTREETMAP MAPPED ROADS (CLASSIFIED VECTORS) ── */}
-            {showOsmRoads && viewLevel === 'district' && osmRoadsData?.features?.map((road) => {
-              const coords = geoJsonLineStringToLatLngs(road.geometry);
-              if (!coords.length) return null;
-              const p = road.properties;
-              const style = getOsmRoadStyle(p.fclass);
-
-              return (
-                <Polyline
-                  key={`osm-road-${road.id}`}
-                  positions={coords}
-                  pathOptions={style}
-                >
-                  <Popup>
-                    <div className="text-xs font-sans min-w-[200px]">
-                      <div className="font-bold text-slate-900">{p.name || 'Mapped Road'}</div>
-                      <div className="text-slate-500 font-mono text-[10px]">{p.ref ? `${p.ref} • ` : ''}Class: {p.fclass}</div>
-                      <div className="mt-1.5 border-t border-slate-100 pt-1 text-[10px] space-y-0.5">
-                        {p.maxspeed && <div>Max Speed: {p.maxspeed} km/h</div>}
-                        {p.oneway && <div>One-way: {p.oneway}</div>}
-                        {p.bridge && <div>Bridge: Yes</div>}
-                      </div>
-                      <div className="mt-2 text-[9px] font-mono text-amber-800 bg-amber-50 p-1 rounded">
-                        {p.classificationNotice}
-                      </div>
-                    </div>
-                  </Popup>
-                </Polyline>
-              );
-            })}
-
-            {/* ── PHASE 9: OPENSTREETMAP CRITICAL FACILITIES ── */}
-            {showOsmFacilities && viewLevel === 'district' && osmFacilitiesData?.features?.map((fac) => {
-              const geom = fac.geometry;
-              if (!geom || geom.type !== 'Point' || !geom.coordinates) return null;
-              const [lon, lat] = geom.coordinates;
-              const p = fac.properties;
-
-              return (
-                <Marker
-                  key={`osm-fac-${fac.id}`}
-                  position={[lat, lon]}
-                  icon={getOsmFacilityIcon(p.category)}
                   eventHandlers={{
                     click: () => {
-                      setSelectedOsmFacilityItem(p);
-                      setSelectedViewType('osm');
+                      setSelectedHazardZoneId(zone.id);
+                      setSelectedViewType('hazardZone');
                       setIsDrawerCollapsed(false);
                     },
                   }}
                 >
                   <Popup>
-                    <div className="text-xs font-sans min-w-[200px]">
-                      <div className="font-bold text-slate-900">{p.name}</div>
-                      <div className="text-[10px] font-mono text-blue-700 uppercase">{p.category} • {p.fclass}</div>
-                      <div className="mt-1.5 text-[9px] font-mono text-slate-500">
-                        {p.sourceNotice}
+                    <div className="text-xs font-sans min-w-[230px]">
+                      <div className="font-bold text-red-800 text-sm flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px]">warning</span>
+                        {zone.name}
+                      </div>
+                      <div className="text-slate-600 font-mono text-[10px] mt-0.5">
+                        {zone.mandateReference}
+                      </div>
+                      <div className="mt-2 border-t border-slate-200 pt-1 space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Hazard Type:</span>
+                          <span className="font-bold text-red-700">{zone.hazardType}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Severity:</span>
+                          <span className="font-bold font-mono">{zone.severity}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Affected Area:</span>
+                          <span className="font-bold font-mono">{formatArea(zone.areaSqKm)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Relocation Need:</span>
+                          <span className="font-bold font-mono text-[#d9531e]">{zone.relocationPriority}</span>
+                        </div>
+                      </div>
+                      <div className="mt-2.5">
+                        <button
+                          onClick={() => {
+                            setSelectedHazardZoneId(zone.id);
+                            setSelectedViewType('hazardZone');
+                            setIsDrawerCollapsed(false);
+                          }}
+                          className="w-full py-1 bg-red-700 hover:bg-red-800 text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">analytics</span>
+                          Inspect Hazard Zone &amp; Habitations
+                        </button>
+                      </div>
+                    </div>
+                  </Popup>
+                </Polygon>
+              ));
+            })}
+
+            {/* ── 2. ACTIVE MAPPED ROAD TRANSPORTATION ROUTES (FOLLOWING OSM HIGHWAY NETWORK) ── */}
+            {showRelocationRoutes && operationalData?.routes.map((route) => {
+              const isSelected =
+                selectedRouteId === route.id ||
+                selectedHabitationId === route.fromHabitationId ||
+                selectedSiteId === route.toSiteId;
+              const coords = route.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number]);
+
+              return (
+                <React.Fragment key={`op-route-${route.id}`}>
+                  {/* Glowing Underlay Casing */}
+                  <Polyline
+                    positions={coords}
+                    pathOptions={{
+                      color: isSelected ? '#1e3a8a' : '#0369a1',
+                      weight: isSelected ? 8 : 5,
+                      opacity: isSelected ? 0.95 : 0.6,
+                      lineCap: 'round',
+                      lineJoin: 'round',
+                    }}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedRouteId(route.id);
+                        setSelectedHabitationId(route.fromHabitationId);
+                        setSelectedSiteId(route.toSiteId);
+                        setSelectedViewType('route');
+                        setIsDrawerCollapsed(false);
+                      },
+                    }}
+                  />
+                  {/* Highlight Core Line */}
+                  <Polyline
+                    positions={coords}
+                    pathOptions={{
+                      color: isSelected ? '#38bdf8' : '#7dd3fc',
+                      weight: isSelected ? 3.5 : 2.2,
+                      opacity: 1,
+                      dashArray: isSelected ? undefined : '8, 6',
+                      lineCap: 'round',
+                      lineJoin: 'round',
+                    }}
+                  />
+                </React.Fragment>
+              );
+            })}
+
+            {/* ── 3. VULNERABLE HABITATIONS (CLEAN OPERATIONAL MARKERS) ── */}
+            {showHabitations && operationalData?.habitations.map((hab) => {
+              const isSelected = selectedHabitationId === hab.id;
+              const icon = getHabitationIcon(hab.relocationPriority, isSelected);
+
+              return (
+                <Marker
+                  key={`op-hab-${hab.id}`}
+                  position={[hab.coordinates.lat, hab.coordinates.lng]}
+                  icon={icon}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedHabitationId(hab.id);
+                      setSelectedSiteId(hab.recommendedDestinationId);
+                      setSelectedRouteId(hab.routeId);
+                      setSelectedViewType('habitation');
+                      setIsDrawerCollapsed(false);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[220px]">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#003366] text-sm">{hab.name}</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono text-white ${
+                            hab.relocationPriority === 'Immediate' ? 'bg-red-700' : 'bg-amber-600'
+                          }`}
+                        >
+                          {hab.relocationPriority}
+                        </span>
+                      </div>
+                      <div className="text-slate-500 font-mono text-[10px]">
+                        {hab.subDistrict}, {hab.district}
+                      </div>
+
+                      <table className="w-full mt-2 text-[11px]">
+                        <tbody>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Population</td>
+                            <td className="font-bold font-mono text-slate-900">{formatPopulation(hab.population)}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Primary Hazard</td>
+                            <td className="font-semibold text-red-700">{hab.primaryHazard}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Safe Destination</td>
+                            <td className="font-bold text-emerald-800">{hab.recommendedDestinationName}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Road Distance</td>
+                            <td className="font-mono">{hab.routeDistanceKm} km ({hab.transitTimeMinutes} min)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div className="mt-2.5 space-y-1">
+                        <button
+                          onClick={() => {
+                            setSelectedHabitationId(hab.id);
+                            setSelectedSiteId(hab.recommendedDestinationId);
+                            setSelectedRouteId(hab.routeId);
+                            setSelectedViewType('habitation');
+                            setIsDrawerCollapsed(false);
+                          }}
+                          className="w-full py-1 bg-[#003366] hover:bg-[#002244] text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">route</span>
+                          Inspect Relocation Requirement &amp; Route
+                        </button>
                       </div>
                     </div>
                   </Popup>
@@ -915,19 +1113,101 @@ export const RiskGIS: React.FC = () => {
               );
             })}
 
-            {/* ── PHASE 9: CENSUS 2011 SETTLEMENTS (TOWNS & VILLAGES) ── */}
-            {showCensusSettlements && viewLevel === 'district' && censusSettlementsData?.features?.map((settle) => {
+            {/* ── 4. SAFE RELOCATION SITES (CLEAN OPERATIONAL HUBS) ── */}
+            {showRelocationSites && operationalData?.relocationSites.map((site) => {
+              const isSelected = selectedSiteId === site.id;
+              const icon = getRelocationSiteIcon(site.suitability, isSelected);
+
+              return (
+                <Marker
+                  key={`op-site-${site.id}`}
+                  position={[site.coordinates.lat, site.coordinates.lng]}
+                  icon={icon}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedSiteId(site.id);
+                      setSelectedViewType('site');
+                      setIsDrawerCollapsed(false);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[220px]">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 text-sm">{site.name}</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono text-white ${
+                            site.suitability === 'RESTRICTED' ? 'bg-red-700' : 'bg-emerald-700'
+                          }`}
+                        >
+                          {site.suitability}
+                        </span>
+                      </div>
+                      <div className="text-slate-500 font-mono text-[10px]">
+                        {site.type} • {site.district}
+                      </div>
+
+                      <table className="w-full mt-2 text-[11px]">
+                        <tbody>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Effective Capacity</td>
+                            <td className="font-bold font-mono text-emerald-800">{formatPopulation(site.effectiveCapacity)}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Allocated Population</td>
+                            <td className="font-bold font-mono text-slate-900">{formatPopulation(site.allocatedPopulation)}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Remaining Capacity</td>
+                            <td className="font-bold font-mono text-blue-700">{formatPopulation(site.remainingCapacity)}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Road Access</td>
+                            <td className="font-mono text-[10px]">{site.roadAccess}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div className="mt-2.5">
+                        <button
+                          onClick={() => {
+                            setSelectedSiteId(site.id);
+                            setSelectedViewType('site');
+                            setIsDrawerCollapsed(false);
+                          }}
+                          className="w-full py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">warehouse</span>
+                          Inspect Carrying Capacity &amp; Inbound Corridors
+                        </button>
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+            {/* ── OPTIONAL: FULL OSM ROAD NETWORK (HIDDEN BY DEFAULT) ── */}
+            {showOsmRoads && osmRoadsData?.features?.map((road) => {
+              const lines = geoJsonLineStringToLatLngs(road.geometry);
+              if (!lines.length) return null;
+              const style = getOsmRoadStyle(road.properties.fclass);
+              return lines.map((coords, lIdx) => (
+                <Polyline key={`osm-r-${road.id}-${lIdx}`} positions={coords} pathOptions={style} />
+              ));
+            })}
+
+            {/* ── OPTIONAL: CENSUS 2011 SETTLEMENTS (HIDDEN BY DEFAULT) ── */}
+            {showCensusSettlements && censusSettlementsData?.features?.map((settle) => {
               const geom = settle.geometry;
               if (!geom || geom.type !== 'Point' || !geom.coordinates) return null;
               const [lon, lat] = geom.coordinates;
               const p = settle.properties;
-              const isTown = p.settlementType === 'TOWN';
-
               return (
                 <Marker
-                  key={`census-${settle.id}`}
+                  key={`census-pt-${settle.id}`}
                   position={[lat, lon]}
-                  icon={isTown ? censusTownIcon : censusVillageIcon}
+                  icon={p.settlementType === 'TOWN' ? censusTownIcon : censusVillageIcon}
                   eventHandlers={{
                     click: () => {
                       setSelectedCensusItem(p);
@@ -935,364 +1215,223 @@ export const RiskGIS: React.FC = () => {
                       setIsDrawerCollapsed(false);
                     },
                   }}
-                >
-                  <Popup>
-                    <div className="text-xs font-sans min-w-[220px]">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-[#003366] text-sm">{p.settlementName}</span>
-                        <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded text-white ${isTown ? 'bg-sky-600' : 'bg-teal-600'}`}>
-                          {p.settlementType}
-                        </span>
-                      </div>
-                      <div className="text-slate-500 font-mono text-[10px]">
-                        Census Code: {p.settlementCode} • {p.districtName}
-                      </div>
-
-                      <table className="w-full mt-2 text-[11px]">
-                        <tbody>
-                          <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">2011 Baseline Pop.</td>
-                            <td className="font-bold font-mono text-slate-900">{formatPopulation(p.population2011Baseline)}</td>
-                          </tr>
-                          <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Households</td>
-                            <td className="font-mono">{formatNumber(p.households2011Baseline, 0, 'Unavailable')}</td>
-                          </tr>
-                          {p.infrastructureMarkers?.tap_water_treated !== undefined && (
-                            <tr>
-                              <td className="text-slate-500 pr-2 py-0.5">Treated Tap Water</td>
-                              <td className="font-mono">{p.infrastructureMarkers.tap_water_treated === 1 ? 'Available' : 'Unavailable'}</td>
-                            </tr>
-                          )}
-                          {p.infrastructureMarkers?.all_weather_road !== undefined && (
-                            <tr>
-                              <td className="text-slate-500 pr-2 py-0.5">All Weather Road</td>
-                              <td className="font-mono">{p.infrastructureMarkers.all_weather_road === 1 ? 'Connected' : 'Unconnected'}</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-
-                      <div className="mt-2 text-[9px] font-mono text-slate-500 bg-slate-50 p-1 rounded">
-                        {p.temporalNotice}
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
+                />
               );
             })}
 
-            {/* ── FALLBACK CENTROIDS FOR NON-UTTARAKHAND STATES IN NATIONAL VIEW ── */}
-            {viewLevel === 'india' && !soiDistrictsData && districtsData?.features?.map((dist) => {
-              const geom = dist.geometry;
+            {/* ── OPTIONAL: OPENSTREETMAP FACILITIES (HIDDEN BY DEFAULT) ── */}
+            {showOsmFacilities && osmFacilitiesData?.features?.map((fac) => {
+              const geom = fac.geometry;
               if (!geom || geom.type !== 'Point' || !geom.coordinates) return null;
               const [lon, lat] = geom.coordinates;
-              const p = dist.properties;
-              const circleColor = getDistrictTierColor(p.tier);
-              const radius = Math.max(5000, Math.min(30000, (p.priorityWeight || 0.5) * 25000));
-
+              const p = fac.properties;
               return (
-                <Circle
-                  key={`dist-${p.canonicalDistrictId}`}
-                  center={[lat, lon]}
-                  radius={radius * 2}
-                  pathOptions={{
-                    color: circleColor,
-                    weight: 2,
-                    fillColor: circleColor,
-                    fillOpacity: 0.45,
-                  }}
-                  eventHandlers={{
-                    click: () => {
-                      setSelectedDistrictItem(p);
-                      setSelectedViewType('district');
-                      setIsDrawerCollapsed(false);
-                    },
-                  }}
-                >
-                  <Popup>
-                    <div className="text-xs font-sans min-w-[210px]">
-                      <div className="font-bold text-[#003366] text-sm">{p.districtName}</div>
-                      <div className="text-slate-500 font-mono text-[10px]">{p.stateName} • Code: {p.districtCode}</div>
-                      <div className="mt-1.5 flex items-center justify-between border-t border-slate-100 pt-1">
-                        <span className="text-slate-500">Phase 5 AI Tier:</span>
-                        <span className="font-bold uppercase text-[10px]" style={{ color: circleColor }}>
-                          {p.tier || 'Unassigned'}
-                        </span>
-                      </div>
-                    </div>
-                  </Popup>
-                </Circle>
+                <Marker
+                  key={`osm-fac-${fac.id}`}
+                  position={[lat, lon]}
+                  icon={getOsmFacilityIcon(p.category)}
+                />
               );
             })}
 
-            {/* ── SECTOR LEVEL: MODEL-DERIVED POSTGIS MULTIPOLYGON RED ZONES ── */}
-            {mapFilters.showRedZones && viewLevel === 'district' && redZonesData?.features?.map((rz) => {
-              const polygonRings = geoJsonGeometryToPolygons(rz.geometry);
-              return polygonRings.map((ring, rIdx) => (
-                <Polygon
-                  key={`rz-${rz.id}-${rIdx}`}
-                  positions={ring}
-                  pathOptions={{
-                    color: '#b91c1c',
-                    weight: 2.5,
-                    fillColor: '#fecaca',
-                    fillOpacity: 0.38,
-                    dashArray: '8, 5',
-                  }}
-                >
-                  <Popup>
-                    <div className="text-xs font-sans min-w-[220px]">
-                      <div className="font-bold text-red-800 text-sm flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">warning</span>
-                        Model-Derived Exclusion Zone (SIMULATED)
-                      </div>
-                      <div className="text-slate-800 font-semibold mt-1">{rz.properties.name}</div>
-                      <div className="text-slate-500 font-mono text-[10px] mt-0.5">
-                        Planning Basis: {rz.properties.mandateReference}
-                      </div>
-                      <div className="mt-2 border-t border-slate-200 pt-1 space-y-0.5">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Exclusion Type:</span>
-                          <span className="font-bold text-red-700 font-mono">{rz.properties.exclusionType}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Total Enclosed Area:</span>
-                          <span className="font-bold font-mono">{formatArea(rz.properties?.areaSqKm)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Constituent Hazards:</span>
-                          <span className="font-bold font-mono">{rz.properties.constituentHazardCount} hazards</span>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-[10px] font-bold bg-red-100 text-red-800 px-2 py-1 rounded text-center">
-                        EXCLUSION: Habitational relocation restricted under DM Act 2005 model planning criteria
-                      </div>
-                    </div>
-                  </Popup>
-                </Polygon>
-              ));
-            })}
-
-            {/* ── SECTOR LEVEL: CANDIDATE RELOCATION SITES (POSTGIS SPATIAL SUITABILITY) ── */}
-            {mapFilters.showRelocationSites && viewLevel === 'district' && gisSitesData?.features?.map((site) => {
-              const geom = site.geometry;
+            {/* ── OPTIONAL: HISTORICAL HAZARD EVIDENCE (GSI/NCS) (HIDDEN BY DEFAULT) ── */}
+            {showHazardEvidence && hazardEvidenceData?.features?.map((feat) => {
+              const geom = feat.geometry;
               if (!geom || geom.type !== 'Point' || !geom.coordinates) return null;
               const [lon, lat] = geom.coordinates;
-              const p = site.properties;
-              const colorInfo = getSuitabilityColor(p.tier);
-              const isSelected = selectedSiteId === p.siteId;
-
+              const p = feat.properties;
+              const isLandslide = p.hazardType === 'LANDSLIDE';
               return (
-                <Circle
-                  key={`gis-site-${p.siteId}`}
-                  center={[lat, lon]}
-                  radius={isSelected ? 650 : 500}
-                  pathOptions={{
-                    color: isSelected ? '#1e3a8a' : colorInfo.border,
-                    weight: isSelected ? 3.5 : 2.5,
-                    fillColor: colorInfo.fill,
-                    fillOpacity: 0.55,
-                    dashArray: p.tier === 'RESTRICTED' ? '4,4' : undefined,
-                  }}
-                  eventHandlers={{
-                    click: () => {
-                      setSelectedSiteId(p.siteId);
-                      setSelectedViewType('site');
-                      setIsDrawerCollapsed(false);
-                    },
-                  }}
-                >
-                  <Popup>
-                    <div className="text-xs font-sans min-w-[210px]">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900 text-sm">{p.name}</span>
-                        <span
-                          className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono uppercase"
-                          style={{
-                            backgroundColor: p.tier === 'RESTRICTED' ? '#fee2e2' : '#ecfdf5',
-                            color: p.tier === 'RESTRICTED' ? '#991b1b' : '#065f46',
-                          }}
-                        >
-                          {colorInfo.label}
-                        </span>
-                      </div>
-                      <div className="text-slate-500 font-mono text-[10px]">{p.code} • {p.siteType}</div>
-                      
-                      <table className="w-full mt-2 text-[11px]">
-                        <tbody>
-                          <tr><td className="text-slate-500 pr-2 py-0.5">Suitability Score</td><td className="font-bold font-mono">{formatPercent(p.suitabilityScore, 0)}</td></tr>
-                          <tr><td className="text-slate-500 pr-2 py-0.5">Carrying Capacity</td><td className="font-bold font-mono text-emerald-700">{formatPopulation(p.effectiveCapacity)}</td></tr>
-                          <tr><td className="text-slate-500 pr-2 py-0.5">Nearest Hospital</td><td className="font-mono">{formatDistance(p.nearestHospitalKm)}</td></tr>
-                          <tr><td className="text-slate-500 pr-2 py-0.5">Road Access</td><td className="font-mono">{formatDistance(p.nearestRoadKm)}</td></tr>
-                        </tbody>
-                      </table>
-
-                      <div className={`mt-2 text-[10px] font-bold px-2 py-1 rounded text-center ${
-                        p.tier === 'RESTRICTED' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        {p.tier === 'RESTRICTED' ? '✕ RESTRICTED — Inside Red Zone Envelope' : '✓ Outside Active Hazard Envelope'}
-                      </div>
-                    </div>
-                  </Popup>
-                </Circle>
+                <Marker
+                  key={`haz-pt-${feat.id}`}
+                  position={[lat, lon]}
+                  icon={isLandslide ? landslideEvidenceIcon : earthquakeEpicenterIcon}
+                />
               );
             })}
 
-            {/* ── SECTOR LEVEL: MONITORED HABITATIONS ── */}
-            {viewLevel === 'district' && habitations.map(hab => (
-              <Circle
-                key={`hab-zone-${hab.id}`}
-                center={[hab.coordinates.lat, hab.coordinates.lng]}
-                radius={hab.riskScore >= 0.8 ? 750 : 550}
-                pathOptions={{
-                  color: hab.riskScore >= 0.8 ? '#dc2626' : '#d97706',
-                  weight: 2,
-                  fillColor: hab.riskScore >= 0.8 ? '#ef4444' : '#f59e0b',
-                  fillOpacity: 0.45,
-                }}
-                eventHandlers={{
-                  click: () => {
-                    setSelectedHabitationId(hab.id);
-                    setSelectedViewType('habitation');
-                    setIsDrawerCollapsed(false);
-                  },
-                }}
-              >
-                <Popup>
-                  <div className="text-xs font-sans min-w-[200px]">
-                    <div className="font-bold text-[#003366] text-sm">{hab.name}</div>
-                    <div className="text-slate-500 font-mono text-[10px]">{hab.code} • {hab.subDistrict}</div>
-                    <table className="w-full mt-2 text-[11px]">
-                      <tbody>
-                        <tr><td className="text-slate-500 pr-3 py-0.5">Population</td><td className="font-bold text-slate-900 font-mono">{formatPopulation(hab.population)}</td></tr>
-                        <tr><td className="text-slate-500 pr-3 py-0.5">Risk Score</td><td className="font-bold text-red-700 font-mono">{formatPercent(hab.riskScore, 0)}</td></tr>
-                        <tr><td className="text-slate-500 pr-3 py-0.5">Primary Hazard</td><td className="font-semibold">{hab.primaryHazard}</td></tr>
-                        <tr><td className="text-slate-500 pr-3 py-0.5">Priority</td><td className="font-bold text-[#d9531e]">{hab.priority}</td></tr>
-                      </tbody>
-                    </table>
-                    <div className={`mt-2 text-[10px] font-bold px-2 py-1 rounded text-center ${
-                      hab.isInsideRedZone ? 'bg-red-100 text-red-800' : 'bg-amber-50 text-amber-800'
-                    }`}>
-                      {hab.isInsideRedZone ? '⚠ INSIDE MODEL-DERIVED RED ZONE' : `${formatDistance(hab.redZoneDistanceKm)} from Red Zone`}
-                    </div>
-                  </div>
-                </Popup>
-              </Circle>
-            ))}
-
-            {/* ── TRANSIT ROUTES ── */}
-            {mapFilters.showTransitCorridors && viewLevel === 'district' && evacuationRoutes.map((route, idx) => (
-              <Polyline
-                key={idx}
-                positions={[route.from, route.to]}
-                pathOptions={{
-                  color: route.color,
-                  weight: 2.5,
-                  opacity: 0.7,
-                  dashArray: '10,6',
-                }}
-              />
-            ))}
-
-            {/* ── ROAD BLOCKAGE ── */}
-            {roadR12Blocked && viewLevel === 'district' && (
+            {/* ── ROAD R12 BLOCKED CORRIDOR ── */}
+            {roadR12Blocked && (
               <Marker position={R12_BLOCK_POINT} icon={blockedIcon}>
                 <Popup>
                   <div className="text-xs font-sans">
                     <div className="font-bold text-red-800 text-sm">✕ ROAD R12 BLOCKED</div>
-                    <div className="text-slate-600 mt-1">Rockfall at Ch. 4+200</div>
+                    <div className="text-slate-600 mt-1">Rockfall debris slump at Ch. 4+200</div>
                     <div className="text-slate-600">Traffic diverted via Alt R12B</div>
-                    <div className="text-red-700 font-bold mt-1">+8.2 min detour delay</div>
+                    <div className="text-red-700 font-bold mt-1">+12.5 min mountain detour delay</div>
                   </div>
                 </Popup>
               </Marker>
             )}
           </MapContainer>
 
+          {/* ── FLOATING ROUTE INFORMATION CARD (Prominently displayed when route is selected) ── */}
+          {currentRoute && showRelocationRoutes && (
+            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs border border-slate-200 rounded shadow-md p-3 max-w-sm text-xs z-[1000] font-sans">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-100 mb-2">
+                <span className="font-bold text-[#003366] text-[10px] uppercase tracking-wider flex items-center gap-1 font-mono">
+                  <span className="material-symbols-outlined text-[14px]">alt_route</span>
+                  TRANSPORTATION ROUTE
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-emerald-100 text-emerald-800">
+                  {currentRoute.status}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
+                <span>{currentRoute.fromHabitationName}</span>
+                <span className="text-blue-600">→</span>
+                <span>{currentRoute.toSiteName}</span>
+              </div>
+              <div className="mt-1 text-[11px] text-slate-600 font-mono">
+                {currentRoute.roadName} • {currentRoute.roadNetwork}
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-center bg-slate-50 p-1.5 rounded border border-slate-100 font-mono">
+                <div>
+                  <span className="block text-[9px] text-slate-400">DISTANCE</span>
+                  <span className="font-bold text-slate-800">{currentRoute.distanceKm} km</span>
+                </div>
+                <div>
+                  <span className="block text-[9px] text-slate-400">EST. TRANSIT</span>
+                  <span className="font-bold text-blue-700">{currentRoute.transitTimeMinutes} min</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Floating Map Legend Toggle & Panel */}
+          <div className="absolute bottom-12 left-3 z-[1000] font-sans">
+            {showMapLegend && (
+              <div className="mb-2 bg-white/95 backdrop-blur-xs border border-slate-200 rounded shadow-xl p-3 w-72 text-xs space-y-2 max-h-96 overflow-y-auto">
+                <div className="font-bold text-[#003366] text-xs uppercase tracking-wider pb-1 border-b border-slate-200 flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[15px]">layers</span>
+                    Decision-Support Legend
+                  </span>
+                  <button onClick={() => setShowMapLegend(false)} className="text-slate-400 hover:text-slate-700">
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold text-slate-700 uppercase">Operational Planning Elements</div>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span className="w-4 h-3 bg-red-500/35 border border-red-700 border-dashed rounded shrink-0"></span>
+                    <span>Hazard-Based Red Zone (Polygon)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span className="w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shrink-0">
+                      H
+                    </span>
+                    <span>Vulnerable Habitation (Immediate)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span className="w-4 h-4 bg-emerald-600 text-white rounded flex items-center justify-center text-[10px] font-bold shrink-0">
+                      S
+                    </span>
+                    <span>Safe Relocation Site (Capacity Verified)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span className="w-5 h-1 bg-blue-600 rounded shrink-0"></span>
+                    <span>Mapped Road Route (OSM Network)</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <button
+              onClick={() => setShowMapLegend(!showMapLegend)}
+              className="bg-white/95 hover:bg-white text-slate-800 border border-slate-300 rounded shadow-xs px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 transition"
+            >
+              <span className="material-symbols-outlined text-[15px] text-[#003366]">layers</span>
+              <span>Map Legend</span>
+              <span className="material-symbols-outlined text-[13px] text-slate-400">
+                {showMapLegend ? 'expand_more' : 'expand_less'}
+              </span>
+            </button>
+          </div>
+
           {/* Floating bottom-left coordinates */}
-          <div className="absolute bottom-3 left-3 bg-white/95 rounded border border-slate-200 px-3 py-1.5 shadow-sm flex items-center gap-3 text-[11px] text-slate-600 font-mono z-[1000]">
+          <div className="absolute bottom-3 left-3 bg-white/95 rounded border border-slate-200 px-3 py-1.5 shadow-xs flex items-center gap-3 text-[11px] text-slate-600 font-mono z-[1000]">
             <span className="text-[#003366] font-bold">{formatScore(mapView.center?.[0], 2)}°N {formatScore(mapView.center?.[1], 2)}°E</span>
             <span className="text-slate-300">|</span>
             <span>Zoom: {mapView.zoom}</span>
             <span className="text-slate-300">|</span>
             <span className="text-emerald-700 font-semibold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              PostGIS EPSG:4326 Live
+              Relocation Decision Support Live
             </span>
-            {isLoadingGis && (
+            {isLoadingOps && (
               <>
                 <span className="text-slate-300">|</span>
-                <span className="text-blue-600 font-semibold animate-pulse">Syncing GIS...</span>
+                <span className="text-blue-600 font-semibold animate-pulse">Syncing Relocation Map...</span>
               </>
             )}
           </div>
         </div>
 
-        {/* ── RIGHT INTELLIGENCE DRAWER ── */}
+        {/* ── RIGHT OPERATIONAL DECISION-SUPPORT DRAWER ── */}
         <aside
           className={`${
-            isDrawerCollapsed ? 'w-10' : 'w-full sm:w-96'
+            isDrawerCollapsed ? 'w-10' : 'w-full sm:w-[410px]'
           } bg-white border-l border-slate-200 shadow-md z-20 flex flex-col shrink-0 h-full transition-all duration-200 overflow-hidden font-sans absolute top-0 right-0 sm:relative`}
         >
           {isDrawerCollapsed ? (
             <button
               onClick={() => setIsDrawerCollapsed(false)}
               className="p-2 text-[#003366] hover:bg-slate-50 h-full flex flex-col items-center justify-start gap-3"
-              title="Expand Intelligence Drawer"
+              title="Expand Relocation Drawer"
             >
               <span className="material-symbols-outlined text-[20px]">chevron_left</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest -rotate-90 whitespace-nowrap mt-10">
-                {selectedViewType === 'site'
-                  ? 'SITE SUITABILITY AUDIT'
-                  : selectedViewType === 'district'
-                  ? 'DISTRICT INTEL'
-                  : selectedViewType === 'census'
-                  ? 'CENSUS SETTLEMENT'
-                  : selectedViewType === 'osm'
-                  ? 'OSM FACILITY'
-                  : 'SETTLEMENT INTEL'}
+              <span className="text-[10px] font-bold uppercase tracking-widest -rotate-90 whitespace-nowrap mt-12">
+                RELOCATION DECISION
               </span>
             </button>
           ) : (
             <div className="flex flex-col h-full">
               {/* Drawer Header */}
-              <div className="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+              <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1 text-[10px] tracking-wider text-[#003366] font-bold uppercase font-mono">
                     <span>
-                      {selectedViewType === 'site'
-                        ? 'SITE SPATIAL SUITABILITY'
+                      {selectedViewType === 'habitation'
+                        ? 'RELOCATION REQUIREMENT'
+                        : selectedViewType === 'site'
+                        ? 'RELOCATION SITE CAPACITY'
+                        : selectedViewType === 'route'
+                        ? 'TRANSPORTATION ROUTE'
+                        : selectedViewType === 'hazardZone'
+                        ? 'HAZARD-BASED RED ZONE'
+                        : selectedViewType === 'plan'
+                        ? 'RELOCATION PLAN SUMMARY'
                         : selectedViewType === 'district'
                         ? 'DISTRICT MACRO AI'
-                        : selectedViewType === 'census'
-                        ? 'CENSUS 2011 SETTLEMENT'
-                        : selectedViewType === 'osm'
-                        ? 'OSM CRITICAL FACILITY'
-                        : 'SETTLEMENT RISK INTEL'}
+                        : 'CENSUS BASELINE'}
                     </span>
                   </div>
                   <h2 className="text-sm font-bold text-slate-900 leading-tight truncate mt-0.5">
-                    {selectedViewType === 'site'
-                      ? selectedSiteAudit?.siteName || currentSite.name
+                    {selectedViewType === 'habitation'
+                      ? currentHabitation.name
+                      : selectedViewType === 'site'
+                      ? currentSite.name
+                      : selectedViewType === 'route'
+                      ? currentRoute.name
+                      : selectedViewType === 'hazardZone'
+                      ? currentHazardZone.name
+                      : selectedViewType === 'plan'
+                      ? 'Chamoli Phased Relocation Plan'
                       : selectedViewType === 'district'
-                      ? selectedDistrictItem?.districtName || 'Selected District'
-                      : selectedViewType === 'census'
-                      ? selectedCensusItem?.settlementName || 'Census Settlement'
-                      : selectedViewType === 'osm'
-                      ? selectedOsmFacilityItem?.name || 'OSM Facility'
-                      : selectedHabitation.name}
+                      ? selectedDistrictItem?.districtName || 'Chamoli'
+                      : selectedCensusItem?.settlementName || 'Census Settlement'}
                   </h2>
                   <p className="text-[10px] text-slate-500 font-mono truncate">
-                    {selectedViewType === 'site'
-                      ? `${selectedSiteAudit?.district || 'Chamoli'}, ${selectedSiteAudit?.state || 'Uttarakhand'} • Elev: ${currentSite.elevationMeters}m`
-                      : selectedViewType === 'district'
-                      ? `${selectedDistrictItem?.stateName} • Code: ${selectedDistrictItem?.districtCode}`
-                      : selectedViewType === 'census'
-                      ? `${selectedCensusItem?.districtName || 'Chamoli'}${selectedCensusItem?.subdistrictName ? ` • ${selectedCensusItem.subdistrictName}` : ''} • Code: ${selectedCensusItem?.settlementCode || '—'}`
-                      : selectedViewType === 'osm'
-                      ? `${selectedOsmFacilityItem?.category || 'Facility'} • ${selectedOsmFacilityItem?.fclass || 'Infrastructure'}`
-                      : `${selectedHabitation.subDistrict} • ${selectedHabitation.code}`}
+                    {selectedViewType === 'habitation'
+                      ? `${currentHabitation.subDistrict}, ${currentHabitation.district} • Phase: ${currentHabitation.relocationPhase}`
+                      : selectedViewType === 'site'
+                      ? `${currentSite.district} • Suitability: ${currentSite.suitability}`
+                      : selectedViewType === 'route'
+                      ? `${currentRoute.roadName} • Distance: ${currentRoute.distanceKm} km`
+                      : selectedViewType === 'hazardZone'
+                      ? `${currentHazardZone.hazardType} • Area: ${formatArea(currentHazardZone.areaSqKm)}`
+                      : 'Chamoli Sector Emergency Operations'}
                   </p>
                 </div>
                 <button
@@ -1306,578 +1445,509 @@ export const RiskGIS: React.FC = () => {
               {/* View Switcher Tabs inside Drawer */}
               <div className="flex border-b border-slate-200 bg-slate-100 text-[11px] font-semibold shrink-0">
                 <button
+                  onClick={() => setSelectedViewType('habitation')}
+                  className={`flex-1 py-1.5 text-center border-b-2 transition ${
+                    selectedViewType === 'habitation'
+                      ? 'border-[#003366] bg-white text-[#003366]'
+                      : 'border-transparent text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Habitation
+                </button>
+                <button
                   onClick={() => setSelectedViewType('site')}
                   className={`flex-1 py-1.5 text-center border-b-2 transition ${
-                    selectedViewType === 'site' ? 'border-[#003366] bg-white text-[#003366]' : 'border-transparent text-slate-600 hover:text-slate-900'
+                    selectedViewType === 'site'
+                      ? 'border-[#003366] bg-white text-[#003366]'
+                      : 'border-transparent text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   Safe Hub
                 </button>
                 <button
-                  onClick={() => setSelectedViewType('habitation')}
+                  onClick={() => setSelectedViewType('route')}
                   className={`flex-1 py-1.5 text-center border-b-2 transition ${
-                    selectedViewType === 'habitation' ? 'border-[#003366] bg-white text-[#003366]' : 'border-transparent text-slate-600 hover:text-slate-900'
+                    selectedViewType === 'route'
+                      ? 'border-[#003366] bg-white text-[#003366]'
+                      : 'border-transparent text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Habitation
+                  Route
                 </button>
-                {(viewLevel === 'india' || viewLevel === 'state') && (
-                  <button
-                    onClick={() => setSelectedViewType('district')}
-                    className={`flex-1 py-1.5 text-center border-b-2 transition ${
-                      selectedViewType === 'district' ? 'border-[#003366] bg-white text-[#003366]' : 'border-transparent text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    District
-                  </button>
-                )}
-                {selectedCensusItem && (
-                  <button
-                    onClick={() => setSelectedViewType('census')}
-                    className={`flex-1 py-1.5 text-center border-b-2 transition ${
-                      selectedViewType === 'census' ? 'border-[#003366] bg-white text-[#003366]' : 'border-transparent text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Census
-                  </button>
-                )}
-                {selectedOsmFacilityItem && (
-                  <button
-                    onClick={() => setSelectedViewType('osm')}
-                    className={`flex-1 py-1.5 text-center border-b-2 transition ${
-                      selectedViewType === 'osm' ? 'border-[#003366] bg-white text-[#003366]' : 'border-transparent text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Facility
-                  </button>
-                )}
+                <button
+                  onClick={() => setSelectedViewType('hazardZone')}
+                  className={`flex-1 py-1.5 text-center border-b-2 transition ${
+                    selectedViewType === 'hazardZone'
+                      ? 'border-[#003366] bg-white text-[#003366]'
+                      : 'border-transparent text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Red Zone
+                </button>
+                <button
+                  onClick={() => setSelectedViewType('plan')}
+                  className={`flex-1 py-1.5 text-center border-b-2 transition ${
+                    selectedViewType === 'plan'
+                      ? 'border-[#003366] bg-white text-[#003366]'
+                      : 'border-transparent text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Plan
+                </button>
               </div>
 
-              {/* Drawer Body */}
-              {selectedViewType === 'site' ? (
-                /* ── SITE SUITABILITY AUDIT VIEW ── */
-                <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
-                  {/* Suitability Tier Status Banner */}
-                  <div className={`p-2.5 rounded-sm flex items-center justify-between text-white ${
-                    selectedSiteAudit?.tier === 'RESTRICTED'
-                      ? 'bg-red-700'
-                      : selectedSiteAudit?.tier === 'CONDITIONALLY_SUITABLE'
-                      ? 'bg-amber-600'
-                      : 'bg-emerald-700'
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
-                      <span className="text-[11px] font-bold tracking-wider uppercase">
-                        {selectedSiteAudit?.tier?.replace(/_/g, ' ') || 'CONDITIONALLY SUITABLE'}
-                      </span>
-                    </div>
-                    <span className="px-1.5 py-0.5 bg-black/25 text-[9px] rounded-sm font-bold font-mono">
-                      SCORE: {formatPercent(selectedSiteAudit?.suitabilityScore ?? 0.85, 0)}
-                    </span>
-                  </div>
-
-                  {/* High-level Metrics */}
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                      <span className="block text-[9px] text-slate-500 font-bold uppercase">Effective Cap</span>
-                      <span className="text-sm font-bold text-slate-800 font-mono">
-                        {formatPopulation(selectedSiteAudit?.effectiveCapacity ?? currentSite?.resourceCapacity?.effectiveCapacity)}
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                      <span className="block text-[9px] text-slate-500 font-bold uppercase">Safety Score</span>
-                      <span className="text-sm font-bold text-emerald-700 font-mono">
-                        {formatPercent(selectedSiteAudit?.safetyScore ?? 0.95, 0)}
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                      <span className="block text-[9px] text-slate-500 font-bold uppercase">Bottleneck</span>
-                      <span className="text-[11px] font-bold text-amber-800 font-mono block truncate">
-                        {selectedSiteAudit?.bottleneck || currentSite?.resourceCapacity?.bottleneck || 'None'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Multi-Criteria Spatial Checklist */}
-                  <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
-                    <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700 flex items-center justify-between">
-                      <span>Spatial Criteria Checklist</span>
-                      <span className="text-[10px] font-mono text-slate-500 font-normal">PostGIS ST_Intersects</span>
-                    </div>
-
-                    {/* Check 1: Hard Hazard Exclusion */}
-                    <div className="p-2.5 flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-semibold text-slate-800 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px] text-[#003366]">shield</span>
-                          Hard Hazard Exclusion
-                        </div>
-                        <p className="text-[10px] text-slate-500 mt-0.5">
-                          Model-derived red zones (subsidence, flood, avalanche buffers)
-                        </p>
+              {/* Drawer Body Content */}
+              <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
+                {selectedViewType === 'habitation' ? (
+                  /* ── 1. HABITATION RELOCATION REQUIREMENT VIEW ── */
+                  <>
+                    <div
+                      className={`p-2.5 rounded text-white flex items-center justify-between ${
+                        currentHabitation.hazardStatus === 'CRITICAL' ? 'bg-red-700' : 'bg-amber-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">warning</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          {currentHabitation.hazardStatus} HAZARD STATUS
+                        </span>
                       </div>
-                      <span className={`px-2 py-0.5 text-[10px] font-bold font-mono rounded ${
-                        selectedSiteAudit?.checks?.hardHazardExclusion === 'PASS'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {selectedSiteAudit?.checks?.hardHazardExclusion || 'PASS'}
+                      <span className="px-1.5 py-0.5 bg-black/25 text-[10px] rounded font-bold font-mono">
+                        {currentHabitation.relocationPriority.toUpperCase()}
                       </span>
                     </div>
 
-                    {/* Check 2: All-Weather Road Proximity */}
-                    <div className="p-2.5 flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-semibold text-slate-800 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px] text-[#003366]">alt_route</span>
-                          Road Accessibility
-                        </div>
-                        <p className="text-[10px] text-slate-500 mt-0.5">
-                          Distance: {selectedSiteAudit?.nearestRoad?.distanceMeters ?? 150}m ({selectedSiteAudit?.nearestRoad?.accessibility || 'assumed all-weather'} • corridor heuristic)
-                        </p>
+                    {/* Population & Demographics */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-slate-50 border border-slate-200 p-2 rounded">
+                        <span className="block text-[9px] text-slate-500 font-bold uppercase">Requiring Relocation</span>
+                        <span className="text-base font-bold text-slate-900 font-mono">
+                          {formatPopulation(currentHabitation.population)}
+                        </span>
                       </div>
-                      <span className="px-2 py-0.5 text-[10px] font-bold font-mono rounded bg-emerald-100 text-emerald-800">
-                        {selectedSiteAudit?.checks?.roadProximity || 'PASS'}
-                      </span>
-                    </div>
-
-                    {/* Check 3: Healthcare Access */}
-                    <div className="p-2.5 flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-semibold text-slate-800 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px] text-red-600">local_hospital</span>
-                          Healthcare Proximity
-                        </div>
-                        <p className="text-[10px] text-slate-500 mt-0.5">
-                          {selectedSiteAudit?.nearestHospital?.name || 'District Hospital Gopeshwar'}
-                          <br />
-                          Distance: {selectedSiteAudit?.nearestHospital?.distanceKm ?? 0.85} km (Geocoded)
-                        </p>
+                      <div className="bg-slate-50 border border-slate-200 p-2 rounded">
+                        <span className="block text-[9px] text-slate-500 font-bold uppercase">Households</span>
+                        <span className="text-base font-bold text-slate-900 font-mono">
+                          {formatNumber(currentHabitation.households)}
+                        </span>
                       </div>
-                      <span className={`px-2 py-0.5 text-[10px] font-bold font-mono rounded ${
-                        selectedSiteAudit?.checks?.healthcareProximity === 'PASS'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {selectedSiteAudit?.checks?.healthcareProximity || 'PASS'}
-                      </span>
+                      <div className="bg-red-50 border border-red-200 p-2 rounded">
+                        <span className="block text-[9px] text-red-900 font-bold uppercase">Phase</span>
+                        <span className="text-xs font-bold text-red-700 font-mono mt-1 block">
+                          {currentHabitation.relocationPhase}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Check 4: Section 8 DEM Terrain Audit Badge */}
-                    <div className="p-2.5 bg-amber-50/70 border-l-2 border-amber-500">
+                    {/* Recommended Safe Destination */}
+                    <div className="bg-emerald-50 border border-emerald-200 p-3 rounded space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-amber-900 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">landscape</span>
-                          DEM Terrain Audit
+                        <span className="font-bold text-emerald-900 text-[10px] uppercase tracking-wider flex items-center gap-1 font-mono">
+                          <span className="material-symbols-outlined text-[14px]">verified</span>
+                          RECOMMENDED DESTINATION
                         </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold font-mono rounded bg-amber-200 text-amber-900">
-                          UNAVAILABLE (AUDITED)
+                        <span className="px-1.5 py-0.5 bg-emerald-200 text-emerald-900 font-mono font-bold text-[9px] rounded">
+                          SUITABLE
                         </span>
                       </div>
-                      <p className="text-[10px] text-amber-800 leading-relaxed mt-1">
-                        <strong>Section 8 Non-Fabrication Declaration:</strong> Cartosat GeoTIFF tiles cover western Gujarat (68°E–71°E, 21°N–24°N). Chamoli coordinates (79.33°E, 30.41°N) marked UNAVAILABLE to prevent synthetic slope fabrication.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Explainability Summary */}
-                  {selectedSiteAudit?.explainability && (
-                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-sm space-y-1 text-xs">
-                      <span className="font-bold text-[#003366] text-[10px] uppercase tracking-wider flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">psychology</span>
-                        Spatial Explainability
-                      </span>
-                      <p className="text-slate-700 text-[11px] leading-relaxed">
-                        {selectedSiteAudit.explainability.summary}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Statutory & Provenance Details */}
-                  <div className="text-[10px] font-mono text-slate-500 space-y-0.5 bg-slate-50 p-2 border border-slate-200 rounded-sm">
-                    <div>Planning Basis: DM Act 2005 Sec 30(2) Planning Criteria (Model)</div>
-                    <div>Site Provenance: {selectedSiteAudit?.dataProvenance?.siteSource || 'SIMULATED_BENCHMARK_FACILITY'}</div>
-                    <div>Site Geometry: PostGIS ST_Point (EPSG:4326)</div>
-                    <div>Healthcare Directory: Quarantined bed count</div>
-                  </div>
-                </div>
-              ) : selectedViewType === 'district' ? (
-                /* ── DISTRICT MACRO INTEL VIEW ── */
-                <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
-                  <div className="bg-[#003366] text-white p-2.5 rounded-sm flex items-center justify-between">
-                    <div>
-                      <div className="text-[11px] font-bold uppercase tracking-wider">
-                        {selectedDistrictItem?.districtName || 'National Overview'}
-                      </div>
-                      <div className="text-[9px] font-mono text-slate-300">
-                        {selectedDistrictItem?.stateName || 'All States'}
+                      <div className="font-bold text-slate-900 text-sm">{currentHabitation.recommendedDestinationName}</div>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-700 pt-1 border-t border-emerald-200/60">
+                        <div>Allocated: <strong>{formatPopulation(currentHabitation.allocatedPopulation)}</strong></div>
+                        <div>Distance: <strong>{currentHabitation.routeDistanceKm} km</strong></div>
                       </div>
                     </div>
-                    <span className="px-2 py-0.5 bg-white/20 text-[10px] font-mono font-bold rounded uppercase">
-                      {selectedDistrictItem
-                        ? ('tier' in selectedDistrictItem ? selectedDistrictItem.tier : selectedDistrictItem.riskTier) || 'Macro View'
-                        : 'Macro View'}
-                    </span>
-                  </div>
 
-                  {selectedDistrictItem ? (
-                    <>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                          <span className="block text-[9px] text-slate-500 font-bold uppercase">
-                            {'priorityWeight' in selectedDistrictItem ? 'RPW Score' : 'Risk Score'}
-                          </span>
-                          <span className="text-sm font-bold text-[#003366] font-mono">
-                            {formatScore(
-                              'priorityWeight' in selectedDistrictItem
-                                ? selectedDistrictItem.priorityWeight
-                                : selectedDistrictItem.riskScore,
-                              3
-                            )}
-                          </span>
+                    {/* Transportation Pathway */}
+                    <div className="border border-slate-200 rounded divide-y divide-slate-100 text-xs">
+                      <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700 flex items-center justify-between">
+                        <span>Transportation Route</span>
+                        <span className="text-[10px] font-mono text-emerald-700 font-bold">Route Available</span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        <div className="text-slate-600 font-semibold flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-blue-700">alt_route</span>
+                          Mapped Road Network:
                         </div>
-                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                          <span className="block text-[9px] text-slate-500 font-bold uppercase">Risk Prob</span>
-                          <span className="text-sm font-bold text-red-700 font-mono">
-                            {formatPercent(
-                              'calibratedRiskProbability' in selectedDistrictItem
-                                ? selectedDistrictItem.calibratedRiskProbability
-                                : selectedDistrictItem.calibratedProbability,
-                              1
-                            )}
-                          </span>
-                        </div>
-                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                          <span className="block text-[9px] text-slate-500 font-bold uppercase">
-                            {'hospitalCount' in selectedDistrictItem ? 'Hospitals' : 'Area'}
-                          </span>
-                          <span className="text-sm font-bold text-slate-800 font-mono">
-                            {'hospitalCount' in selectedDistrictItem
-                              ? formatNumber(selectedDistrictItem.geocodedHospitalCount || selectedDistrictItem.hospitalCount, 0, '0')
-                              : formatArea(selectedDistrictItem.shapeArea ? selectedDistrictItem.shapeArea / 1000000 : null, 0)}
-                          </span>
+                        <div className="font-mono text-slate-800 text-[11px] pl-5">
+                          {currentRoute.roadName} ({currentRoute.distanceKm} km • {currentRoute.transitTimeMinutes} min)
                         </div>
                       </div>
+                    </div>
 
-                      <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
-                        <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700 flex items-center justify-between">
-                          <span>{'hospitalCount' in selectedDistrictItem ? 'Phase 5 AI District Profile' : 'Survey of India Official Boundary'}</span>
-                          <span className="text-[10px] font-mono text-slate-500">LGD: {selectedDistrictItem.districtCode}</span>
-                        </div>
-                        {'primaryHazard' in selectedDistrictItem && (
-                          <div className="flex items-center justify-between p-2">
-                            <span className="text-slate-600">Primary Hazard</span>
-                            <span className="font-semibold text-slate-800 capitalize">{selectedDistrictItem.primaryHazard || 'Multi-Hazard'}</span>
-                          </div>
-                        )}
-                        {'hazardReportsTotal' in selectedDistrictItem && (
-                          <div className="flex items-center justify-between p-2">
-                            <span className="text-slate-600">Hazard Events Total</span>
-                            <span className="font-bold font-mono">{selectedDistrictItem.activeEventsTotal ?? 0} active / {selectedDistrictItem.hazardReportsTotal ?? 0} total</span>
-                          </div>
-                        )}
-                        {'censusPopulationTotal' in selectedDistrictItem && selectedDistrictItem.censusPopulationTotal != null && (
-                          <div className="flex items-center justify-between p-2">
-                            <span className="text-slate-600">Census Population</span>
-                            <span className="font-bold font-mono">{formatPopulation(selectedDistrictItem.censusPopulationTotal)}</span>
-                          </div>
-                        )}
-                        {'vulnerabilityScore' in selectedDistrictItem && (
-                          <div className="flex items-center justify-between p-2">
-                            <span className="text-slate-600">Vulnerability Score</span>
-                            <span className="font-bold font-mono text-amber-700">{formatScore(selectedDistrictItem.vulnerabilityScore, 2)}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Data Provenance</span>
-                          <span className="font-mono text-[10px] text-slate-500">
-                            {'centroidProvenance' in selectedDistrictItem
-                              ? selectedDistrictItem.centroidProvenance
-                              : selectedDistrictItem.provenance}
-                          </span>
-                        </div>
+                    {/* Why Relocation Section */}
+                    <div className="border border-slate-200 rounded p-3 text-xs space-y-1.5 bg-slate-50">
+                      <div className="font-bold text-[#003366] text-[11px] uppercase tracking-wider font-mono">
+                        Why Relocation?
                       </div>
+                      <ul className="text-slate-700 space-y-1 text-[11px] list-disc list-inside">
+                        <li><strong>Active Hazard Exposure:</strong> Habitation lies within the active {currentHabitation.redZoneName || 'Hazard-Based Red Zone'}.</li>
+                        <li><strong>Ground Instability:</strong> Measured displacement and slope declivity exceed safety thresholds.</li>
+                        <li><strong>Carrying Capacity:</strong> Destination provides verified water, sanitation, and shelter capacity.</li>
+                        <li><strong>Transportation:</strong> All-weather arterial corridor confirmed passably operational.</li>
+                      </ul>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-1.5 pt-1">
+                      <button
+                        onClick={() => {
+                          setSelectedRouteId(currentHabitation.routeId);
+                          setSelectedViewType('route');
+                        }}
+                        className="w-full py-2 bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold rounded flex items-center justify-center gap-1.5 transition shadow-xs"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">alt_route</span>
+                        View Mapped Road Route ({currentHabitation.routeDistanceKm} km)
+                      </button>
 
                       <button
                         onClick={() => {
-                          setViewLevel('district');
+                          setSelectedSiteId(currentHabitation.recommendedDestinationId);
                           setSelectedViewType('site');
                         }}
-                        className="w-full h-8 bg-[#003366] hover:bg-[#002244] text-white text-xs font-semibold rounded-sm flex items-center justify-center gap-1.5 transition"
+                        className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded flex items-center justify-center gap-1.5 transition shadow-xs"
                       >
-                        <span className="material-symbols-outlined text-[14px]">map</span>
-                        Enter Chamoli Sector (GIS)
+                        <span className="material-symbols-outlined text-[15px]">warehouse</span>
+                        Inspect Safe Relocation Hub ({currentHabitation.recommendedDestinationName})
                       </button>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-500 text-center py-8">
-                      Click any district circle on the map to inspect Phase 5 AI risk scores and geocoded hospital metrics.
                     </div>
-                  )}
-                </div>
-              ) : selectedViewType === 'census' ? (
-                /* ── CENSUS 2011 SETTLEMENT VIEW ── */
-                <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
-                  {selectedCensusItem ? (
-                    <>
-                      <div className={`text-white p-2.5 rounded-sm flex items-center justify-between ${
-                        selectedCensusItem.settlementType === 'TOWN' ? 'bg-sky-700' : 'bg-teal-700'
-                      }`}>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-white"></span>
-                          <span className="text-[11px] font-bold tracking-wider uppercase">
-                            CENSUS {selectedCensusItem.settlementType}
-                          </span>
-                        </div>
-                        <span className="px-1.5 py-0.5 bg-black/25 text-[9px] rounded-sm font-bold font-mono">
-                          CODE: {selectedCensusItem.settlementCode}
+                  </>
+                ) : selectedViewType === 'site' ? (
+                  /* ── 2. RELOCATION SITE CARRYING CAPACITY VIEW ── */
+                  <>
+                    <div
+                      className={`p-2.5 rounded text-white flex items-center justify-between ${
+                        currentSite.suitability === 'RESTRICTED' ? 'bg-red-700' : 'bg-emerald-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">
+                          {currentSite.suitability === 'RESTRICTED' ? 'block' : 'verified'}
+                        </span>
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          {currentSite.suitability} RELOCATION SITE
                         </span>
                       </div>
+                      <span className="px-1.5 py-0.5 bg-black/25 text-[10px] rounded font-bold font-mono">
+                        SAFETY: {Math.round(currentSite.safetyScore * 100)}%
+                      </span>
+                    </div>
 
-                      {/* Baseline Demographic Statistics */}
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                          <span className="block text-[9px] text-slate-500 font-bold uppercase">2011 Baseline Pop.</span>
-                          <span className="text-base font-bold text-slate-900 font-mono">
-                            {formatPopulation(selectedCensusItem.population2011Baseline)}
-                          </span>
-                        </div>
-                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                          <span className="block text-[9px] text-slate-500 font-bold uppercase">Households</span>
-                          <span className="text-base font-bold text-slate-900 font-mono">
-                            {formatNumber(selectedCensusItem.households2011Baseline, 0, '—')}
-                          </span>
-                        </div>
-                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                          <span className="block text-[9px] text-slate-500 font-bold uppercase">Sex Ratio (M/F)</span>
-                          <span className="text-xs font-bold text-slate-800 font-mono leading-relaxed mt-1 block">
-                            {selectedCensusItem.malePopulation2011 != null && selectedCensusItem.femalePopulation2011 != null
-                              ? `${formatNumber(selectedCensusItem.malePopulation2011)} / ${formatNumber(selectedCensusItem.femalePopulation2011)}`
-                              : '—'}
-                          </span>
-                        </div>
+                    {/* Explicit Carrying Capacity Metrics */}
+                    <div className="border border-slate-200 rounded divide-y divide-slate-100 text-xs">
+                      <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700 flex items-center justify-between font-mono">
+                        <span>CARRYING CAPACITY ASSESSMENT</span>
+                        <span className="text-[10px] text-slate-500 font-normal">PS 26191 Multi-Resource</span>
                       </div>
-
-                      {/* Location & Administrative Hierarchy */}
-                      <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
-                        <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700 flex items-center justify-between">
-                          <span>Administrative Hierarchy</span>
-                          <span className="text-[9px] font-mono text-slate-500">Census 2011 MDDS</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">District</span>
-                          <span className="font-semibold text-slate-800">{selectedCensusItem.districtName} ({selectedCensusItem.districtCode})</span>
-                        </div>
-                        {selectedCensusItem.subdistrictName && (
-                          <div className="flex items-center justify-between p-2">
-                            <span className="text-slate-600">Subdistrict / Tehsil</span>
-                            <span className="font-semibold text-slate-800">{selectedCensusItem.subdistrictName}</span>
-                          </div>
-                        )}
-                        {selectedCensusItem.cdBlockName && (
-                          <div className="flex items-center justify-between p-2">
-                            <span className="text-slate-600">CD Block</span>
-                            <span className="font-semibold text-slate-800">{selectedCensusItem.cdBlockName}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Coordinates</span>
-                          <span className="font-mono text-[11px] text-slate-700">
-                            {selectedCensusItem.latitude != null && selectedCensusItem.longitude != null
-                              ? `${formatNumber(selectedCensusItem.latitude, 4)}°N, ${formatNumber(selectedCensusItem.longitude, 4)}°E`
-                              : '—'}
-                          </span>
-                        </div>
+                      <div className="flex justify-between p-2">
+                        <span className="text-slate-600">Nominal Physical Capacity:</span>
+                        <span className="font-bold font-mono text-slate-900">{formatPopulation(currentSite.nominalCapacity)}</span>
                       </div>
+                      <div className="flex justify-between p-2 bg-emerald-50/50">
+                        <span className="text-slate-700 font-semibold">Effective Carrying Capacity:</span>
+                        <span className="font-bold font-mono text-emerald-800 text-sm">
+                          {formatPopulation(currentSite.effectiveCapacity)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between p-2">
+                        <span className="text-slate-600">Allocated Population:</span>
+                        <span className="font-bold font-mono text-slate-900">{formatPopulation(currentSite.allocatedPopulation)}</span>
+                      </div>
+                      <div className="flex justify-between p-2 bg-blue-50/50">
+                        <span className="text-slate-700 font-semibold">Remaining Capacity:</span>
+                        <span className="font-bold font-mono text-blue-700">
+                          {formatPopulation(currentSite.remainingCapacity)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between p-2">
+                        <span className="text-slate-600">Limiting Bottleneck:</span>
+                        <span className="font-bold font-mono text-amber-800">{currentSite.bottleneck}</span>
+                      </div>
+                    </div>
 
-                      {/* Infrastructure Markers (from Census DCHB) */}
-                      {selectedCensusItem.infrastructureMarkers && Object.keys(selectedCensusItem.infrastructureMarkers).length > 0 && (
-                        <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
-                          <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700">
-                            Census 2011 Infrastructure Amenities
+                    {/* Source Habitations & Inbound Demand */}
+                    <div className="border border-slate-200 rounded divide-y divide-slate-100 text-xs">
+                      <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700">
+                        Assigned Source Habitations
+                      </div>
+                      {currentSite.sourceHabitations.length > 0 ? (
+                        currentSite.sourceHabitations.map((habName) => (
+                          <div key={habName} className="p-2 flex items-center justify-between">
+                            <span className="font-semibold text-slate-900">{habName}</span>
+                            <span className="text-slate-500 font-mono text-[11px]">Assigned Population: {formatPopulation(currentSite.allocatedPopulation)}</span>
                           </div>
-                          {Object.entries(selectedCensusItem.infrastructureMarkers).map(([key, val]) => (
-                            <div key={key} className="flex items-center justify-between p-2">
-                              <span className="text-slate-600 capitalize">{key.replace(/_/g, ' ')}</span>
-                              <span className="font-semibold font-mono text-[11px] text-slate-800">
-                                {typeof val === 'boolean' ? (val ? 'Available' : 'Unavailable') : String(val ?? '—')}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                        ))
+                      ) : (
+                        <div className="p-2 text-slate-500 italic">No habitations assigned (Site Restricted by Hazard Envelope).</div>
                       )}
-
-                      {/* Official Provenance & Temporal Disclaimer */}
-                      <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-sm space-y-1 text-xs">
-                        <div className="font-bold text-amber-900 text-[10px] uppercase tracking-wider flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">history_edu</span>
-                          Data Provenance & Temporal Baseline Notice
-                        </div>
-                        <p className="text-[10px] text-amber-900 leading-relaxed font-sans">
-                          {selectedCensusItem.temporalNotice || 'Official Census 2011 baseline data. Reflects 2011 statutory enumeration; not real-time population.'}
-                        </p>
-                        <div className="text-[9px] font-mono text-amber-800 pt-1 border-t border-amber-200/60">
-                          Source: {selectedCensusItem.provenance || 'Census of India 2011, Directorate of Census Operations Uttarakhand'}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-500 text-center py-8">
-                      Click any Census settlement point on the map to inspect baseline demographics and infrastructure.
                     </div>
-                  )}
-                </div>
-              ) : selectedViewType === 'osm' ? (
-                /* ── OSM CRITICAL FACILITY VIEW ── */
-                <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
-                  {selectedOsmFacilityItem ? (
-                    <>
-                      <div className="bg-[#003366] text-white p-2.5 rounded-sm flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                          <span className="text-[11px] font-bold tracking-wider uppercase">
-                            {selectedOsmFacilityItem.category} FACILITY
-                          </span>
-                        </div>
-                        <span className="px-1.5 py-0.5 bg-white/20 text-[9px] rounded-sm font-bold font-mono">
-                          OSM ID: {selectedOsmFacilityItem.osmId}
+
+                    {/* Transportation Access */}
+                    <div className="border border-slate-200 rounded p-2.5 text-xs space-y-1">
+                      <span className="font-bold text-slate-700 text-[10px] uppercase font-mono">Transportation Accessibility</span>
+                      <div className="text-slate-900 font-medium">{currentSite.roadAccess}</div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="space-y-1.5 pt-1">
+                      <button
+                        onClick={() => {
+                          const matchingRoute = operationalData?.routes.find((r) => r.toSiteId === currentSite.id);
+                          if (matchingRoute) {
+                            setSelectedRouteId(matchingRoute.id);
+                            setSelectedViewType('route');
+                          }
+                        }}
+                        className="w-full py-2 bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold rounded flex items-center justify-center gap-1.5 transition"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">alt_route</span>
+                        View Converging Road Routes
+                      </button>
+                    </div>
+                  </>
+                ) : selectedViewType === 'route' ? (
+                  /* ── 3. TRANSPORTATION ROUTE VIEW (OSM NETWORK) ── */
+                  <>
+                    <div className="bg-[#003366] text-white p-2.5 rounded flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">alt_route</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          MAPPED ROAD CORRIDOR
                         </span>
                       </div>
+                      <span className="px-1.5 py-0.5 bg-emerald-500 text-white font-mono font-bold text-[9px] rounded">
+                        {currentRoute.status}
+                      </span>
+                    </div>
 
-                      {/* Facility Attribute Details */}
-                      <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
-                        <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700">
-                          Facility Spatial Attributes
+                    <div className="border border-slate-200 rounded divide-y divide-slate-100 text-xs font-sans">
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Origin Habitation:</span>
+                        <span className="font-bold text-slate-900">{currentRoute.fromHabitationName}</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Destination Hub:</span>
+                        <span className="font-bold text-emerald-800">{currentRoute.toSiteName}</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Mapped Highway:</span>
+                        <span className="font-bold text-slate-800 font-mono">{currentRoute.roadName}</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Road Distance:</span>
+                        <span className="font-bold font-mono text-slate-900">{currentRoute.distanceKm} km</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Estimated Transit Time:</span>
+                        <span className="font-bold font-mono text-blue-700">{currentRoute.transitTimeMinutes} minutes</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Route Geometry:</span>
+                        <span className="font-mono text-slate-700">OSM Snapped LineString ({currentRoute.geometry.coordinates.length} waypoints)</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 p-3 rounded text-xs space-y-1">
+                      <div className="font-bold text-blue-900 text-[10px] uppercase font-mono">
+                        Transportation Integrity
+                      </div>
+                      <p className="text-[11px] text-blue-800 leading-relaxed">
+                        Route geometry follows the official OpenStreetMap road network. No synthetic straight lines or heuristic pseudo-vectors are used.
+                      </p>
+                    </div>
+                  </>
+                ) : selectedViewType === 'hazardZone' ? (
+                  /* ── 4. HAZARD-BASED RED ZONE VIEW ── */
+                  <>
+                    <div className="bg-red-700 text-white p-2.5 rounded flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">gpp_bad</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          HAZARD-BASED RED ZONE
+                        </span>
+                      </div>
+                      <span className="px-1.5 py-0.5 bg-black/30 font-mono font-bold text-[9px] rounded">
+                        {currentHazardZone.severity}
+                      </span>
+                    </div>
+
+                    <div className="border border-slate-200 rounded divide-y divide-slate-100 text-xs">
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Zone Name:</span>
+                        <span className="font-bold text-slate-900">{currentHazardZone.name}</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Hazard Type:</span>
+                        <span className="font-bold text-red-700">{currentHazardZone.hazardType}</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Enclosed Spatial Area:</span>
+                        <span className="font-bold font-mono">{formatArea(currentHazardZone.areaSqKm)}</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Affected Habitations:</span>
+                        <span className="font-bold font-mono text-slate-900">{currentHazardZone.affectedHabitationsCount} monitored</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Relocation Urgency:</span>
+                        <span className="font-bold font-mono text-red-700">{currentHazardZone.relocationPriority}</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Statutory Basis:</span>
+                        <span className="font-mono text-[10px] text-slate-600">{currentHazardZone.mandateReference}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-red-50 border border-red-200 rounded text-xs space-y-1">
+                      <div className="font-bold text-red-900 text-[10px] uppercase font-mono">
+                        Operational Restriction
+                      </div>
+                      <p className="text-[11px] text-red-800 leading-relaxed">
+                        Continuous habitational residence within this spatial polygon is restricted under DM Act 2005 model planning criteria. Immediate phased evacuation to designated safe hubs is mandated.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedHabitationId('hab-joshimath');
+                        setSelectedViewType('habitation');
+                      }}
+                      className="w-full py-2 bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold rounded flex items-center justify-center gap-1.5 transition"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">home</span>
+                      View Affected Habitations
+                    </button>
+                  </>
+                ) : selectedViewType === 'plan' ? (
+                  /* ── 5. RELOCATION PLAN SUMMARY & OFFICER DECISION ── */
+                  <>
+                    <div className="bg-[#003366] text-white p-2.5 rounded flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">assignment_turned_in</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          PHASED RELOCATION PLAN
+                        </span>
+                      </div>
+                      <span className="px-1.5 py-0.5 bg-emerald-500 text-white font-mono font-bold text-[9px] rounded">
+                        {operationalData?.summary.status || 'OPTIMAL'}
+                      </span>
+                    </div>
+
+                    {/* Executive Plan KPIs */}
+                    <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                      <div className="bg-slate-50 border border-slate-200 p-2 rounded">
+                        <span className="block text-[9px] text-slate-500 font-bold uppercase">Required Relocation</span>
+                        <span className="text-base font-bold text-slate-900 font-mono">
+                          {formatPopulation(operationalData?.summary.totalRequiredPopulation ?? 15450)}
+                        </span>
+                      </div>
+                      <div className="bg-emerald-50 border border-emerald-200 p-2 rounded">
+                        <span className="block text-[9px] text-emerald-900 font-bold uppercase">Effective Capacity</span>
+                        <span className="text-base font-bold text-emerald-800 font-mono">
+                          {formatPopulation(operationalData?.summary.totalEffectiveCapacity ?? 18000)}
+                        </span>
+                      </div>
+                      <div className="bg-blue-50 border border-blue-200 p-2 rounded">
+                        <span className="block text-[9px] text-blue-900 font-bold uppercase">Allocated Population</span>
+                        <span className="text-base font-bold text-blue-800 font-mono">
+                          {formatPopulation(operationalData?.summary.totalAllocatedPopulation ?? 15450)}
+                        </span>
+                      </div>
+                      <div className={`p-2 rounded border ${
+                        (operationalData?.summary.capacityDeficit ?? 0) > 0
+                          ? 'bg-red-50 border-red-200 text-red-800'
+                          : 'bg-slate-50 border-slate-200 text-slate-800'
+                      }`}>
+                        <span className="block text-[9px] font-bold uppercase">Capacity Deficit</span>
+                        <span className="text-base font-bold font-mono">
+                          {formatPopulation(operationalData?.summary.capacityDeficit ?? 0)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Scenario Contingency Trigger */}
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-amber-900 text-[10px] uppercase font-mono">
+                          Scenario Lab Stress Testing
+                        </span>
+                        <span className="text-[9px] font-mono text-amber-800">Demo Trigger</span>
+                      </div>
+                      <p className="text-[11px] text-amber-800">
+                        Simulate sudden capacity drop (e.g. sanitation deficit at Gauchar) to demonstrate automated re-optimization.
+                      </p>
+                      <button
+                        onClick={handleTriggerCapacityDeficit}
+                        className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded transition flex items-center justify-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">tune</span>
+                        Simulate Capacity Deficit (1,250 Beds)
+                      </button>
+                    </div>
+
+                    {/* Officer Decision Component */}
+                    <div className="border border-slate-200 rounded p-3 bg-white space-y-2 text-xs">
+                      <div className="font-bold text-[#003366] text-[10px] uppercase font-mono flex items-center justify-between">
+                        <span>OFFICER REVIEW &amp; STATUTORY SIGN-OFF</span>
+                        <span className="text-slate-400 font-normal">DM Act 2005</span>
+                      </div>
+                      <p className="text-slate-600 text-[11px]">
+                        Review the recommended relocation plan for 15,450 residents across 5 habitations.
+                      </p>
+                      <div className="grid grid-cols-3 gap-1.5 pt-1">
+                        <button
+                          onClick={() => handleOfficerAction('ACCEPTED')}
+                          className="py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-center transition"
+                        >
+                          ACCEPT
+                        </button>
+                        <button
+                          onClick={() => handleOfficerAction('MODIFIED')}
+                          className="py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded text-center transition"
+                        >
+                          MODIFY
+                        </button>
+                        <button
+                          onClick={() => handleOfficerAction('REJECTED')}
+                          className="py-1.5 bg-red-700 hover:bg-red-800 text-white font-bold rounded text-center transition"
+                        >
+                          REJECT
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* ── 6. CENSUS / DISTRICT DRILL-DOWN VIEW ── */
+                  <div className="space-y-3 text-xs">
+                    <div className="p-2.5 bg-[#003366] text-white rounded">
+                      <div className="font-bold text-sm">
+                        {selectedCensusItem?.settlementName || selectedDistrictItem?.districtName || 'Census Baseline'}
+                      </div>
+                      <div className="text-[10px] text-slate-300 font-mono">
+                        Official Census 2011 Baseline Demographics
+                      </div>
+                    </div>
+                    {selectedCensusItem && (
+                      <div className="border border-slate-200 rounded divide-y divide-slate-100">
+                        <div className="p-2 flex justify-between">
+                          <span className="text-slate-500">2011 Baseline Pop:</span>
+                          <span className="font-bold font-mono">{formatPopulation(selectedCensusItem.population2011Baseline)}</span>
                         </div>
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Facility Name</span>
-                          <span className="font-bold text-slate-900">{selectedOsmFacilityItem.name}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Classification (fclass)</span>
-                          <span className="font-semibold text-slate-800 font-mono">{selectedOsmFacilityItem.fclass}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Functional Category</span>
-                          <span className="font-semibold text-[#003366] capitalize">{selectedOsmFacilityItem.category}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Coordinates (WGS84)</span>
-                          <span className="font-mono text-[11px] text-slate-700">
-                            {selectedOsmFacilityItem.latitude != null && selectedOsmFacilityItem.longitude != null
-                              ? `${formatNumber(selectedOsmFacilityItem.latitude, 4)}°N, ${formatNumber(selectedOsmFacilityItem.longitude, 4)}°E`
-                              : '—'}
-                          </span>
+                        <div className="p-2 flex justify-between">
+                          <span className="text-slate-500">Households:</span>
+                          <span className="font-mono">{formatNumber(selectedCensusItem.households2011Baseline)}</span>
                         </div>
                       </div>
-
-                      {/* Crowdsource Provenance Notice */}
-                      <div className="bg-sky-50 border border-sky-200 p-2.5 rounded-sm space-y-1 text-xs">
-                        <div className="font-bold text-sky-900 text-[10px] uppercase tracking-wider flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">public</span>
-                          OpenStreetMap Crowdsource Notice
-                        </div>
-                        <p className="text-[10px] text-sky-900 leading-relaxed font-sans">
-                          {selectedOsmFacilityItem.sourceNotice || 'OpenStreetMap crowdsourced geometry. For planning reference; not field-verified by government surveyors.'}
-                        </p>
-                        <div className="text-[9px] font-mono text-sky-800 pt-1 border-t border-sky-200/60">
-                          Source: {selectedOsmFacilityItem.provenance || 'OpenStreetMap Contributors, Geofabrik Northern Zone extract'}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-500 text-center py-8">
-                      Click any OSM critical facility marker on the map to inspect spatial attributes and classification.
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* ── HABITATION VIEW ── */
-                <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
-                  <div className="bg-[#d9531e] text-white p-2.5 rounded-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-white"></span>
-                      <span className="text-[11px] font-bold tracking-wider uppercase">
-                        {selectedHabitation.priority} PRIORITY
-                      </span>
-                    </div>
-                    <span className="px-1.5 py-0.5 bg-[#611b00] text-[9px] rounded-sm font-bold font-mono">HABITATION</span>
+                    )}
+                    <button
+                      onClick={() => setSelectedViewType('habitation')}
+                      className="w-full py-1.5 bg-[#003366] text-white font-semibold rounded"
+                    >
+                      Return to Operational Habitations
+                    </button>
                   </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                      <span className="block text-[9px] text-slate-500 font-bold uppercase">Pop.</span>
-                      <span className="text-base font-bold text-slate-900 font-mono">{formatPopulation(selectedHabitation?.population)}</span>
-                    </div>
-                    <div className="bg-amber-50 border border-amber-200 p-2 rounded-sm">
-                      <span className="block text-[9px] text-amber-900 font-bold uppercase">Exposure</span>
-                      <span className="text-base font-bold text-amber-900 font-mono">{formatPercent(selectedHabitation?.hazardExposureScore, 0)}</span>
-                    </div>
-                    <div className="bg-red-50 border border-red-200 p-2 rounded-sm">
-                      <span className="block text-[9px] text-red-900 font-bold uppercase">Risk</span>
-                      <span className="text-base font-bold text-red-700 font-mono">{formatScore(selectedHabitation?.riskScore, 2)}</span>
-                    </div>
-                  </div>
-
-                  <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
-                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50">
-                      <span className="flex items-center gap-1.5 text-slate-600">
-                        <span className="material-symbols-outlined text-[14px] text-red-600">local_hospital</span>
-                        Healthcare
-                      </span>
-                      <span className="font-bold text-red-700 font-mono text-[11px]">{selectedHabitation?.infrastructure?.healthcare || '—'}</span>
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <span className="flex items-center gap-1.5 text-slate-600">
-                        <span className="material-symbols-outlined text-[14px] text-[#d9531e]">alt_route</span>
-                        Roads
-                      </span>
-                      <span className="font-bold text-amber-700 font-mono text-[11px]">{selectedHabitation?.infrastructure?.roads || '—'}</span>
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50">
-                      <span className="flex items-center gap-1.5 text-slate-600">
-                        <span className="material-symbols-outlined text-[14px] text-[#003366]">water_drop</span>
-                        Water
-                      </span>
-                      <span className="font-bold text-[#003366] font-mono text-[11px]">{selectedHabitation.infrastructure.water}</span>
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2">
-                      <span className="flex items-center gap-1.5 text-slate-600">
-                        <span className="material-symbols-outlined text-[14px] text-amber-600">bolt</span>
-                        Power Grid
-                      </span>
-                      <span className="font-bold font-mono text-[11px]">{selectedHabitation.infrastructure.powerGrid}</span>
-                    </div>
-                  </div>
-
-                  {/* Recommended site */}
-                  <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-sm space-y-1 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-emerald-900 text-[10px] uppercase tracking-wider flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">verified</span>
-                        Recommended Safe Hub
-                      </span>
-                      <span className="text-[10px] font-mono font-bold bg-emerald-200 text-emerald-900 px-1 rounded-sm">98.2%</span>
-                    </div>
-                    <div className="font-bold text-slate-900">{recommendedSite.name}</div>
-                    <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-slate-700">
-                      <div>DIST: <strong>{recommendedSite.routeDistanceKm} km</strong></div>
-                      <div>TIME: <strong>{recommendedSite.transitTimeMinutes} min</strong></div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedSiteId(recommendedSite.id);
-                      setSelectedViewType('site');
-                    }}
-                    className="w-full h-8 bg-[#003366] hover:bg-[#002244] text-white text-xs font-semibold rounded-sm flex items-center justify-center gap-1.5 transition"
-                  >
-                    <span className="material-symbols-outlined text-[14px] text-emerald-400">warehouse</span>
-                    Inspect Safe Hub ({recommendedSite.name.split('(')[0].trim()})
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </aside>

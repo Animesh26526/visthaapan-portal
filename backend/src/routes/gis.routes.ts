@@ -19,9 +19,19 @@ import {
   getCensusSettlements,
   getOsmRoads,
   getOsmFacilities,
+  getHazardEvidence,
+  searchSettlements,
+  getSettlementIntelligence,
 } from '../controllers/gis.controller.js';
 
 export const gisRouter: Router = Router();
+
+// Phase 10: Settlement Search & Habitation-Level Intelligence Engine
+gisRouter.get('/settlements/search', searchSettlements);
+gisRouter.get('/settlements/:id/intelligence', getSettlementIntelligence);
+
+// Phase 10: Verified Spatial Hazard Evidence Features (Landslides, Earthquakes, River Corridors, Subsidence)
+gisRouter.get('/hazard-evidence', getHazardEvidence);
 
 // Districts GIS layer with Phase 5 AI risk attributions
 gisRouter.get('/districts', getGisDistricts);

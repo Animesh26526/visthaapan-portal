@@ -29,7 +29,9 @@
     "ingest:phase9:geo": "python scripts/ingest_phase9_geo.py",
     "test:phase9": "tsx test/phase9.test.ts",
     "test:phase9:geo": "tsx test/phase9_geo_enrichment.test.ts",
-    "test:all": "tsx test/foundation.test.ts && tsx test/db.test.ts && tsx test/pipeline.test.ts && tsx test/enrichment.test.ts && tsx test/ai.test.ts && tsx test/ai_validation.test.ts && tsx test/gis.test.ts && tsx test/capacity.test.ts && tsx test/optimization.test.ts && tsx test/phase9.test.ts && tsx test/phase9_geo_enrichment.test.ts"
+    "test:phase10": "tsx test/phase10_hazard_intelligence.test.ts",
+    "test:operations": "tsx test/operations_relocation_map.test.ts",
+    "test:all": "tsx test/foundation.test.ts && tsx test/db.test.ts && tsx test/pipeline.test.ts && tsx test/enrichment.test.ts && tsx test/ai.test.ts && tsx test/ai_validation.test.ts && tsx test/gis.test.ts && tsx test/capacity.test.ts && tsx test/optimization.test.ts && tsx test/phase9.test.ts && tsx test/phase9_geo_enrichment.test.ts && tsx test/phase10_hazard_intelligence.test.ts && tsx test/operations_relocation_map.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

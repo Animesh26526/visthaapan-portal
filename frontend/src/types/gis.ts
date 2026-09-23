@@ -272,3 +272,141 @@ export interface OsmFacilityProperties {
   sourceNotice: string;
 }
 
+export interface HazardEvidenceFeatureProperties {
+  id: string;
+  name: string;
+  hazardType: string;
+  semanticType: 'OBSERVED_EVENT' | 'INVENTORY' | 'SUSCEPTIBILITY' | 'HAZARD_MAP' | 'HISTORICAL_EVENT' | 'DERIVED_SPATIAL_BUFFER' | 'SIMULATED_DEMONSTRATION';
+  dataOrigin: 'REAL' | 'DERIVED' | 'SIMULATED' | 'QUARANTINED' | 'UNKNOWN';
+  source: string;
+  authority: string;
+  datasetName?: string;
+  datasetVersion?: string;
+  referenceDate?: string;
+  severity: string;
+  confidence: number;
+  methodology?: string;
+  provenance: string;
+  bufferMeters: number;
+  metadata?: Record<string, any>;
+}
+
+export interface SettlementHazardExposure {
+  hazardFeatureId: string;
+  name: string;
+  hazardType: string;
+  semanticType: string;
+  dataOrigin: 'REAL' | 'DERIVED' | 'SIMULATED' | 'QUARANTINED' | 'UNKNOWN';
+  relationship: 'WITHIN' | 'INTERSECTS' | 'NEAR' | 'OUTSIDE' | 'UNKNOWN';
+  distanceMeters: number;
+  exposureClassification: 'HARD_EXCLUSION' | 'WARNING' | 'INFORMATIONAL' | 'UNKNOWN';
+  interpretation: string;
+  source: string;
+  authority: string;
+  confidence: number;
+}
+
+export interface SettlementHistoricalDisaster {
+  eventName: string;
+  disasterType: string;
+  eventDate?: string;
+  spatialPrecision: string;
+  distanceMeters?: number;
+  deathsTotal: number;
+  housesDamagedTotal: number;
+  source: string;
+  provenance: string;
+}
+
+export interface SettlementNearbyInfrastructure {
+  nearestRoad?: {
+    name: string;
+    fclass: string;
+    distanceMeters: number;
+    provenance: string;
+  } | null;
+  nearestFacility?: {
+    name: string;
+    category: string;
+    fclass: string;
+    distanceMeters: number;
+    provenance: string;
+  } | null;
+}
+
+export interface SettlementIntelligenceResponse {
+  settlement: {
+    id: string;
+    settlementCode: string;
+    settlementName: string;
+    settlementType: 'TOWN' | 'VILLAGE';
+    coordinates: {
+      latitude: number | null;
+      longitude: number | null;
+    };
+  };
+  administration: {
+    stateCode: string;
+    stateName: string;
+    districtCode: string;
+    districtName: string;
+    subdistrictCode?: string;
+    subdistrictName?: string;
+    cdBlockName?: string;
+  };
+  census: {
+    population2011Baseline: number | null;
+    households2011Baseline: number | null;
+    malePopulation2011: number | null;
+    femalePopulation2011: number | null;
+    infrastructureMarkers: Record<string, any>;
+    provenance: string;
+    temporalNotice: string;
+  };
+  districtAI: {
+    districtName: string;
+    riskScore: number | null;
+    priorityTier: string | null;
+    primaryHazard: string | null;
+    modelLevel: 'DISTRICT_LEVEL_ONLY';
+    disclaimer: string;
+  };
+  hazards: SettlementHazardExposure[];
+  terrain: {
+    elevationMeters: number | null;
+    slopeDegrees: number | null;
+    aspectDegrees: number | null;
+    terrainStatus: 'AVAILABLE' | 'UNAVAILABLE' | 'OUT_OF_BOUNDS';
+    source: string;
+    provenance: string;
+    note: string;
+  };
+  historicalEvidence: SettlementHistoricalDisaster[];
+  nearbyInfrastructure: SettlementNearbyInfrastructure;
+  dataQuality: {
+    confidence: number;
+    spatialPrecision: string;
+    hazardEvidenceCount: number;
+    analyzedAt: string;
+    analysisVersion: string;
+    overallStatus: 'SUFFICIENT_EVIDENCE' | 'LIMITED_EVIDENCE' | 'NO_SPATIAL_HAZARD_OBSERVED';
+  };
+}
+
+export interface SettlementSearchResult {
+  id: string;
+  settlementCode: string;
+  settlementName: string;
+  settlementType: 'TOWN' | 'VILLAGE';
+  districtCode: string;
+  districtName: string;
+  subdistrictCode?: string;
+  subdistrictName?: string;
+  population2011Baseline: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  hasHazardExclusions: boolean;
+  hasHazardWarnings: boolean;
+  exposureCount: number;
+}
+
