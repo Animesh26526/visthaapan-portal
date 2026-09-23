@@ -9,6 +9,7 @@ export interface OperationalHazardZone {
   id: string;
   name: string;
   hazardType: string;
+  hazardCategory?: 'AREA' | 'CORRIDOR';
   severity: 'CRITICAL' | 'HIGH' | 'WARNING';
   areaSqKm: number;
   affectedHabitationsCount: number;
@@ -81,6 +82,8 @@ export interface OperationalRoute {
   distanceKm: number;
   transitTimeMinutes: number;
   roadName: string;
+  roadRef?: string;
+  roadClassification?: string;
   roadNetwork: string;
   status: 'Route Available' | 'Detour Active' | 'Corridor Impassable';
   phase: 'Immediate' | 'Short Term' | 'Medium Term' | 'Long Term';

@@ -89,7 +89,7 @@ function geoJsonLineStringToLatLngs(geom: any): [number, number][][] {
 // Vulnerable Habitation Marker
 function getHabitationIcon(priority: string, isSelected: boolean) {
   const isImm = priority === 'Immediate';
-  const size = isSelected ? 34 : 28;
+  const size = isSelected ? 38 : 28;
   const bg = isImm ? '#dc2626' : '#d97706';
   return L.divIcon({
     className: '',
@@ -97,15 +97,15 @@ function getHabitationIcon(priority: string, isSelected: boolean) {
       <div style="
         width: ${size}px; height: ${size}px;
         background: ${bg};
-        border: 2.5px solid #ffffff;
+        border: ${isSelected ? '3px solid #ffffff' : '2.5px solid #ffffff'};
         border-radius: 50%;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+        box-shadow: ${isSelected ? '0 0 0 3px #1d4ed8, 0 4px 14px rgba(0,0,0,0.5)' : '0 3px 10px rgba(0,0,0,0.4)'};
         display: flex; align-items: center; justify-content: center;
         color: #ffffff;
         transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
-        transition: transform 0.2s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
       " title="${priority} Priority Habitation">
-        <span class="material-symbols-outlined" style="font-size:${isSelected ? '18px' : '15px'}; font-weight:bold;">home</span>
+        <span class="material-symbols-outlined" style="font-size:${isSelected ? '20px' : '15px'}; font-weight:bold;">home</span>
       </div>
     `,
     iconSize: [size, size],
@@ -315,6 +315,7 @@ export const RiskGIS: React.FC = () => {
   const [selectedViewType, setSelectedViewType] = useState<
     'habitation' | 'site' | 'route' | 'hazardZone' | 'plan' | 'district' | 'census'
   >('habitation');
+  const [showRouteCard, setShowRouteCard] = useState<boolean>(false);
 
   // Primary Operational Layer Visibility (Clutter-Free Defaults)
   const [showHazardZones, setShowHazardZones] = useState(true);
@@ -520,13 +521,19 @@ export const RiskGIS: React.FC = () => {
     try {
       await recordOfficerDecision(
         action,
-        `Officer [${action}] relocation plan under DM Act 2005 Section 30(2)(v) operational mandate.`
+        `Officer [${action}] recommendation for relocation allocation.`
       );
     } catch {
       // Fallback
     }
-    setOfficerDecisionMessage(`Officer Decision [${action}] recorded in statutory DDMA ledger.`);
-    setTimeout(() => setOfficerDecisionMessage(null), 6000);
+    if (action === 'ACCEPTED') {
+      setOfficerDecisionMessage('Decision Recorded');
+    } else if (action === 'MODIFIED') {
+      setOfficerDecisionMessage('Officer Modification Recorded');
+    } else {
+      setOfficerDecisionMessage('Plan Rejection Recorded');
+    }
+    setTimeout(() => setOfficerDecisionMessage(null), 5000);
   };
 
   return (
@@ -921,7 +928,8 @@ export const RiskGIS: React.FC = () => {
               const polys = geoJsonGeometryToPolygons(zone.geometry);
               const isSelected = selectedHazardZoneId === zone.id;
               const isCritical = zone.severity === 'CRITICAL';
-              const strokeColor = isCritical ? '#b91c1c' : '#ea580c';
+              const isCorridor = zone.hazardCategory === 'CORRIDOR' || zone.id.includes('corridor');
+              const strokeColor = isCritical ? '#dc2626' : '#d97706';
               const fillColor = isCritical ? '#ef4444' : '#f97316';
 
               return polys.map((ring, rIdx) => (
@@ -930,10 +938,10 @@ export const RiskGIS: React.FC = () => {
                   positions={ring}
                   pathOptions={{
                     color: strokeColor,
-                    weight: isSelected ? 3.5 : 2.5,
+                    weight: isSelected ? 3 : 2,
                     fillColor: fillColor,
-                    fillOpacity: isCritical ? 0.35 : 0.22,
-                    dashArray: isCritical ? '6, 4' : undefined,
+                    fillOpacity: isCritical ? 0.25 : 0.18,
+                    dashArray: isCorridor ? '5, 5' : undefined,
                   }}
                   eventHandlers={{
                     click: () => {
@@ -944,12 +952,24 @@ export const RiskGIS: React.FC = () => {
                   }}
                 >
                   <Popup>
-                    <div className="text-xs font-sans min-w-[230px]">
-                      <div className="font-bold text-red-800 text-sm flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">warning</span>
-                        {zone.name}
+                    <div className="text-xs font-sans min-w-[230px] p-0.5">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                        <span className="font-bold text-red-800 text-sm flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[16px] text-red-700">
+                            {isCorridor ? 'water_loss' : 'warning'}
+                          </span>
+                          {zone.name}
+                        </span>
+                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold font-mono text-white ${
+                          isCritical ? 'bg-red-700' : 'bg-amber-600'
+                        }`}>
+                          {zone.severity}
+                        </span>
                       </div>
-                      <div className="text-slate-600 font-mono text-[10px] mt-0.5">
+                      <div className="text-amber-900 font-bold uppercase font-mono text-[9px] mt-1">
+                        {isCorridor ? 'Linear Riverine Hazard Corridor' : 'Spatial Hazard Restricted Area'}
+                      </div>
+                      <div className="text-slate-500 font-mono text-[10px] mt-0.5">
                         {zone.mandateReference}
                       </div>
                       <div className="mt-2 border-t border-slate-200 pt-1 space-y-1">
@@ -958,8 +978,8 @@ export const RiskGIS: React.FC = () => {
                           <span className="font-bold text-red-700">{zone.hazardType}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500">Severity:</span>
-                          <span className="font-bold font-mono">{zone.severity}</span>
+                          <span className="text-slate-500">Geometry Type:</span>
+                          <span className="font-mono text-slate-800 font-semibold">{isCorridor ? 'Riparian Buffer Corridor' : 'Spatial Polygon'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Affected Area:</span>
@@ -977,7 +997,7 @@ export const RiskGIS: React.FC = () => {
                             setSelectedViewType('hazardZone');
                             setIsDrawerCollapsed(false);
                           }}
-                          className="w-full py-1 bg-red-700 hover:bg-red-800 text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1"
+                          className="w-full py-1.5 bg-red-700 hover:bg-red-800 text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1 shadow-xs"
                         >
                           <span className="material-symbols-outlined text-[13px]">analytics</span>
                           Inspect Hazard Zone &amp; Habitations
@@ -989,53 +1009,174 @@ export const RiskGIS: React.FC = () => {
               ));
             })}
 
-            {/* ── 2. ACTIVE MAPPED ROAD TRANSPORTATION ROUTES (FOLLOWING OSM HIGHWAY NETWORK) ── */}
+            {/* ── 2. ACTIVE MAPPED ROAD TRANSPORTATION ROUTES (OSM HIGHWAY NETWORK) ── */}
+            {/* Z-Order: Render faint non-selected routes first, then dominant selected route */}
             {showRelocationRoutes && operationalData?.routes.map((route) => {
-              const isSelected =
+              const isSelectedRoute =
                 selectedRouteId === route.id ||
-                selectedHabitationId === route.fromHabitationId ||
-                selectedSiteId === route.toSiteId;
+                (selectedHabitationId != null && selectedHabitationId === route.fromHabitationId);
               const coords = route.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number]);
 
+              if (isSelectedRoute) {
+                return (
+                  <React.Fragment key={`op-route-${route.id}`}>
+                    {/* Outer Casing for Selected Route */}
+                    <Polyline
+                      positions={coords}
+                      pathOptions={{
+                        color: '#1e3a8a',
+                        weight: 7,
+                        opacity: 0.85,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                      }}
+                      eventHandlers={{
+                        click: () => {
+                          setSelectedRouteId(route.id);
+                          setSelectedHabitationId(route.fromHabitationId);
+                          setSelectedSiteId(route.toSiteId);
+                          setSelectedViewType('route');
+                          setShowRouteCard(true);
+                          setIsDrawerCollapsed(false);
+                        },
+                      }}
+                    />
+                    {/* Core Line for Selected Route (Thick, High-Contrast Blue) */}
+                    <Polyline
+                      positions={coords}
+                      pathOptions={{
+                        color: '#2563eb',
+                        weight: 4,
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                      }}
+                      eventHandlers={{
+                        click: () => {
+                          setSelectedRouteId(route.id);
+                          setSelectedHabitationId(route.fromHabitationId);
+                          setSelectedSiteId(route.toSiteId);
+                          setSelectedViewType('route');
+                          setShowRouteCard(true);
+                          setIsDrawerCollapsed(false);
+                        },
+                      }}
+                    >
+                      <Popup>
+                        <div className="text-xs font-sans min-w-[210px] p-0.5">
+                          <div className="font-bold text-[#003366] text-xs font-mono uppercase tracking-wider pb-1 border-b border-slate-100 flex items-center justify-between">
+                            <span className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">alt_route</span>
+                              ROAD
+                            </span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] bg-blue-100 text-blue-800 font-bold">
+                              SELECTED ROUTE
+                            </span>
+                          </div>
+                          <table className="w-full mt-2 text-[11px]">
+                            <tbody>
+                              <tr>
+                                <td className="text-slate-500 py-0.5 pr-2">Name:</td>
+                                <td className="font-bold text-slate-900 font-mono">
+                                  {route.roadName || route.roadRef || 'Unnamed mapped road'}
+                                </td>
+                              </tr>
+                              {route.roadRef && (
+                                <tr>
+                                  <td className="text-slate-500 py-0.5 pr-2">Reference:</td>
+                                  <td className="font-semibold text-slate-800 font-mono">{route.roadRef}</td>
+                                </tr>
+                              )}
+                              <tr>
+                                <td className="text-slate-500 py-0.5 pr-2">Classification:</td>
+                                <td className="text-slate-700">{route.roadClassification || 'Primary / National Highway'}</td>
+                              </tr>
+                              <tr className="border-t border-slate-100">
+                                <td className="text-slate-500 py-0.5 pr-2 pt-1">Corridor:</td>
+                                <td className="font-semibold text-[#003366] pt-1">
+                                  {route.fromHabitationName} → {route.toSiteName}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="text-slate-500 py-0.5 pr-2">Distance:</td>
+                                <td className="font-mono text-slate-800">{route.distanceKm} km ({route.transitTimeMinutes} min)</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </Popup>
+                    </Polyline>
+                  </React.Fragment>
+                );
+              }
+
+              // Non-selected routes: very faint and thin, minimal clutter
               return (
-                <React.Fragment key={`op-route-${route.id}`}>
-                  {/* Glowing Underlay Casing */}
-                  <Polyline
-                    positions={coords}
-                    pathOptions={{
-                      color: isSelected ? '#1e3a8a' : '#0369a1',
-                      weight: isSelected ? 8 : 5,
-                      opacity: isSelected ? 0.95 : 0.6,
-                      lineCap: 'round',
-                      lineJoin: 'round',
-                    }}
-                    eventHandlers={{
-                      click: () => {
-                        setSelectedRouteId(route.id);
-                        setSelectedHabitationId(route.fromHabitationId);
-                        setSelectedSiteId(route.toSiteId);
-                        setSelectedViewType('route');
-                        setIsDrawerCollapsed(false);
-                      },
-                    }}
-                  />
-                  {/* Highlight Core Line */}
-                  <Polyline
-                    positions={coords}
-                    pathOptions={{
-                      color: isSelected ? '#38bdf8' : '#7dd3fc',
-                      weight: isSelected ? 3.5 : 2.2,
-                      opacity: 1,
-                      dashArray: isSelected ? undefined : '8, 6',
-                      lineCap: 'round',
-                      lineJoin: 'round',
-                    }}
-                  />
-                </React.Fragment>
+                <Polyline
+                  key={`op-route-${route.id}`}
+                  positions={coords}
+                  pathOptions={{
+                    color: '#93c5fd',
+                    weight: 1.5,
+                    opacity: 0.25,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedRouteId(route.id);
+                      setSelectedHabitationId(route.fromHabitationId);
+                      setSelectedSiteId(route.toSiteId);
+                      setSelectedViewType('route');
+                      setShowRouteCard(true);
+                      setIsDrawerCollapsed(false);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[200px] p-0.5">
+                      <div className="font-bold text-[#003366] text-xs font-mono uppercase tracking-wider pb-1 border-b border-slate-100 flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">alt_route</span>
+                          ROAD
+                        </span>
+                        <span className="px-1.5 py-0.2 rounded text-[9px] bg-slate-100 text-slate-600 font-bold">
+                          OSM MAPPED
+                        </span>
+                      </div>
+                      <table className="w-full mt-2 text-[11px]">
+                        <tbody>
+                          <tr>
+                            <td className="text-slate-500 py-0.5 pr-2">Name:</td>
+                            <td className="font-bold text-slate-900 font-mono">
+                              {route.roadName || route.roadRef || 'Unnamed mapped road'}
+                            </td>
+                          </tr>
+                          {route.roadRef && (
+                            <tr>
+                              <td className="text-slate-500 py-0.5 pr-2">Reference:</td>
+                              <td className="font-semibold text-slate-800 font-mono">{route.roadRef}</td>
+                            </tr>
+                          )}
+                          <tr>
+                            <td className="text-slate-500 py-0.5 pr-2">Classification:</td>
+                            <td className="text-slate-700">{route.roadClassification || 'Primary / National Highway'}</td>
+                          </tr>
+                          <tr className="border-t border-slate-100">
+                            <td className="text-slate-500 py-0.5 pr-2 pt-1">Corridor:</td>
+                            <td className="font-semibold text-slate-800 pt-1">
+                              {route.fromHabitationName} → {route.toSiteName}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </Popup>
+                </Polyline>
               );
             })}
 
-            {/* ── 3. VULNERABLE HABITATIONS (CLEAN OPERATIONAL MARKERS) ── */}
+            {/* ── 3. VULNERABLE HABITATIONS (CLEAN OPERATIONAL MARKERS, ABOVE ROUTES) ── */}
             {showHabitations && operationalData?.habitations.map((hab) => {
               const isSelected = selectedHabitationId === hab.id;
               const icon = getHabitationIcon(hab.relocationPriority, isSelected);
@@ -1045,6 +1186,7 @@ export const RiskGIS: React.FC = () => {
                   key={`op-hab-${hab.id}`}
                   position={[hab.coordinates.lat, hab.coordinates.lng]}
                   icon={icon}
+                  zIndexOffset={isSelected ? 1000 : 500}
                   eventHandlers={{
                     click: () => {
                       setSelectedHabitationId(hab.id);
@@ -1056,52 +1198,57 @@ export const RiskGIS: React.FC = () => {
                   }}
                 >
                   <Popup>
-                    <div className="text-xs font-sans min-w-[220px]">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-[#003366] text-sm">{hab.name}</span>
+                    <div className="text-xs font-sans min-w-[220px] p-0.5">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                        <span className="font-bold text-[#003366] text-sm uppercase">{hab.name}</span>
                         <span
                           className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono text-white ${
-                            hab.relocationPriority === 'Immediate' ? 'bg-red-700' : 'bg-amber-600'
+                            hab.relocationPriority.toUpperCase() === 'IMMEDIATE' ? 'bg-red-700' : 'bg-amber-600'
                           }`}
                         >
-                          {hab.relocationPriority}
+                          {hab.relocationPriority.toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-slate-500 font-mono text-[10px]">
+                      <div className="text-slate-500 font-mono text-[10px] mt-0.5">
                         {hab.subDistrict}, {hab.district}
                       </div>
 
                       <table className="w-full mt-2 text-[11px]">
                         <tbody>
                           <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Population</td>
+                            <td className="text-slate-500 pr-2 py-0.5">Population:</td>
                             <td className="font-bold font-mono text-slate-900">{formatPopulation(hab.population)}</td>
                           </tr>
                           <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Primary Hazard</td>
+                            <td className="text-slate-500 pr-2 py-0.5">Primary Hazard:</td>
                             <td className="font-semibold text-red-700">{hab.primaryHazard}</td>
                           </tr>
                           <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Safe Destination</td>
+                            <td className="text-slate-500 pr-2 py-0.5">Relocation Priority:</td>
+                            <td className="font-bold font-mono text-red-700 uppercase">{hab.relocationPriority}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Safe Destination:</td>
                             <td className="font-bold text-emerald-800">{hab.recommendedDestinationName}</td>
                           </tr>
                           <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Road Distance</td>
-                            <td className="font-mono">{hab.routeDistanceKm} km ({hab.transitTimeMinutes} min)</td>
+                            <td className="text-slate-500 pr-2 py-0.5">Road Distance:</td>
+                            <td className="font-mono text-slate-800">{hab.routeDistanceKm} km</td>
                           </tr>
                         </tbody>
                       </table>
 
-                      <div className="mt-2.5 space-y-1">
+                      <div className="mt-2.5">
                         <button
                           onClick={() => {
                             setSelectedHabitationId(hab.id);
                             setSelectedSiteId(hab.recommendedDestinationId);
                             setSelectedRouteId(hab.routeId);
-                            setSelectedViewType('habitation');
+                            setSelectedViewType('route');
+                            setShowRouteCard(true);
                             setIsDrawerCollapsed(false);
                           }}
-                          className="w-full py-1 bg-[#003366] hover:bg-[#002244] text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1"
+                          className="w-full py-1.5 bg-[#003366] hover:bg-[#002244] text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1 shadow-xs"
                         >
                           <span className="material-symbols-outlined text-[13px]">route</span>
                           Inspect Relocation Requirement &amp; Route
@@ -1113,7 +1260,7 @@ export const RiskGIS: React.FC = () => {
               );
             })}
 
-            {/* ── 4. SAFE RELOCATION SITES (CLEAN OPERATIONAL HUBS) ── */}
+            {/* ── 4. SAFE RELOCATION SITES (CLEAN OPERATIONAL HUBS, ABOVE ROUTES) ── */}
             {showRelocationSites && operationalData?.relocationSites.map((site) => {
               const isSelected = selectedSiteId === site.id;
               const icon = getRelocationSiteIcon(site.suitability, isSelected);
@@ -1123,6 +1270,7 @@ export const RiskGIS: React.FC = () => {
                   key={`op-site-${site.id}`}
                   position={[site.coordinates.lat, site.coordinates.lng]}
                   icon={icon}
+                  zIndexOffset={isSelected ? 900 : 400}
                   eventHandlers={{
                     click: () => {
                       setSelectedSiteId(site.id);
@@ -1132,38 +1280,46 @@ export const RiskGIS: React.FC = () => {
                   }}
                 >
                   <Popup>
-                    <div className="text-xs font-sans min-w-[220px]">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900 text-sm">{site.name}</span>
+                    <div className="text-xs font-sans min-w-[220px] p-0.5">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                        <span className="font-bold text-slate-900 text-sm uppercase">{site.name}</span>
                         <span
                           className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono text-white ${
                             site.suitability === 'RESTRICTED' ? 'bg-red-700' : 'bg-emerald-700'
                           }`}
                         >
-                          {site.suitability}
+                          {site.suitability === 'RESTRICTED' ? 'RESTRICTED' : 'Suitable'}
                         </span>
                       </div>
-                      <div className="text-slate-500 font-mono text-[10px]">
+                      <div className="text-slate-500 font-mono text-[10px] mt-0.5">
                         {site.type} • {site.district}
                       </div>
 
                       <table className="w-full mt-2 text-[11px]">
                         <tbody>
                           <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Effective Capacity</td>
+                            <td className="text-slate-500 pr-2 py-0.5">Nominal Capacity:</td>
+                            <td className="font-mono text-slate-800">{formatPopulation(site.nominalCapacity)}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Effective Capacity:</td>
                             <td className="font-bold font-mono text-emerald-800">{formatPopulation(site.effectiveCapacity)}</td>
                           </tr>
                           <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Allocated Population</td>
+                            <td className="text-slate-500 pr-2 py-0.5">Allocated:</td>
                             <td className="font-bold font-mono text-slate-900">{formatPopulation(site.allocatedPopulation)}</td>
                           </tr>
                           <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Remaining Capacity</td>
+                            <td className="text-slate-500 pr-2 py-0.5">Remaining:</td>
                             <td className="font-bold font-mono text-blue-700">{formatPopulation(site.remainingCapacity)}</td>
                           </tr>
                           <tr>
-                            <td className="text-slate-500 pr-2 py-0.5">Road Access</td>
-                            <td className="font-mono text-[10px]">{site.roadAccess}</td>
+                            <td className="text-slate-500 pr-2 py-0.5">Bottleneck:</td>
+                            <td className="font-semibold text-amber-800">{site.bottleneck}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Suitability:</td>
+                            <td className="font-semibold text-emerald-800">{site.suitability === 'RESTRICTED' ? 'Restricted' : 'Suitable'}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -1175,7 +1331,7 @@ export const RiskGIS: React.FC = () => {
                             setSelectedViewType('site');
                             setIsDrawerCollapsed(false);
                           }}
-                          className="w-full py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1"
+                          className="w-full py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] rounded transition flex items-center justify-center gap-1 shadow-xs"
                         >
                           <span className="material-symbols-outlined text-[13px]">warehouse</span>
                           Inspect Carrying Capacity &amp; Inbound Corridors
@@ -1187,13 +1343,44 @@ export const RiskGIS: React.FC = () => {
               );
             })}
 
-            {/* ── OPTIONAL: FULL OSM ROAD NETWORK (HIDDEN BY DEFAULT) ── */}
+            {/* ── OPTIONAL: FULL OSM ROAD NETWORK (HIDDEN BY DEFAULT, ROAD-CLICK POPUP) ── */}
             {showOsmRoads && osmRoadsData?.features?.map((road) => {
               const lines = geoJsonLineStringToLatLngs(road.geometry);
               if (!lines.length) return null;
               const style = getOsmRoadStyle(road.properties.fclass);
+              const roadName = road.properties.name || road.properties.ref || 'Unnamed mapped road';
+              const roadRef = road.properties.ref;
+              const roadClass = road.properties.fclass || 'Highway';
+
               return lines.map((coords, lIdx) => (
-                <Polyline key={`osm-r-${road.id}-${lIdx}`} positions={coords} pathOptions={style} />
+                <Polyline key={`osm-r-${road.id}-${lIdx}`} positions={coords} pathOptions={style}>
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[190px] p-0.5">
+                      <div className="font-bold text-[#003366] text-xs font-mono uppercase tracking-wider pb-1 border-b border-slate-100 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">signpost</span>
+                        ROAD
+                      </div>
+                      <table className="w-full mt-2 text-[11px]">
+                        <tbody>
+                          <tr>
+                            <td className="text-slate-500 py-0.5 pr-2">Name:</td>
+                            <td className="font-bold text-slate-900 font-mono">{roadName}</td>
+                          </tr>
+                          {roadRef && (
+                            <tr>
+                              <td className="text-slate-500 py-0.5 pr-2">Reference:</td>
+                              <td className="font-semibold text-slate-800 font-mono">{roadRef}</td>
+                            </tr>
+                          )}
+                          <tr>
+                            <td className="text-slate-500 py-0.5 pr-2">Classification:</td>
+                            <td className="text-slate-700 capitalize">{roadClass}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </Popup>
+                </Polyline>
               ));
             })}
 
@@ -1265,35 +1452,63 @@ export const RiskGIS: React.FC = () => {
             )}
           </MapContainer>
 
-          {/* ── FLOATING ROUTE INFORMATION CARD (Prominently displayed when route is selected) ── */}
-          {currentRoute && showRelocationRoutes && (
-            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs border border-slate-200 rounded shadow-md p-3 max-w-sm text-xs z-[1000] font-sans">
-              <div className="flex items-center justify-between pb-1 border-b border-slate-100 mb-2">
+          {/* ── FLOATING ROUTE INFORMATION CARD (Docked bottom-left, displayed on explicit inspection) ── */}
+          {showRouteCard && currentRoute && showRelocationRoutes && (
+            <div className="absolute bottom-24 left-3 bg-white/98 backdrop-blur-xs border border-slate-200 rounded-lg shadow-xl p-3 w-80 text-xs z-[1000] font-sans">
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 mb-2">
                 <span className="font-bold text-[#003366] text-[10px] uppercase tracking-wider flex items-center gap-1 font-mono">
                   <span className="material-symbols-outlined text-[14px]">alt_route</span>
                   TRANSPORTATION ROUTE
                 </span>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-emerald-100 text-emerald-800">
-                  {currentRoute.status}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold font-mono bg-emerald-100 text-emerald-800">
+                    Route Available
+                  </span>
+                  <button
+                    onClick={() => setShowRouteCard(false)}
+                    className="text-slate-400 hover:text-slate-700 p-0.5"
+                    title="Dismiss Route Card"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
                 <span>{currentRoute.fromHabitationName}</span>
                 <span className="text-blue-600">→</span>
                 <span>{currentRoute.toSiteName}</span>
               </div>
-              <div className="mt-1 text-[11px] text-slate-600 font-mono">
-                {currentRoute.roadName} • {currentRoute.roadNetwork}
+              <div className="mt-1 text-[11px] text-slate-700 font-mono font-semibold">
+                {currentRoute.roadName} {currentRoute.roadRef && currentRoute.roadRef !== currentRoute.roadName ? `[${currentRoute.roadRef}]` : ''}
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-center bg-slate-50 p-1.5 rounded border border-slate-100 font-mono">
+              <div className="text-[10px] text-slate-500 font-mono">
+                Mapped Road Route
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-center bg-slate-50 p-1.5 rounded border border-slate-100 font-mono text-[10px]">
                 <div>
-                  <span className="block text-[9px] text-slate-400">DISTANCE</span>
+                  <span className="block text-slate-400 text-[8px] uppercase">Distance</span>
                   <span className="font-bold text-slate-800">{currentRoute.distanceKm} km</span>
                 </div>
                 <div>
-                  <span className="block text-[9px] text-slate-400">EST. TRANSIT</span>
+                  <span className="block text-slate-400 text-[8px] uppercase">Estimated Transit</span>
                   <span className="font-bold text-blue-700">{currentRoute.transitTimeMinutes} min</span>
                 </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-[10px] text-slate-600 font-mono pt-1.5 border-t border-slate-100">
+                <span>Evacuation Phase:</span>
+                <span className="font-bold text-[#d9531e]">{currentRoute.phase}</span>
+              </div>
+              <div className="mt-2">
+                <button
+                  onClick={() => {
+                    setSelectedHabitationId(currentRoute.fromHabitationId);
+                    setSelectedViewType('habitation');
+                    setIsDrawerCollapsed(false);
+                  }}
+                  className="w-full py-1.5 bg-[#003366] hover:bg-[#002244] text-white text-[10px] font-bold rounded transition text-center shadow-xs"
+                >
+                  Inspect Relocation Requirement
+                </button>
               </div>
             </div>
           )}
@@ -1569,8 +1784,52 @@ export const RiskGIS: React.FC = () => {
                           Mapped Road Network:
                         </div>
                         <div className="font-mono text-slate-800 text-[11px] pl-5">
-                          {currentRoute.roadName} ({currentRoute.distanceKm} km • {currentRoute.transitTimeMinutes} min)
+                          {currentRoute.roadName} {currentRoute.roadRef && currentRoute.roadRef !== currentRoute.roadName ? `[${currentRoute.roadRef}]` : ''} ({currentRoute.distanceKm} km • {currentRoute.transitTimeMinutes} min)
                         </div>
+                      </div>
+                    </div>
+
+                    {/* RELOCATION TIMELINE (PS 26191 Section 16 Requirement) */}
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#003366] text-[10px] uppercase font-mono tracking-wider">
+                          RELOCATION TIMELINE
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-500">Phased Execution</span>
+                      </div>
+                      <div className="space-y-1 font-mono text-xs">
+                        {[
+                          { key: 'Immediate', label: 'IMMEDIATE' },
+                          { key: 'Short Term', label: 'SHORT TERM' },
+                          { key: 'Medium Term', label: 'MEDIUM TERM' },
+                          { key: 'Long Term', label: 'LONG TERM' },
+                        ].map((step) => {
+                          const isCurrentPhase = currentHabitation.relocationPhase === step.key;
+                          return (
+                            <div
+                              key={step.key}
+                              className={`flex items-center justify-between px-2.5 py-1 rounded transition ${
+                                isCurrentPhase
+                                  ? step.key === 'Immediate'
+                                    ? 'bg-red-100 text-red-900 font-bold border border-red-300'
+                                    : 'bg-blue-100 text-blue-900 font-bold border border-blue-300'
+                                  : 'text-slate-400 font-normal'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm ${isCurrentPhase ? (step.key === 'Immediate' ? 'text-red-700' : 'text-blue-700') : 'text-slate-400'}`}>
+                                  {isCurrentPhase ? '●' : '○'}
+                                </span>
+                                <span className="tracking-wide">{step.label}</span>
+                              </div>
+                              {isCurrentPhase && (
+                                <span className="text-[9px] px-1.5 py-0.2 bg-white/90 rounded font-sans uppercase font-bold text-red-800">
+                                  Active Phase
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1593,6 +1852,7 @@ export const RiskGIS: React.FC = () => {
                         onClick={() => {
                           setSelectedRouteId(currentHabitation.routeId);
                           setSelectedViewType('route');
+                          setShowRouteCard(true);
                         }}
                         className="w-full py-2 bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold rounded flex items-center justify-center gap-1.5 transition shadow-xs"
                       >
@@ -1733,6 +1993,18 @@ export const RiskGIS: React.FC = () => {
                         <span className="text-slate-500">Mapped Highway:</span>
                         <span className="font-bold text-slate-800 font-mono">{currentRoute.roadName}</span>
                       </div>
+                      {currentRoute.roadRef && (
+                        <div className="p-2.5 flex justify-between">
+                          <span className="text-slate-500">Road Reference:</span>
+                          <span className="font-bold text-blue-700 font-mono">{currentRoute.roadRef}</span>
+                        </div>
+                      )}
+                      {currentRoute.roadClassification && (
+                        <div className="p-2.5 flex justify-between">
+                          <span className="text-slate-500">Classification:</span>
+                          <span className="font-semibold text-slate-700">{currentRoute.roadClassification}</span>
+                        </div>
+                      )}
                       <div className="p-2.5 flex justify-between">
                         <span className="text-slate-500">Road Distance:</span>
                         <span className="font-bold font-mono text-slate-900">{currentRoute.distanceKm} km</span>
@@ -1775,6 +2047,12 @@ export const RiskGIS: React.FC = () => {
                       <div className="p-2.5 flex justify-between">
                         <span className="text-slate-500">Zone Name:</span>
                         <span className="font-bold text-slate-900">{currentHazardZone.name}</span>
+                      </div>
+                      <div className="p-2.5 flex justify-between">
+                        <span className="text-slate-500">Zone Category:</span>
+                        <span className="font-bold text-slate-800">
+                          {currentHazardZone.hazardCategory === 'CORRIDOR' ? 'CORRIDOR-TYPE HAZARD / RIPARIAN BUFFER' : 'AREA HAZARD / RESTRICTED ENVELOPE'}
+                        </span>
                       </div>
                       <div className="p-2.5 flex justify-between">
                         <span className="text-slate-500">Hazard Type:</span>
@@ -1888,8 +2166,11 @@ export const RiskGIS: React.FC = () => {
                     {/* Officer Decision Component */}
                     <div className="border border-slate-200 rounded p-3 bg-white space-y-2 text-xs">
                       <div className="font-bold text-[#003366] text-[10px] uppercase font-mono flex items-center justify-between">
-                        <span>OFFICER REVIEW &amp; STATUTORY SIGN-OFF</span>
+                        <span>OFFICER REVIEW</span>
                         <span className="text-slate-400 font-normal">DM Act 2005</span>
+                      </div>
+                      <div className="text-xs font-bold text-slate-800">
+                        Recommended Relocation Plan
                       </div>
                       <p className="text-slate-600 text-[11px]">
                         Review the recommended relocation plan for 15,450 residents across 5 habitations.

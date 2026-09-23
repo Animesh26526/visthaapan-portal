@@ -18,6 +18,7 @@ export interface OperationalHazardZone {
   id: string;
   name: string;
   hazardType: string;
+  hazardCategory?: 'AREA' | 'CORRIDOR';
   severity: 'CRITICAL' | 'HIGH' | 'WARNING';
   areaSqKm: number;
   affectedHabitationsCount: number;
@@ -90,6 +91,8 @@ export interface OperationalRoute {
   distanceKm: number;
   transitTimeMinutes: number;
   roadName: string;
+  roadRef?: string;
+  roadClassification?: string;
   roadNetwork: string;
   status: 'Route Available' | 'Detour Active' | 'Corridor Impassable';
   phase: 'Immediate' | 'Short Term' | 'Medium Term' | 'Long Term';
@@ -281,6 +284,7 @@ export async function getRelocationMapOperations(
         id: 'zone-joshimath-subsidence',
         name: 'Joshimath Subsidence Zone',
         hazardType: 'Land Subsidence / Landslide Risk',
+        hazardCategory: 'AREA',
         severity: 'CRITICAL',
         areaSqKm: 4.2,
         affectedHabitationsCount: 2,
@@ -297,7 +301,8 @@ export async function getRelocationMapOperations(
       {
         id: 'zone-alaknanda-corridor',
         name: 'Alaknanda Flood-Prone Corridor',
-        hazardType: 'Flash Flood / Riparian Inundation',
+        hazardType: 'Riparian Inundation & Flash Flood Corridor',
+        hazardCategory: 'CORRIDOR',
         severity: 'HIGH',
         areaSqKm: 12.8,
         affectedHabitationsCount: 3,
@@ -314,7 +319,8 @@ export async function getRelocationMapOperations(
       {
         id: 'zone-malari-landslide',
         name: 'Malari Landslide-Prone Zone',
-        hazardType: 'Debris Flow & Slope Instability',
+        hazardType: 'Debris Flow & Steep Slope Instability',
+        hazardCategory: 'AREA',
         severity: 'CRITICAL',
         areaSqKm: 6.5,
         affectedHabitationsCount: 2,
@@ -332,6 +338,7 @@ export async function getRelocationMapOperations(
         id: 'zone-pipalkoti-escarpment',
         name: 'Pipalkoti Hazard Zone',
         hazardType: 'High-Angle Highway Escarpment Bluff',
+        hazardCategory: 'AREA',
         severity: 'WARNING',
         areaSqKm: 3.8,
         affectedHabitationsCount: 1,
@@ -349,6 +356,7 @@ export async function getRelocationMapOperations(
         id: 'zone-chamoli-composite',
         name: 'Chamoli Composite Hazard Restricted Area',
         hazardType: 'Composite Multi-Hazard Envelope',
+        hazardCategory: 'AREA',
         severity: 'CRITICAL',
         areaSqKm: 32.4,
         affectedHabitationsCount: 5,
@@ -680,7 +688,7 @@ export async function getRelocationMapOperations(
         remainingCapacity: 500,    // Exactly 5,000 - 4,500 = 500
         suitability: 'SUITABLE',
         safetyScore: 0.98,
-        bottleneck: 'Sanitation (5,000 max capacity)',
+        bottleneck: 'Potable Water Treatment Limit',
         hazardStatus: 'Outside Hazard-Based Restricted Area',
         sourceHabitations: ['Joshimath'],
         roadAccess: 'All-weather 2-Lane NH-07 Highway',
@@ -704,7 +712,7 @@ export async function getRelocationMapOperations(
         remainingCapacity: 800,    // Exactly 3,000 - 2,200 = 800
         suitability: 'SUITABLE',
         safetyScore: 0.95,
-        bottleneck: 'Water Supply (3,000 max capacity)',
+        bottleneck: 'Emergency Medical Staging Limit',
         hazardStatus: 'Outside Hazard-Based Restricted Area',
         sourceHabitations: ['Raini'],
         roadAccess: 'All-weather NH-07 Highway',
@@ -728,7 +736,7 @@ export async function getRelocationMapOperations(
         remainingCapacity: 850,    // Exactly 4,000 - 3,150 = 850
         suitability: 'SUITABLE',
         safetyScore: 0.97,
-        bottleneck: 'Shelter Units (4,000 max capacity)',
+        bottleneck: 'Shelter Footprint Capacity',
         hazardStatus: 'Outside Hazard-Based Restricted Area',
         sourceHabitations: ['Tapovan'],
         roadAccess: 'All-weather 2-Lane NH-07 Highway',
@@ -746,13 +754,13 @@ export async function getRelocationMapOperations(
         district: 'Pauri Garhwal',
         coordinates: { lat: 30.2215, lng: 78.7845 },
         type: 'Regional Logistics Haven',
-        nominalCapacity: 7000,
+        nominalCapacity: 6500,
         effectiveCapacity: 6000,
         allocatedPopulation: 5600, // 2,800 from Helang + 2,800 from Pandukeshwar = 5,600
         remainingCapacity: 400,    // Exactly 6,000 - 5,600 = 400
         suitability: 'SUITABLE',
         safetyScore: 0.99,
-        bottleneck: 'Sanitation (6,000 max capacity)',
+        bottleneck: 'Sanitation / Septage Peak Limit',
         hazardStatus: 'Outside Hazard-Based Restricted Area',
         sourceHabitations: ['Helang', 'Pandukeshwar'],
         roadAccess: 'All-weather 4-Lane NH-07 Arterial',
@@ -801,7 +809,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Gauchar Relocation Site',
         distanceKm: 79.2,
         transitTimeMinutes: 136,
-        roadName: 'NH-07 Badrinath National Highway',
+        roadName: 'NH-07',
+        roadRef: 'NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Immediate',
@@ -819,7 +829,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Karnaprayag Relocation Site',
         distanceKm: 127.7,
         transitTimeMinutes: 219,
-        roadName: 'NH-58 Ext to Joshimath & NH-07 Lifeline',
+        roadName: 'NH-58 Ext / NH-07',
+        roadRef: 'NH 58 / NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Immediate',
@@ -837,7 +849,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Rudraprayag Relocation Site',
         distanceKm: 125.0,
         transitTimeMinutes: 210,
-        roadName: 'NH-58 Ext & NH-07 Regional Arterial',
+        roadName: 'NH-58 Ext / NH-07',
+        roadRef: 'NH 58 / NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Immediate',
@@ -855,7 +869,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Srinagar Relocation Site',
         distanceKm: 118.5,
         transitTimeMinutes: 202,
-        roadName: 'NH-07 Garhwal Lifeline Arterial',
+        roadName: 'NH-07',
+        roadRef: 'NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Immediate',
@@ -873,7 +889,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Srinagar Relocation Site',
         distanceKm: 148.0,
         transitTimeMinutes: 250,
-        roadName: 'NH-07 Upper Alaknanda Corridor to Pauri',
+        roadName: 'NH-07',
+        roadRef: 'NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Immediate',
@@ -891,7 +909,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Gauchar Relocation Site',
         distanceKm: 42.5,
         transitTimeMinutes: 72,
-        roadName: 'NH-107A & NH-07',
+        roadName: 'NH-107A / NH-07',
+        roadRef: 'NH 107A / NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Short Term',
@@ -910,6 +930,8 @@ export async function getRelocationMapOperations(
         distanceKm: 21.0,
         transitTimeMinutes: 35,
         roadName: 'NH-07',
+        roadRef: 'NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Short Term',
@@ -927,7 +949,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Karnaprayag Relocation Site',
         distanceKm: 34.0,
         transitTimeMinutes: 58,
-        roadName: 'NH-109 Pindar Valley Corridor',
+        roadName: 'NH-109',
+        roadRef: 'NH 109',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Medium Term',
@@ -945,7 +969,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Karnaprayag Relocation Site',
         distanceKm: 38.5,
         transitTimeMinutes: 65,
-        roadName: 'MDR-14 & NH-07',
+        roadName: 'MDR-14 / NH-07',
+        roadRef: 'MDR 14 / NH 7',
+        roadClassification: 'Secondary / Major District Road',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Medium Term',
@@ -963,7 +989,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Srinagar Relocation Site',
         distanceKm: 185.0,
         transitTimeMinutes: 320,
-        roadName: 'NH-58 Ext & NH-07',
+        roadName: 'NH-58 Ext / NH-07',
+        roadRef: 'NH 58 / NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Long Term',
@@ -981,7 +1009,9 @@ export async function getRelocationMapOperations(
         toSiteName: 'Srinagar Relocation Site',
         distanceKm: 172.0,
         transitTimeMinutes: 295,
-        roadName: 'NH-07 Trans-Himalayan Arterial',
+        roadName: 'NH-07',
+        roadRef: 'NH 7',
+        roadClassification: 'Primary / National Highway',
         roadNetwork: 'Mapped Road Network',
         status: 'Route Available',
         phase: 'Long Term',
