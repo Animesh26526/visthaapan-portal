@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
+import { formatPercent, formatPopulation } from '../utils/formatters';
 
 export const Analytics: React.FC = () => {
   const { habitations, sites, allocationSummary } = useAppStore();
@@ -61,7 +62,7 @@ export const Analytics: React.FC = () => {
         <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
           <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Unmet Transparent Deficit</span>
           <span className="text-2xl font-extrabold text-amber-600 font-mono">
-            {allocationSummary.unmetDemandTotal.toLocaleString()}
+            {formatPopulation(allocationSummary?.unmetDemandTotal)}
           </span>
           <span className="block text-[11px] text-amber-700 font-semibold">Flagged for State Requisition</span>
         </div>
@@ -83,18 +84,18 @@ export const Analytics: React.FC = () => {
               <div key={h.id} className="space-y-1 text-xs">
                 <div className="flex justify-between font-mono">
                   <span className="font-bold text-slate-800 font-sans">{h.name}</span>
-                  <span className="text-red-700 font-bold">{(h.hazardExposureScore * 100).toFixed(0)}% Exposure</span>
+                  <span className="text-red-700 font-bold">{formatPercent(h?.hazardExposureScore, 0)} Exposure</span>
                 </div>
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${
-                      h.hazardExposureScore > 0.9
+                      (h.hazardExposureScore || 0) > 0.9
                         ? 'bg-red-600'
-                        : h.hazardExposureScore > 0.7
+                        : (h.hazardExposureScore || 0) > 0.7
                         ? 'bg-[#d9531e]'
                         : 'bg-amber-500'
                     }`}
-                    style={{ width: `${h.hazardExposureScore * 100}%` }}
+                    style={{ width: `${Math.min(100, Math.max(0, (h.hazardExposureScore || 0) * 100))}%` }}
                   ></div>
                 </div>
               </div>
@@ -113,28 +114,32 @@ export const Analytics: React.FC = () => {
 
           <div className="space-y-4 pt-1">
             {sites.map((s) => {
-              const suppressionRatio = ((s.resourceCapacity.effectiveCapacity / s.resourceCapacity.areaCapacity) * 100).toFixed(0);
+              const eff = s?.resourceCapacity?.effectiveCapacity;
+              const area = s?.resourceCapacity?.areaCapacity;
+              const hasValidRatio = typeof eff === 'number' && typeof area === 'number' && area > 0;
+              const suppressionRatio = hasValidRatio ? ((eff / area) * 100).toFixed(0) : '—';
+              const numRatio = hasValidRatio ? Math.min(100, Math.max(0, (eff / area) * 100)) : 0;
               return (
                 <div key={s.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-1.5 text-xs">
                   <div className="flex justify-between font-bold text-slate-900 font-sans">
                     <span>{s.name}</span>
                     <span className="font-mono text-emerald-800 font-extrabold">
-                      {s.resourceCapacity.effectiveCapacity.toLocaleString()} Effective
+                      {formatPopulation(s?.resourceCapacity?.effectiveCapacity)} Effective
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono">
-                    <span>Physical Space: {s.resourceCapacity.areaCapacity.toLocaleString()}</span>
-                    <span className="text-red-700 font-bold">Bottleneck: {s.resourceCapacity.bottleneck}</span>
+                    <span>Physical Space: {formatPopulation(s?.resourceCapacity?.areaCapacity)}</span>
+                    <span className="text-red-700 font-bold">Bottleneck: {s?.resourceCapacity?.bottleneck || 'None'}</span>
                   </div>
 
                   {/* Dual Bar: Space vs Effective */}
                   <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
-                    <div className="bg-emerald-600 h-full" style={{ width: `${suppressionRatio}%` }}></div>
-                    <div className="bg-slate-400/40 h-full" style={{ width: `${100 - Number(suppressionRatio)}%` }}></div>
+                    <div className="bg-emerald-600 h-full" style={{ width: `${numRatio}%` }}></div>
+                    <div className="bg-slate-400/40 h-full" style={{ width: `${100 - numRatio}%` }}></div>
                   </div>
                   <div className="text-[10px] text-slate-500 text-right font-mono">
-                    {suppressionRatio}% real resource viability
+                    {suppressionRatio !== '—' ? `${suppressionRatio}% real resource viability` : 'Viability metric unavailable'}
                   </div>
                 </div>
               );

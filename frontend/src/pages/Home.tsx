@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
+import { formatPercent, formatPopulation } from '../utils/formatters';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -13,9 +14,9 @@ export const Home: React.FC = () => {
     setSelectedHabitationId
   } = useAppStore();
 
-  const totalAtRisk = habitations.reduce((acc, h) => acc + h.population, 0);
-  const totalSafeCapacity = sites.reduce((acc, s) => acc + s.resourceCapacity.effectiveCapacity, 0);
-  const immediatePriorityCount = habitations.filter(h => h.priority === 'Immediate').length;
+  const totalAtRisk = (habitations || []).reduce((acc, h) => acc + (h?.population || 0), 0);
+  const totalSafeCapacity = (sites || []).reduce((acc, s) => acc + (s?.resourceCapacity?.effectiveCapacity || 0), 0);
+  const immediatePriorityCount = (habitations || []).filter(h => h?.priority === 'Immediate').length;
   const avgEvacTime = roadR12Blocked ? 36.4 : 28.2;
 
   const workspaces = [
@@ -23,38 +24,46 @@ export const Home: React.FC = () => {
     { num: '02', title: 'Capacity & Risk', icon: 'psychology', desc: 'Site audits, bottleneck analysis, AI explainers', route: '/capacity-intelligence', accent: '#4338ca' },
     { num: '03', title: 'Allocation Engine', icon: 'alt_route', desc: 'MILP solver, stress testing, scenario lab', route: '/allocation-engine', accent: '#0f766e' },
     { num: '04', title: 'Adjudication', icon: 'gavel', desc: 'Officer review gate, statutory decisions', route: '/adjudication', accent: '#b45309' },
-    { num: '05', title: 'Evidence & Data', icon: 'menu_book', desc: 'Data provenance, quality benchmarks', route: '/system-intelligence', accent: '#166534' },
   ];
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-5 font-sans min-w-0">
-
-      {/* ── INCIDENT BANNER ── */}
-      <div className="bg-red-50 border border-red-200 p-3 sm:p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full min-w-0">
-        <div className="flex items-start sm:items-center gap-2.5 min-w-0">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0 mt-1 sm:mt-0 animate-pulse"></span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono uppercase font-bold text-xs text-red-900 tracking-wide">
-                Level 3 Advisory
-              </span>
-              <span className="hidden sm:inline text-slate-300">•</span>
-              <span className="text-xs font-semibold text-red-800">
-                Joshimath Sub-Division
-              </span>
-            </div>
-            <p className="text-xs text-red-700 font-medium mt-0.5 leading-snug">
-              Active Relocation Directive — Priority evacuation for unstable ground subsidence zones.
-            </p>
+    <div className="p-3.5 sm:p-5 md:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto font-sans">
+      {/* ── TOP BANNER ── */}
+      <div className="bg-[#003366] text-white p-4 sm:p-5 rounded-lg border border-[#002244] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-200 text-[10px] font-bold uppercase font-mono tracking-wider">
+              OPERATIONAL WORKBENCH • SEC-4B
+            </span>
+            <span className="text-[10px] text-emerald-300 font-mono flex items-center gap-1 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              ALL SYSTEMS OPTIMAL
+            </span>
           </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            Joshimath Relocation Operations Hub
+          </h1>
+          <p className="text-xs text-slate-200 max-w-2xl leading-relaxed">
+            Multi-hazard spatial intelligence, safe relocation capacity auditing, and verifiable Linear-Program allocation network for immediate habitational transit.
+          </p>
         </div>
-        <button
-          onClick={() => navigate('/operations')}
-          className="w-full sm:w-auto h-9 px-4 bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold rounded flex items-center justify-center gap-1.5 transition shrink-0 shadow-xs"
-        >
-          <span className="material-symbols-outlined text-[16px]">dashboard</span>
-          Launch Operations
-        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => navigate('/adjudication?tab=review')}
+            className="gov-btn-secondary bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs py-2 px-3 sm:px-4"
+          >
+            <span className="material-symbols-outlined text-[16px] text-amber-300">gavel</span>
+            <span>Review Active Plan</span>
+          </button>
+          <button
+            onClick={() => navigate('/operations?tab=gis')}
+            className="gov-btn-primary bg-[#d9531e] hover:bg-[#b84314] text-xs py-2 px-3 sm:px-4"
+          >
+            <span className="material-symbols-outlined text-[16px]">map</span>
+            <span>Open Map</span>
+          </button>
+        </div>
       </div>
 
       {/* ── KPI METRICS ROW ── */}
@@ -62,7 +71,7 @@ export const Home: React.FC = () => {
         <div className="gov-card p-3 sm:p-4 flex flex-col justify-between min-w-0">
           <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide truncate">At-Risk Citizens</div>
           <div className="text-xl sm:text-2xl font-black text-red-700 font-mono my-1 tracking-tight truncate">
-            {totalAtRisk.toLocaleString()}
+            {formatPopulation(totalAtRisk)}
           </div>
           <div className="text-[11px] text-slate-500 flex items-center gap-1 min-w-0">
             <span className="material-symbols-outlined text-[14px] text-red-600 shrink-0">warning</span>
@@ -73,7 +82,7 @@ export const Home: React.FC = () => {
         <div className="gov-card p-3 sm:p-4 flex flex-col justify-between min-w-0">
           <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide truncate">Safe Capacity</div>
           <div className="text-xl sm:text-2xl font-black text-emerald-700 font-mono my-1 tracking-tight truncate">
-            {totalSafeCapacity.toLocaleString()}
+            {formatPopulation(totalSafeCapacity)}
           </div>
           <div className="text-[11px] text-emerald-700 flex items-center gap-1 min-w-0">
             <span className="material-symbols-outlined text-[14px] shrink-0">verified</span>
@@ -94,7 +103,7 @@ export const Home: React.FC = () => {
         <div className="gov-card p-3 sm:p-4 flex flex-col justify-between min-w-0">
           <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide truncate">Unmet Demand</div>
           <div className="text-xl sm:text-2xl font-black text-[#d9531e] font-mono my-1 tracking-tight truncate">
-            {allocationSummary.unmetDemandTotal.toLocaleString()}
+            {formatPopulation(allocationSummary?.unmetDemandTotal)}
           </div>
           <div className="text-[11px] text-slate-500 truncate font-medium">Capacity deficit</div>
         </div>
@@ -102,7 +111,7 @@ export const Home: React.FC = () => {
         <div className="gov-card p-3 sm:p-4 flex flex-col justify-between col-span-2 lg:col-span-1 min-w-0">
           <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide truncate">Estimated Outlay</div>
           <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono my-1 tracking-tight truncate">
-            ₹{allocationSummary.totalEstimatedCostLakhs} <span className="text-xs font-normal text-slate-500">Lakhs</span>
+            ₹{allocationSummary?.totalEstimatedCostLakhs ?? 0} <span className="text-xs font-normal text-slate-500">Lakhs</span>
           </div>
           <div className="text-[11px] text-slate-500 truncate font-medium">{sites.length} site deployments</div>
         </div>
@@ -229,11 +238,11 @@ export const Home: React.FC = () => {
               <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded border border-slate-100 text-center">
                 <div>
                   <div className="text-[9px] text-slate-400 font-mono uppercase">Population</div>
-                  <div className="font-mono font-bold text-xs text-slate-800 mt-0.5">{hab.population.toLocaleString()}</div>
+                  <div className="font-mono font-bold text-xs text-slate-800 mt-0.5">{formatPopulation(hab.population)}</div>
                 </div>
                 <div>
                   <div className="text-[9px] text-slate-400 font-mono uppercase">Risk Score</div>
-                  <div className="font-mono font-bold text-xs text-red-700 mt-0.5">{(hab.riskScore * 100).toFixed(0)}%</div>
+                  <div className="font-mono font-bold text-xs text-red-700 mt-0.5">{formatPercent(hab.riskScore, 0)}</div>
                 </div>
                 <div>
                   <div className="text-[9px] text-slate-400 font-mono uppercase">Hazard</div>
@@ -281,17 +290,17 @@ export const Home: React.FC = () => {
                     <div className="font-bold text-slate-900">{hab.name}</div>
                     <div className="text-[10px] font-mono text-slate-400">{hab.code}</div>
                   </td>
-                  <td className="px-4 py-2.5 font-mono font-semibold text-slate-800">{hab.population.toLocaleString()}</td>
+                  <td className="px-4 py-2.5 font-mono font-semibold text-slate-800">{formatPopulation(hab.population)}</td>
                   <td className="px-4 py-2.5">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm font-bold font-mono text-[11px] ${
-                      hab.riskScore >= 0.8
+                      (hab.riskScore || 0) >= 0.8
                         ? 'bg-red-50 text-red-800 border border-red-200'
-                        : hab.riskScore >= 0.6
+                        : (hab.riskScore || 0) >= 0.6
                         ? 'bg-amber-50 text-amber-800 border border-amber-200'
                         : 'bg-slate-50 text-slate-700 border border-slate-200'
                     }`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                      {(hab.riskScore * 100).toFixed(0)}%
+                      {formatPercent(hab.riskScore, 0)}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-slate-600">{hab.primaryHazard}</td>
@@ -345,15 +354,15 @@ export const Home: React.FC = () => {
                 <div className="mt-3 space-y-1.5 text-xs bg-slate-50 p-2.5 rounded border border-slate-100 min-w-0">
                   <div className="flex justify-between gap-2">
                     <span className="text-slate-500 truncate">Effective Capacity</span>
-                    <strong className="font-mono text-slate-900 shrink-0">{site.resourceCapacity.effectiveCapacity.toLocaleString()}</strong>
+                    <strong className="font-mono text-slate-900 shrink-0">{formatPopulation(site?.resourceCapacity?.effectiveCapacity)}</strong>
                   </div>
                   <div className="flex justify-between gap-2">
                     <span className="text-slate-500 truncate">Allocated</span>
-                    <strong className="font-mono text-emerald-700 shrink-0">{site.totalAllocated.toLocaleString()}</strong>
+                    <strong className="font-mono text-emerald-700 shrink-0">{formatPopulation(site?.totalAllocated)}</strong>
                   </div>
                   <div className="flex justify-between gap-2">
                     <span className="text-slate-500 truncate">Bottleneck</span>
-                    <strong className="font-mono text-amber-700 truncate">{site.resourceCapacity.bottleneck}</strong>
+                    <strong className="font-mono text-amber-700 truncate">{site?.resourceCapacity?.bottleneck || 'None'}</strong>
                   </div>
                 </div>
               </div>

@@ -493,3 +493,478 @@ export async function getGisCorridors(
     next(err);
   }
 }
+
+/**
+ * GET /api/v1/gis/boundaries/state
+ * Returns GeoJSON FeatureCollection of official Survey of India state boundary.
+ */
+export async function getStateBoundaries(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const query = `
+      SELECT 
+        id,
+        state_code,
+        state_name,
+        shape_length,
+        shape_area,
+        provenance,
+        ST_AsGeoJSON(geometry)::json as geojson_geom
+      FROM state_boundaries
+      ORDER BY state_name ASC;
+    `;
+    const { rows } = await pool.query(query);
+    const features = rows.map((r) => ({
+      type: 'Feature' as const,
+      id: r.id,
+      geometry: r.geojson_geom,
+      properties: {
+        stateCode: r.state_code,
+        stateName: r.state_name,
+        shapeLength: parseFloat(r.shape_length) || null,
+        shapeArea: parseFloat(r.shape_area) || null,
+        provenance: r.provenance,
+      },
+    }));
+
+    const collection: GeoJsonFeatureCollection = {
+      type: 'FeatureCollection',
+      features,
+      metadata: {
+        count: features.length,
+        source: 'Survey of India (Official Administrative Boundary Database)',
+        crs: 'EPSG:4326',
+      },
+    };
+    sendSuccess(res, collection, { count: features.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/v1/gis/boundaries/districts
+ * Returns GeoJSON FeatureCollection of official Survey of India 13 district boundaries for Uttarakhand.
+ */
+export async function getDistrictBoundaries(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const query = `
+      SELECT 
+        db.id,
+        db.state_code,
+        db.state_name,
+        db.district_code,
+        db.district_name,
+        db.shape_length,
+        db.shape_area,
+        db.provenance,
+        ST_AsGeoJSON(db.geometry)::json as geojson_geom,
+        ra.risk_score,
+        ra.calibrated_risk_probability,
+        ra.vulnerability_score,
+        ra.hazard_exposure_score,
+        ra.urgency
+      FROM district_boundaries db
+      LEFT JOIN canonical_districts cd ON cd.district_code = db.district_code
+      LEFT JOIN risk_assessments ra ON ra.canonical_district_id = cd.id
+      ORDER BY db.district_name ASC;
+    `;
+    const { rows } = await pool.query(query);
+    const features = rows.map((r) => ({
+      type: 'Feature' as const,
+      id: r.id,
+      geometry: r.geojson_geom,
+      properties: {
+        districtCode: r.district_code,
+        districtName: r.district_name,
+        stateCode: r.state_code,
+        stateName: r.state_name,
+        shapeLength: parseFloat(r.shape_length) || null,
+        shapeArea: parseFloat(r.shape_area) || null,
+        riskScore: r.risk_score ? parseFloat(r.risk_score) : null,
+        riskTier: r.urgency || null,
+        calibratedProbability: r.calibrated_risk_probability ? parseFloat(r.calibrated_risk_probability) : null,
+        vulnerabilityScore: r.vulnerability_score ? parseFloat(r.vulnerability_score) : null,
+        hazardScore: r.hazard_exposure_score ? parseFloat(r.hazard_exposure_score) : null,
+        provenance: r.provenance,
+      },
+    }));
+
+    const collection: GeoJsonFeatureCollection = {
+      type: 'FeatureCollection',
+      features,
+      metadata: {
+        count: features.length,
+        source: 'Survey of India (Official Administrative Boundary Database)',
+        crs: 'EPSG:4326',
+      },
+    };
+    sendSuccess(res, collection, { count: features.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/v1/gis/boundaries/subdistricts
+ * Returns GeoJSON FeatureCollection of official Survey of India 111 subdistricts / tehsils.
+ * Supports optional ?district_code=057 (Chamoli) filter.
+ */
+export async function getSubdistrictBoundaries(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const districtCode = req.query.district_code ? String(req.query.district_code).trim() : null;
+    let query = `
+      SELECT 
+        sdb.id,
+        sdb.district_code,
+        sdb.district_name,
+        sdb.subdistrict_code,
+        sdb.subdistrict_name,
+        sdb.shape_length,
+        sdb.shape_area,
+        sdb.provenance,
+        ST_AsGeoJSON(sdb.geometry)::json as geojson_geom
+      FROM subdistrict_boundaries sdb
+    `;
+    const params: any[] = [];
+    if (districtCode) {
+      params.push(districtCode.padStart(3, '0'));
+      query += ` WHERE sdb.district_code = $1`;
+    }
+    query += ` ORDER BY sdb.district_name ASC, sdb.subdistrict_name ASC;`;
+
+    const { rows } = await pool.query(query, params);
+    const features = rows.map((r) => ({
+      type: 'Feature' as const,
+      id: r.id,
+      geometry: r.geojson_geom,
+      properties: {
+        subdistrictCode: r.subdistrict_code,
+        subdistrictName: r.subdistrict_name,
+        districtCode: r.district_code,
+        districtName: r.district_name,
+        shapeLength: parseFloat(r.shape_length) || null,
+        shapeArea: parseFloat(r.shape_area) || null,
+        provenance: r.provenance,
+      },
+    }));
+
+    const collection: GeoJsonFeatureCollection = {
+      type: 'FeatureCollection',
+      features,
+      metadata: {
+        count: features.length,
+        districtFilter: districtCode || 'ALL',
+        source: 'Survey of India (Official Administrative Boundary Database)',
+        crs: 'EPSG:4326',
+      },
+    };
+    sendSuccess(res, collection, { count: features.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/v1/gis/census-settlements
+ * Returns GeoJSON FeatureCollection of official Census 2011 Settlements (Towns and Villages).
+ * Supports ?district_code=...&subdistrict_code=...&type=TOWN|VILLAGE&geocoded_only=true
+ */
+export async function getCensusSettlements(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const districtCode = req.query.district_code ? String(req.query.district_code).trim() : null;
+    const subdistrictCode = req.query.subdistrict_code ? String(req.query.subdistrict_code).trim() : null;
+    const type = req.query.type ? String(req.query.type).toUpperCase().trim() : null;
+    const geocodedOnly = req.query.geocoded_only === 'true';
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit), 10) || 500, 1), 5000);
+    const offset = Math.max(parseInt(String(req.query.offset), 10) || 0, 0);
+
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (geocodedOnly) {
+      conditions.push(`cs.geometry IS NOT NULL`);
+    }
+    if (districtCode) {
+      params.push(districtCode.padStart(3, '0'));
+      conditions.push(`cs.district_code = $${params.length}`);
+    }
+    if (subdistrictCode) {
+      params.push(subdistrictCode);
+      conditions.push(`cs.subdistrict_code = $${params.length}`);
+    }
+    if (type && (type === 'TOWN' || type === 'VILLAGE')) {
+      params.push(type);
+      conditions.push(`cs.settlement_type = $${params.length}`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(limit);
+    const limitIdx = params.length;
+    params.push(offset);
+    const offsetIdx = params.length;
+
+    const query = `
+      SELECT 
+        cs.id,
+        cs.settlement_type,
+        cs.settlement_code,
+        cs.settlement_name,
+        cs.state_code,
+        cs.district_code,
+        cs.district_name,
+        cs.subdistrict_code,
+        cs.subdistrict_name,
+        cs.cd_block_name,
+        cs.population_2011_baseline,
+        cs.households_2011_baseline,
+        cs.male_population_2011,
+        cs.female_population_2011,
+        cs.infrastructure_markers,
+        cs.longitude,
+        cs.latitude,
+        cs.provenance,
+        ST_AsGeoJSON(cs.geometry)::json as geojson_geom
+      FROM census_settlements cs
+      ${whereClause}
+      ORDER BY cs.population_2011_baseline DESC NULLS LAST
+      LIMIT $${limitIdx} OFFSET $${offsetIdx};
+    `;
+
+    const { rows } = await pool.query(query, params);
+    const features = rows.map((r) => ({
+      type: 'Feature' as const,
+      id: r.id,
+      geometry: r.geojson_geom,
+      properties: {
+        settlementCode: r.settlement_code,
+        settlementName: r.settlement_name,
+        settlementType: r.settlement_type,
+        districtCode: r.district_code,
+        districtName: r.district_name,
+        subdistrictCode: r.subdistrict_code,
+        subdistrictName: r.subdistrict_name,
+        cdBlockName: r.cd_block_name,
+        population2011Baseline: r.population_2011_baseline,
+        households2011Baseline: r.households_2011_baseline,
+        malePopulation2011: r.male_population_2011,
+        femalePopulation2011: r.female_population_2011,
+        infrastructureMarkers: r.infrastructure_markers || {},
+        longitude: r.longitude ? parseFloat(r.longitude) : null,
+        latitude: r.latitude ? parseFloat(r.latitude) : null,
+        provenance: r.provenance,
+        temporalNotice: 'Census 2011 Baseline Population (Official Government Census, not real-time population)',
+      },
+    }));
+
+    const collection: GeoJsonFeatureCollection = {
+      type: 'FeatureCollection',
+      features,
+      metadata: {
+        count: features.length,
+        limit,
+        offset,
+        source: 'Census of India 2011 - District Census Handbook (DCHB) Uttarakhand',
+        provenanceNotice: 'Demographic baseline figures reflect 2011 decennial census release; for operational decision support only.',
+      },
+    };
+    sendSuccess(res, collection, { count: features.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/v1/gis/osm/roads
+ * Returns GeoJSON FeatureCollection of OpenStreetMap mapped road vectors.
+ * Supports ?bbox=minLon,minLat,maxLon,maxLat&fclass=primary,secondary...
+ */
+export async function getOsmRoads(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const bboxStr = req.query.bbox ? String(req.query.bbox).trim() : null;
+    const fclassFilter = req.query.fclass ? String(req.query.fclass).split(',').map((s) => s.trim()) : null;
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit), 10) || 1000, 1), 5000);
+
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (bboxStr) {
+      const parts = bboxStr.split(',').map(Number);
+      if (parts.length === 4 && parts.every((n) => !isNaN(n))) {
+        params.push(parts[0], parts[1], parts[2], parts[3]);
+        conditions.push(`geometry && ST_MakeEnvelope($${params.length - 3}, $${params.length - 2}, $${params.length - 1}, $${params.length}, 4326)`);
+      }
+    }
+
+    if (fclassFilter && fclassFilter.length > 0) {
+      params.push(fclassFilter);
+      conditions.push(`fclass = ANY($${params.length})`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(limit);
+    const limitIdx = params.length;
+
+    const query = `
+      SELECT 
+        id,
+        osm_id,
+        name,
+        ref,
+        fclass,
+        oneway,
+        maxspeed,
+        bridge,
+        tunnel,
+        provenance,
+        ST_AsGeoJSON(geometry)::json as geojson_geom
+      FROM osm_roads
+      ${whereClause}
+      ORDER BY 
+        CASE 
+          WHEN fclass IN ('motorway', 'trunk') THEN 1
+          WHEN fclass = 'primary' THEN 2
+          WHEN fclass = 'secondary' THEN 3
+          WHEN fclass = 'tertiary' THEN 4
+          ELSE 5
+        END ASC
+      LIMIT $${limitIdx};
+    `;
+
+    const { rows } = await pool.query(query, params);
+    const features = rows.map((r) => ({
+      type: 'Feature' as const,
+      id: r.id,
+      geometry: r.geojson_geom,
+      properties: {
+        osmId: r.osm_id,
+        name: r.name || 'Unnamed Road',
+        ref: r.ref || null,
+        fclass: r.fclass,
+        oneway: r.oneway,
+        maxspeed: r.maxspeed,
+        bridge: r.bridge,
+        tunnel: r.tunnel,
+        provenance: r.provenance,
+        classificationNotice: 'Mapped Road (Not real-time passability verified; derived from OpenStreetMap Northern Zone)',
+      },
+    }));
+
+    const collection: GeoJsonFeatureCollection = {
+      type: 'FeatureCollection',
+      features,
+      metadata: {
+        count: features.length,
+        source: 'OpenStreetMap contributors / Geofabrik Northern Zone',
+        provenance: 'Mapped Road (Not real-time passability verified)',
+      },
+    };
+    sendSuccess(res, collection, { count: features.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/v1/gis/osm/facilities
+ * Returns GeoJSON FeatureCollection of OpenStreetMap critical facilities (healthcare, education, emergency, government, shelter).
+ * Supports ?category=healthcare|education|emergency|government|shelter&bbox=...
+ */
+export async function getOsmFacilities(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const category = req.query.category ? String(req.query.category).toLowerCase().trim() : null;
+    const bboxStr = req.query.bbox ? String(req.query.bbox).trim() : null;
+    const limit = Math.min(Math.max(parseInt(String(req.query.limit), 10) || 500, 1), 2000);
+
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (category) {
+      params.push(category);
+      conditions.push(`category = $${params.length}`);
+    }
+
+    if (bboxStr) {
+      const parts = bboxStr.split(',').map(Number);
+      if (parts.length === 4 && parts.every((n) => !isNaN(n))) {
+        params.push(parts[0], parts[1], parts[2], parts[3]);
+        conditions.push(`geometry && ST_MakeEnvelope($${params.length - 3}, $${params.length - 2}, $${params.length - 1}, $${params.length}, 4326)`);
+      }
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(limit);
+    const limitIdx = params.length;
+
+    const query = `
+      SELECT 
+        id,
+        osm_id,
+        name,
+        fclass,
+        category,
+        longitude,
+        latitude,
+        provenance,
+        ST_AsGeoJSON(geometry)::json as geojson_geom
+      FROM osm_facilities
+      ${whereClause}
+      ORDER BY category ASC, name ASC
+      LIMIT $${limitIdx};
+    `;
+
+    const { rows } = await pool.query(query, params);
+    const features = rows.map((r) => ({
+      type: 'Feature' as const,
+      id: r.id,
+      geometry: r.geojson_geom,
+      properties: {
+        osmId: r.osm_id,
+        name: r.name,
+        fclass: r.fclass,
+        category: r.category,
+        longitude: r.longitude ? parseFloat(r.longitude) : null,
+        latitude: r.latitude ? parseFloat(r.latitude) : null,
+        provenance: r.provenance,
+        sourceNotice: 'OSM-mapped facility (Derived from OpenStreetMap Northern Zone POIs)',
+      },
+    }));
+
+    const collection: GeoJsonFeatureCollection = {
+      type: 'FeatureCollection',
+      features,
+      metadata: {
+        count: features.length,
+        source: 'OpenStreetMap contributors / Geofabrik Northern Zone',
+        provenance: 'OSM-mapped facility',
+      },
+    };
+    sendSuccess(res, collection, { count: features.length });
+  } catch (err) {
+    next(err);
+  }
+}
+

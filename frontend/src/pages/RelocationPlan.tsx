@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppStore } from '../stores/useAppStore';
 import { mockRelocationPhases } from '../mock/data';
+import { formatPopulation } from '../utils/formatters';
 
 export const RelocationPlan: React.FC = () => {
   const { allocationSummary } = useAppStore();
@@ -41,7 +42,7 @@ export const RelocationPlan: React.FC = () => {
         <div>
           <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Total Citizens Scheduled</span>
           <span className="text-2xl font-bold font-mono text-slate-900 mt-0.5">
-            {allocationSummary.totalAllocatedPopulation.toLocaleString()}
+            {formatPopulation(allocationSummary?.totalAllocatedPopulation)}
           </span>
           <span className="block text-[10px] text-emerald-700 font-semibold">100% Verified Movement</span>
         </div>
@@ -55,7 +56,7 @@ export const RelocationPlan: React.FC = () => {
         <div>
           <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Immediate Phase (0-24h)</span>
           <span className="text-2xl font-bold font-mono text-red-700 mt-0.5">
-            {phase1Population.toLocaleString()}
+            {formatPopulation(phase1Population)}
           </span>
           <span className="block text-[10px] text-red-700 font-semibold">Highest Hazard Priority</span>
         </div>
@@ -83,7 +84,7 @@ export const RelocationPlan: React.FC = () => {
                 </h3>
               </div>
               <span className="text-xs font-mono text-slate-500">
-                {phaseGroup.items.reduce((s, i) => s + i.headcount, 0).toLocaleString()} Persons
+                {formatPopulation(phaseGroup.items.reduce((s, i) => s + (i?.headcount || 0), 0))} Persons
               </span>
             </div>
 
@@ -105,7 +106,7 @@ export const RelocationPlan: React.FC = () => {
 
                   <div className="flex items-center gap-4 shrink-0 font-mono">
                     <div className="text-right">
-                      <span className="text-sm font-extrabold text-slate-900">{item.headcount.toLocaleString()}</span>
+                      <span className="text-sm font-extrabold text-slate-900">{formatPopulation(item?.headcount)}</span>
                       <span className="block text-[9px] text-slate-400 uppercase">Headcount</span>
                     </div>
 

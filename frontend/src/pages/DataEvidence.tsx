@@ -4,6 +4,7 @@ import {
   type ProvenanceRecord,
   type DistrictEvidenceResponse,
 } from '../services/evidence.service';
+import { formatPopulation } from '../utils/formatters';
 
 export const DataEvidence: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'provenance' | 'ddmp'>('provenance');
@@ -191,7 +192,7 @@ export const DataEvidence: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-slate-50 p-2.5 rounded border border-slate-100">
                   <div>
                     <span className="block text-[9px] text-slate-400 uppercase font-bold">Records Count:</span>
-                    <span className="text-slate-900 font-semibold">{item.recordsCount.toLocaleString()}</span>
+                    <span className="text-slate-900 font-semibold">{formatPopulation(item?.recordsCount)}</span>
                   </div>
                   <div>
                     <span className="block text-[9px] text-slate-400 uppercase font-bold">Status:</span>

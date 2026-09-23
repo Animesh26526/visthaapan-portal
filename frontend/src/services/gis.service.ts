@@ -12,6 +12,12 @@ import type {
   RelocationSiteFeatureProperties,
   HazardLayerFeatureProperties,
   SiteSuitabilityAudit,
+  StateBoundaryProperties,
+  DistrictBoundaryProperties,
+  SubdistrictBoundaryProperties,
+  CensusSettlementProperties,
+  OsmRoadProperties,
+  OsmFacilityProperties,
 } from '../types/gis';
 
 // Offline / Mock Fallbacks
@@ -498,6 +504,124 @@ export const GisService = {
       return { type: 'FeatureCollection', features: [] };
     } catch (err) {
       console.warn('[GisService] Failed to fetch corridors:', err);
+      return { type: 'FeatureCollection', features: [] };
+    }
+  },
+
+  /**
+   * Phase 9: Fetch official Survey of India state boundary
+   */
+  getStateBoundaries: async (): Promise<GeoJsonFeatureCollection<StateBoundaryProperties>> => {
+    try {
+      const resp = await apiClient.get<any>('/gis/boundaries/state');
+      const data = resp?.data || resp;
+      if (data && data.type === 'FeatureCollection') {
+        return data as GeoJsonFeatureCollection<StateBoundaryProperties>;
+      }
+      return { type: 'FeatureCollection', features: [] };
+    } catch (err) {
+      console.warn('[GisService] Failed to fetch state boundary:', err);
+      return { type: 'FeatureCollection', features: [] };
+    }
+  },
+
+  /**
+   * Phase 9: Fetch official Survey of India 13 district boundaries
+   */
+  getOfficialDistrictBoundaries: async (): Promise<GeoJsonFeatureCollection<DistrictBoundaryProperties>> => {
+    try {
+      const resp = await apiClient.get<any>('/gis/boundaries/districts');
+      const data = resp?.data || resp;
+      if (data && data.type === 'FeatureCollection') {
+        return data as GeoJsonFeatureCollection<DistrictBoundaryProperties>;
+      }
+      return { type: 'FeatureCollection', features: [] };
+    } catch (err) {
+      console.warn('[GisService] Failed to fetch district boundaries:', err);
+      return { type: 'FeatureCollection', features: [] };
+    }
+  },
+
+  /**
+   * Phase 9: Fetch official Survey of India subdistrict / tehsil boundaries
+   */
+  getSubdistrictBoundaries: async (districtCode?: string): Promise<GeoJsonFeatureCollection<SubdistrictBoundaryProperties>> => {
+    try {
+      const resp = await apiClient.get<any>('/gis/boundaries/subdistricts', {
+        params: districtCode ? { district_code: districtCode } : undefined,
+      });
+      const data = resp?.data || resp;
+      if (data && data.type === 'FeatureCollection') {
+        return data as GeoJsonFeatureCollection<SubdistrictBoundaryProperties>;
+      }
+      return { type: 'FeatureCollection', features: [] };
+    } catch (err) {
+      console.warn('[GisService] Failed to fetch subdistrict boundaries:', err);
+      return { type: 'FeatureCollection', features: [] };
+    }
+  },
+
+  /**
+   * Phase 9: Fetch official Census 2011 settlements (Towns & Villages)
+   */
+  getCensusSettlements: async (params?: {
+    district_code?: string;
+    subdistrict_code?: string;
+    type?: string;
+    geocoded_only?: boolean;
+    limit?: number;
+  }): Promise<GeoJsonFeatureCollection<CensusSettlementProperties>> => {
+    try {
+      const resp = await apiClient.get<any>('/gis/census-settlements', { params });
+      const data = resp?.data || resp;
+      if (data && data.type === 'FeatureCollection') {
+        return data as GeoJsonFeatureCollection<CensusSettlementProperties>;
+      }
+      return { type: 'FeatureCollection', features: [] };
+    } catch (err) {
+      console.warn('[GisService] Failed to fetch census settlements:', err);
+      return { type: 'FeatureCollection', features: [] };
+    }
+  },
+
+  /**
+   * Phase 9: Fetch OpenStreetMap mapped roads
+   */
+  getOsmRoads: async (params?: {
+    bbox?: string;
+    fclass?: string;
+    limit?: number;
+  }): Promise<GeoJsonFeatureCollection<OsmRoadProperties>> => {
+    try {
+      const resp = await apiClient.get<any>('/gis/osm/roads', { params });
+      const data = resp?.data || resp;
+      if (data && data.type === 'FeatureCollection') {
+        return data as GeoJsonFeatureCollection<OsmRoadProperties>;
+      }
+      return { type: 'FeatureCollection', features: [] };
+    } catch (err) {
+      console.warn('[GisService] Failed to fetch OSM roads:', err);
+      return { type: 'FeatureCollection', features: [] };
+    }
+  },
+
+  /**
+   * Phase 9: Fetch OpenStreetMap critical facilities
+   */
+  getOsmFacilities: async (params?: {
+    category?: string;
+    bbox?: string;
+    limit?: number;
+  }): Promise<GeoJsonFeatureCollection<OsmFacilityProperties>> => {
+    try {
+      const resp = await apiClient.get<any>('/gis/osm/facilities', { params });
+      const data = resp?.data || resp;
+      if (data && data.type === 'FeatureCollection') {
+        return data as GeoJsonFeatureCollection<OsmFacilityProperties>;
+      }
+      return { type: 'FeatureCollection', features: [] };
+    } catch (err) {
+      console.warn('[GisService] Failed to fetch OSM facilities:', err);
       return { type: 'FeatureCollection', features: [] };
     }
   },

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import { EvidenceService, type CommandCenterSummary } from '../services/evidence.service';
+import { formatNumber, formatPercent, formatPopulation } from '../utils/formatters';
 
 export const CommandCenter: React.FC = () => {
   const navigate = useNavigate();
@@ -22,8 +23,8 @@ export const CommandCenter: React.FC = () => {
     };
   }, []);
 
-  const totalAtRisk = habitations.reduce((s, h) => s + h.population, 0);
-  const totalCapacity = sites.reduce((s, si) => s + si.resourceCapacity.effectiveCapacity, 0);
+  const totalAtRisk = (habitations || []).reduce((s, h) => s + (h?.population || 0), 0);
+  const totalCapacity = (sites || []).reduce((s, si) => s + (si?.resourceCapacity?.effectiveCapacity || 0), 0);
 
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-[1600px] mx-auto font-sans">
@@ -123,19 +124,19 @@ export const CommandCenter: React.FC = () => {
 
         <div className="gov-card p-3.5">
           <div className="text-[11px] font-semibold text-slate-500">At-Risk Population</div>
-          <div className="text-2xl font-mono font-extrabold text-[#003366] mt-1">{totalAtRisk.toLocaleString()}</div>
+          <div className="text-2xl font-mono font-extrabold text-[#003366] mt-1">{formatPopulation(totalAtRisk)}</div>
           <div className="text-[11px] text-slate-500 mt-0.5">Immediate priority</div>
         </div>
 
         <div className="gov-card p-3.5">
           <div className="text-[11px] font-semibold text-slate-500">Safe Capacity</div>
-          <div className="text-2xl font-mono font-extrabold text-emerald-700 mt-1">{totalCapacity.toLocaleString()}</div>
+          <div className="text-2xl font-mono font-extrabold text-emerald-700 mt-1">{formatPopulation(totalCapacity)}</div>
           <div className="text-[11px] text-slate-500 mt-0.5">Across {sites.length} hubs (SIMULATED)</div>
         </div>
 
         <div className="gov-card p-3.5">
           <div className="text-[11px] font-semibold text-slate-500">Unmet Demand</div>
-          <div className="text-2xl font-mono font-extrabold text-[#d9531e] mt-1">{allocationSummary.unmetDemandTotal.toLocaleString()}</div>
+          <div className="text-2xl font-mono font-extrabold text-[#d9531e] mt-1">{formatPopulation(allocationSummary?.unmetDemandTotal)}</div>
           <div className="text-[11px] text-slate-500 mt-0.5">Capacity deficit</div>
         </div>
 
@@ -181,14 +182,14 @@ export const CommandCenter: React.FC = () => {
               <div key={hab.id} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/70 transition">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-8 h-8 rounded-sm flex items-center justify-center shrink-0 text-white text-xs font-bold ${
-                    hab.riskScore >= 0.8 ? 'bg-red-600' : hab.riskScore >= 0.6 ? 'bg-amber-500' : 'bg-slate-400'
+                    (hab.riskScore || 0) >= 0.8 ? 'bg-red-600' : (hab.riskScore || 0) >= 0.6 ? 'bg-amber-500' : 'bg-slate-400'
                   }`}>
-                    {(hab.riskScore * 100).toFixed(0)}
+                    {formatPercent(hab.riskScore, 0).replace('%', '')}
                   </div>
                   <div className="min-w-0">
                     <div className="font-bold text-xs text-slate-900 truncate">{hab.name}</div>
                     <div className="text-[10px] text-slate-500 font-mono">
-                      Pop: {hab.population.toLocaleString()} • {hab.primaryHazard} • Slope {hab.slopeDegrees}°
+                      Pop: {formatPopulation(hab.population)} • {hab.primaryHazard || '—'} • Slope {formatNumber(hab.slopeDegrees, 1, '—')}°
                     </div>
                   </div>
                 </div>
@@ -201,7 +202,7 @@ export const CommandCenter: React.FC = () => {
 
                   {/* Risk bar */}
                   <div className="w-20 bg-slate-200 h-1.5 rounded-full overflow-hidden hidden sm:block">
-                    <div className="bg-red-600 h-full rounded-full" style={{ width: `${hab.riskScore * 100}%` }}></div>
+                    <div className="bg-red-600 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, (hab.riskScore || 0) * 100))}%` }}></div>
                   </div>
                 </div>
               </div>

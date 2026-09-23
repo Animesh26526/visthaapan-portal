@@ -3,6 +3,7 @@ import { useAppStore } from '../stores/useAppStore';
 import { mockRiskIntelligence, mockHabitations } from '../mock/data';
 import { LiveAIAnalysisPanel } from '../components/ai/LiveAIAnalysisPanel';
 import type { VillageContext } from '../services/briefing.service';
+import { formatPercent, formatScore } from '../utils/formatters';
 
 export const RiskIntelligence: React.FC = () => {
   const { habitations, selectedHabitationId, setSelectedHabitationId, roadR12Blocked } = useAppStore();
@@ -38,7 +39,7 @@ export const RiskIntelligence: React.FC = () => {
             <span className="px-2 py-0.5 rounded bg-purple-100 border border-purple-300 text-purple-900 text-[10px] font-bold uppercase font-mono">
               AI EXPLAINABILITY ENGINE (SHAP &amp; FEATURE WEIGHTS)
             </span>
-            <span className="text-xs text-slate-500 font-mono">MODEL CONFIDENCE: {((intelligence?.confidenceScore || 0.91) * 100).toFixed(0)}%</span>
+            <span className="text-xs text-slate-500 font-mono">MODEL CONFIDENCE: {formatPercent(intelligence?.confidenceScore ?? 0.91, 0)}</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#003366] mt-1">
             Algorithmic Risk Intelligence &amp; Rationale
@@ -57,7 +58,7 @@ export const RiskIntelligence: React.FC = () => {
           >
             {safeHabitations.map((h) => (
               <option key={h.id} value={h.id}>
-                {h.name} (Risk: {((h.riskScore || 0) * 100).toFixed(0)}%)
+                {h.name} (Risk: {formatPercent(h.riskScore, 0)})
               </option>
             ))}
           </select>
@@ -78,10 +79,10 @@ export const RiskIntelligence: React.FC = () => {
               </span>
             </div>
             <h2 className="text-xl font-bold tracking-tight">
-              Multi-Hazard Vulnerability Index: {(intelligence.overallRisk * 100).toFixed(0)}% (Immediate Priority Tier)
+              Multi-Hazard Vulnerability Index: {formatPercent(intelligence?.overallRisk, 0)} (Immediate Priority Tier)
             </h2>
             <p className="text-xs text-slate-100 leading-relaxed font-sans">
-              {intelligence.narrativeExplanation}
+              {intelligence?.narrativeExplanation || 'Model assessment pending live telemetry.'}
             </p>
           </div>
 
@@ -89,7 +90,7 @@ export const RiskIntelligence: React.FC = () => {
             <div className="text-center">
               <span className="block text-[10px] text-slate-200 uppercase font-mono font-semibold">Model Confidence</span>
               <span className="text-2xl font-bold text-emerald-300 font-mono">
-                {(intelligence.confidenceScore * 100).toFixed(0)}%
+                {formatPercent(intelligence?.confidenceScore, 0)}
               </span>
               <span className="block text-[9px] text-slate-300">Calibrated Brier: 0.04</span>
             </div>
@@ -111,7 +112,7 @@ export const RiskIntelligence: React.FC = () => {
             <span className="material-symbols-outlined text-red-600 text-[20px]">tsunami</span>
           </div>
           <div className="text-2xl font-extrabold text-red-600 font-mono mt-2">
-            {(intelligence.hazardExposureIndex * 100).toFixed(0)}%
+            {formatPercent(intelligence?.hazardExposureIndex, 0)}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             Active ground slump exceeding 14 mm/week and high river proximity.
@@ -124,7 +125,7 @@ export const RiskIntelligence: React.FC = () => {
             <span className="material-symbols-outlined text-[#d9531e] text-[20px]">groups</span>
           </div>
           <div className="text-2xl font-extrabold text-[#d9531e] font-mono mt-2">
-            {(intelligence.vulnerabilityIndex * 100).toFixed(0)}%
+            {formatPercent(intelligence?.vulnerabilityIndex, 0)}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             39% elderly/children fraction requiring specialized transit logistics.
@@ -137,7 +138,7 @@ export const RiskIntelligence: React.FC = () => {
             <span className="material-symbols-outlined text-amber-600 text-[20px]">alt_route</span>
           </div>
           <div className="text-2xl font-extrabold text-amber-700 font-mono mt-2">
-            {(intelligence.infrastructureFragilityIndex * 100).toFixed(0)}%
+            {formatPercent(intelligence?.infrastructureFragilityIndex, 0)}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             Traverses a single vulnerable bridge link at Km 212 on NH-07.
@@ -150,7 +151,7 @@ export const RiskIntelligence: React.FC = () => {
             <span className="material-symbols-outlined text-[#003366] text-[20px]">balance</span>
           </div>
           <div className="text-2xl font-extrabold text-[#003366] font-mono mt-2">
-            {selectedHabitation.priorityScore.toFixed(2)}
+            {formatScore(selectedHabitation?.priorityScore, 2)}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             Feeds directly as penalty multiplier in Linear Program optimizer.
@@ -185,9 +186,9 @@ export const RiskIntelligence: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-3 font-mono">
-                  <span className="text-slate-500">Weight: <strong>{(feat.importanceWeight * 100).toFixed(0)}%</strong></span>
+                  <span className="text-slate-500">Weight: <strong>{formatPercent(feat?.importanceWeight, 0)}</strong></span>
                   <span className="text-red-700 font-bold bg-red-50 border border-red-200 px-1.5 py-0.2 rounded">
-                    SHAP: +{feat.shapValue.toFixed(2)}
+                    SHAP: +{formatScore(feat?.shapValue, 2)}
                   </span>
                 </div>
               </div>
@@ -196,7 +197,7 @@ export const RiskIntelligence: React.FC = () => {
               <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                 <div
                   className="bg-[#d9531e] h-full rounded-full"
-                  style={{ width: `${feat.importanceWeight * 100}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, (feat?.importanceWeight ?? 0) * 100))}%` }}
                 ></div>
               </div>
 

@@ -4,6 +4,7 @@ import { RiskGIS } from '../RiskGIS';
 import { CommandCenter } from '../CommandCenter';
 import { HabitationDetail } from '../HabitationDetail';
 import { useAppStore } from '../../stores/useAppStore';
+import { formatPopulation } from '../../utils/formatters';
 
 export const OperationsWorkspace: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -51,7 +52,7 @@ export const OperationsWorkspace: React.FC = () => {
           <div className="flex items-center gap-2 shrink-0">
             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-mono text-[11px]">
               <span className="text-slate-500">At-Risk Citizens:</span>
-              <strong className="text-red-700 font-bold">{totalAtRisk.toLocaleString()}</strong>
+              <strong className="text-red-700 font-bold">{formatPopulation(totalAtRisk)}</strong>
               <span className="text-slate-300">|</span>
               <span className="text-slate-500">Safe Sites:</span>
               <strong className="text-emerald-700 font-bold">{safeSites.length} Active</strong>

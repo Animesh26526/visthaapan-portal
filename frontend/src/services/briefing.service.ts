@@ -7,6 +7,7 @@
 import { mockSites } from '../mock/data';
 import { USE_MOCK_API, MOCK_DELAY_MS } from './config';
 import { apiClient } from './apiClient';
+import { formatPercent, formatPopulation, formatNumber } from '../utils/formatters';
 
 export interface VillageContext {
   id: string;
@@ -158,16 +159,16 @@ ${safeSites
   if (queryTopic === 'vulnerability') {
     return `### 👥 DEMOGRAPHIC IMMOBILITY & LOGISTICS AUDIT
 
-**Sector:** ${context.name} | **Composite Vulnerability Index:** ${((context.vulnerabilityScore || 0.89) * 100).toFixed(1)}%  
+**Sector:** ${context.name} | **Composite Vulnerability Index:** ${formatPercent(context.vulnerabilityScore ?? 0.89, 1)}  
 **Nearest Safe Hub:** ${nearestSite.name} (${nearestSite.distanceKm} km, ~${nearestSite.transitTimeMin} min)
 
 ---
 
 #### 1. High-Dependency Cohort Breakdown
-- **Elderly Dependents (>65y):** ${elderly.toLocaleString()} persons (requires wheelchair / ambulant staff support)
-- **Infants & Toddlers (<10y):** ${children.toLocaleString()} persons (requires immediate pediatric hydration & blanket rations)
-- **Persons with Disabilities (PwD):** ${disabled.toLocaleString()} persons (stretcher & portable oxygen transit required)
-- **Total Specialized Transit Load:** **${totalVuln.toLocaleString()} citizens** (~${(((totalVuln) / (context.population || 1)) * 100).toFixed(0)}% of total village population)
+- **Elderly Dependents (>65y):** ${formatPopulation(elderly)} persons (requires wheelchair / ambulant staff support)
+- **Infants & Toddlers (<10y):** ${formatPopulation(children)} persons (requires immediate pediatric hydration & blanket rations)
+- **Persons with Disabilities (PwD):** ${formatPopulation(disabled)} persons (stretcher & portable oxygen transit required)
+- **Total Specialized Transit Load:** **${formatPopulation(totalVuln)} citizens** (~${formatPercent((totalVuln) / (context.population || 1), 0)} of total village population)
 
 #### 2. Shelter Resource Allocation & Proximity Recommendation
 - **Primary Destination (${recommendedSite.name}):** Ensure Medical Tents #4 and #7 are pre-warmed and connected to emergency diesel backup.
@@ -179,9 +180,9 @@ ${safeSites
   return `### 📋 EXECUTIVE DISASTER ADJUDICATION DOSSIER
 
 **Settlement:** ${context.name} (${context.code})  
-**Composite AI Risk Score:** ${((context.riskScore || 0.94) * 100).toFixed(1)}% [Immediate Priority Tier]  
+**Composite AI Risk Score:** ${formatPercent(context.riskScore ?? 0.94, 1)} [Immediate Priority Tier]  
 **Primary Hazard Factor:** ${context.primaryHazard || 'Active Subsidence & Ground Slump'}  
-**Slope Declivity:** ${context.slopeDegrees || 34.2}° (Exceeds 28° Critical Shear Threshold)  
+**Slope Declivity:** ${formatNumber(context.slopeDegrees, 1, '34.2')}° (Exceeds 28° Critical Shear Threshold)  
 **Nearest Safe Site:** ${nearestSite.name} (${nearestSite.distanceKm} km, ~${nearestSite.transitTimeMin} min)  
 
 ---

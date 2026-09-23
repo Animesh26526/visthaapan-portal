@@ -1,12 +1,13 @@
 import React from 'react';
 import { useAppStore } from '../stores/useAppStore';
+import { formatPercent, formatPopulation } from '../utils/formatters';
 
 export const RelocationCapacity: React.FC = () => {
   const { sites, selectedSiteId, setSelectedSiteId, habitations } = useAppStore();
 
   const activeSite = sites.find(s => s.id === selectedSiteId) || sites[0];
-  const totalTargetPopulation = habitations.reduce((sum, h) => sum + h.population, 0);
-  const totalEffectiveCapacity = sites.reduce((sum, s) => sum + s.resourceCapacity.effectiveCapacity, 0);
+  const totalTargetPopulation = (habitations || []).reduce((sum, h) => sum + (h?.population || 0), 0);
+  const totalEffectiveCapacity = (sites || []).reduce((sum, s) => sum + (s?.resourceCapacity?.effectiveCapacity || 0), 0);
   const totalDeficit = Math.max(0, totalTargetPopulation - totalEffectiveCapacity);
 
   return (
@@ -62,17 +63,17 @@ export const RelocationCapacity: React.FC = () => {
         <div className="flex items-center gap-3 shrink-0 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
           <div className="text-center">
             <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Total Displaced</span>
-            <span className="text-xl font-bold font-mono text-slate-900">{totalTargetPopulation.toLocaleString()}</span>
+            <span className="text-xl font-bold font-mono text-slate-900">{formatPopulation(totalTargetPopulation)}</span>
           </div>
           <span className="text-slate-400 font-bold">-</span>
           <div className="text-center">
             <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Safe Capacity</span>
-            <span className="text-xl font-bold font-mono text-emerald-700">{totalEffectiveCapacity.toLocaleString()}</span>
+            <span className="text-xl font-bold font-mono text-emerald-700">{formatPopulation(totalEffectiveCapacity)}</span>
           </div>
           <span className="text-slate-400 font-bold">=</span>
           <div className="text-center">
             <span className="block text-[10px] text-red-700 uppercase font-mono font-bold">Unmet Deficit</span>
-            <span className="text-xl font-bold font-mono text-red-700">{totalDeficit.toLocaleString()}</span>
+            <span className="text-xl font-bold font-mono text-red-700">{formatPopulation(totalDeficit)}</span>
           </div>
         </div>
       </div>
@@ -95,7 +96,7 @@ export const RelocationCapacity: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono font-bold text-slate-500 uppercase">{site.code}</span>
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded font-mono">
-                    SAFETY {(site.safetyScore * 100).toFixed(0)}%
+                    SAFETY {formatPercent(site?.safetyScore, 0)}
                   </span>
                 </div>
                 <h3 className="text-base font-bold text-[#003366] mt-1">{site.name}</h3>
@@ -106,13 +107,13 @@ export const RelocationCapacity: React.FC = () => {
                   <div className="flex items-baseline justify-between">
                     <span className="text-[10px] font-bold text-slate-600 uppercase font-mono">Effective Capacity:</span>
                     <span className="text-2xl font-extrabold text-emerald-700 font-mono">
-                      {site.resourceCapacity.effectiveCapacity.toLocaleString()}
+                      {formatPopulation(site?.resourceCapacity?.effectiveCapacity)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-xs">
                     <span className="text-slate-500 font-medium">Limiting Bottleneck:</span>
                     <span className="px-2 py-0.5 rounded bg-red-100 text-red-800 font-bold font-mono text-[10px] uppercase">
-                      {site.resourceCapacity.bottleneck}
+                      {site?.resourceCapacity?.bottleneck || 'None'}
                     </span>
                   </div>
                 </div>
@@ -122,7 +123,7 @@ export const RelocationCapacity: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-[10px] text-slate-600 mb-0.5 font-mono">
                       <span>Area Footprint</span>
-                      <span>{site.resourceCapacity.areaCapacity.toLocaleString()}</span>
+                      <span>{formatPopulation(site?.resourceCapacity?.areaCapacity)}</span>
                     </div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-slate-500 h-full" style={{ width: '100%' }}></div>
@@ -132,12 +133,12 @@ export const RelocationCapacity: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-[10px] text-slate-600 mb-0.5 font-mono">
                       <span>Water Supply</span>
-                      <span>{site.resourceCapacity.waterCapacity.toLocaleString()}</span>
+                      <span>{formatPopulation(site?.resourceCapacity?.waterCapacity)}</span>
                     </div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div
                         className="bg-sky-600 h-full"
-                        style={{ width: `${(site.resourceCapacity.waterCapacity / site.resourceCapacity.areaCapacity) * 100}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, ((site?.resourceCapacity?.waterCapacity || 0) / (site?.resourceCapacity?.areaCapacity || 1)) * 100))}%` }}
                       ></div>
                     </div>
                   </div>
@@ -145,12 +146,12 @@ export const RelocationCapacity: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-[10px] text-slate-600 mb-0.5 font-mono">
                       <span>Sanitation (Toilets)</span>
-                      <span>{site.resourceCapacity.sanitationCapacity.toLocaleString()}</span>
+                      <span>{formatPopulation(site?.resourceCapacity?.sanitationCapacity)}</span>
                     </div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div
                         className="bg-amber-600 h-full"
-                        style={{ width: `${(site.resourceCapacity.sanitationCapacity / site.resourceCapacity.areaCapacity) * 100}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, ((site?.resourceCapacity?.sanitationCapacity || 0) / (site?.resourceCapacity?.areaCapacity || 1)) * 100))}%` }}
                       ></div>
                     </div>
                   </div>
@@ -158,12 +159,12 @@ export const RelocationCapacity: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-[10px] text-slate-600 mb-0.5 font-mono">
                       <span>Healthcare Tents</span>
-                      <span>{site.resourceCapacity.healthcareCapacity.toLocaleString()}</span>
+                      <span>{formatPopulation(site?.resourceCapacity?.healthcareCapacity)}</span>
                     </div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div
                         className="bg-emerald-600 h-full"
-                        style={{ width: `${(site.resourceCapacity.healthcareCapacity / site.resourceCapacity.areaCapacity) * 100}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, ((site?.resourceCapacity?.healthcareCapacity || 0) / (site?.resourceCapacity?.areaCapacity || 1)) * 100))}%` }}
                       ></div>
                     </div>
                   </div>
@@ -194,7 +195,7 @@ export const RelocationCapacity: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded font-mono font-bold text-xs">
-              EFFECTIVE: {activeSite.resourceCapacity.effectiveCapacity.toLocaleString()} PERSONS
+              EFFECTIVE: {formatPopulation(activeSite?.resourceCapacity?.effectiveCapacity)} PERSONS
             </span>
           </div>
         </div>
@@ -218,7 +219,7 @@ export const RelocationCapacity: React.FC = () => {
                   Physical Land Area
                 </td>
                 <td className="p-2.5 font-mono">45.0 Hectares</td>
-                <td className="p-2.5 font-mono font-bold">{activeSite.resourceCapacity.areaCapacity.toLocaleString()}</td>
+                <td className="p-2.5 font-mono font-bold">{formatPopulation(activeSite?.resourceCapacity?.areaCapacity)}</td>
                 <td className="p-2.5 text-slate-500 font-mono">30 m² / person</td>
                 <td className="p-2.5"><span className="text-emerald-700 font-bold">Surplus (+5,800)</span></td>
               </tr>
@@ -228,7 +229,7 @@ export const RelocationCapacity: React.FC = () => {
                   Potable Water Supply
                 </td>
                 <td className="p-2.5 font-mono">180,000 L/day</td>
-                <td className="p-2.5 font-mono font-bold">{activeSite.resourceCapacity.waterCapacity.toLocaleString()}</td>
+                <td className="p-2.5 font-mono font-bold">{formatPopulation(activeSite?.resourceCapacity?.waterCapacity)}</td>
                 <td className="p-2.5 text-slate-500 font-mono">15 L / person / day (Sphere)</td>
                 <td className="p-2.5"><span className="text-emerald-700 font-bold">Adequate (+2,800)</span></td>
               </tr>
@@ -238,7 +239,7 @@ export const RelocationCapacity: React.FC = () => {
                   Shelter Units (Weatherized)
                 </td>
                 <td className="p-2.5 font-mono">2,000 Modular Tents</td>
-                <td className="p-2.5 font-mono font-bold">{activeSite.resourceCapacity.shelterCapacity.toLocaleString()}</td>
+                <td className="p-2.5 font-mono font-bold">{formatPopulation(activeSite?.resourceCapacity?.shelterCapacity)}</td>
                 <td className="p-2.5 text-slate-500 font-mono">5 persons / family tent</td>
                 <td className="p-2.5"><span className="text-emerald-700 font-bold">Adequate (+800)</span></td>
               </tr>
@@ -248,7 +249,7 @@ export const RelocationCapacity: React.FC = () => {
                   Sanitation / Latrine Blocks
                 </td>
                 <td className="p-2.5 font-mono text-red-900 font-bold">460 Bio-Toilet Units</td>
-                <td className="p-2.5 font-mono font-bold text-red-700">{activeSite.resourceCapacity.sanitationCapacity.toLocaleString()}</td>
+                <td className="p-2.5 font-mono font-bold text-red-700">{formatPopulation(activeSite?.resourceCapacity?.sanitationCapacity)}</td>
                 <td className="p-2.5 text-red-800 font-mono">1 toilet per 20 persons</td>
                 <td className="p-2.5">
                   <span className="px-2 py-0.5 bg-red-600 text-white font-bold font-mono text-[9px] rounded uppercase">
@@ -262,7 +263,7 @@ export const RelocationCapacity: React.FC = () => {
                   Field Healthcare Facility
                 </td>
                 <td className="p-2.5 font-mono">Level-3 Trauma Outpost</td>
-                <td className="p-2.5 font-mono font-bold">{activeSite.resourceCapacity.healthcareCapacity.toLocaleString()}</td>
+                <td className="p-2.5 font-mono font-bold">{formatPopulation(activeSite?.resourceCapacity?.healthcareCapacity)}</td>
                 <td className="p-2.5 text-slate-500 font-mono">1 doctor per 2,500 pop</td>
                 <td className="p-2.5"><span className="text-emerald-700 font-bold">Adequate (+3,800)</span></td>
               </tr>

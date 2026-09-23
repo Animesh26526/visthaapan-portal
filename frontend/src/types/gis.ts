@@ -194,3 +194,81 @@ export interface HazardLayerFeatureProperties {
   district: string;
   state: string;
 }
+
+export interface StateBoundaryProperties {
+  stateCode: string;
+  stateName: string;
+  shapeLength: number | null;
+  shapeArea: number | null;
+  provenance: string;
+}
+
+export interface DistrictBoundaryProperties {
+  districtCode: string;
+  districtName: string;
+  stateCode: string;
+  stateName: string;
+  shapeLength: number | null;
+  shapeArea: number | null;
+  riskScore: number | null;
+  riskTier: string | null;
+  calibratedProbability?: number | null;
+  vulnerabilityScore: number | null;
+  hazardScore: number | null;
+  provenance: string;
+}
+
+export interface SubdistrictBoundaryProperties {
+  subdistrictCode: string;
+  subdistrictName: string;
+  districtCode: string;
+  districtName: string;
+  shapeLength: number | null;
+  shapeArea: number | null;
+  provenance: string;
+}
+
+export interface CensusSettlementProperties {
+  settlementCode: string;
+  settlementName: string;
+  settlementType: 'TOWN' | 'VILLAGE';
+  districtCode: string;
+  districtName: string;
+  subdistrictCode?: string;
+  subdistrictName?: string;
+  cdBlockName?: string;
+  population2011Baseline: number | null;
+  households2011Baseline: number | null;
+  malePopulation2011?: number | null;
+  femalePopulation2011?: number | null;
+  infrastructureMarkers?: Record<string, any>;
+  longitude: number | null;
+  latitude: number | null;
+  provenance: string;
+  temporalNotice: string;
+}
+
+export interface OsmRoadProperties {
+  osmId: string;
+  name: string;
+  ref: string | null;
+  fclass: string;
+  oneway: string | null;
+  maxspeed: number | null;
+  bridge: string | null;
+  tunnel: string | null;
+  provenance: string;
+  classificationNotice: string;
+}
+
+export interface OsmFacilityProperties {
+  osmId: string;
+  name: string;
+  fclass: string;
+  category: 'healthcare' | 'education' | 'emergency' | 'government' | 'shelter' | string;
+  longitude: number | null;
+  latitude: number | null;
+  provenance: string;
+  sourceNotice: string;
+}
+

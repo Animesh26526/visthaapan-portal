@@ -6,6 +6,7 @@ import {
 } from '../../services/briefing.service';
 import { USE_MOCK_API } from '../../services/config';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
+import { formatPercent } from '../../utils/formatters';
 
 interface LiveAIAnalysisPanelProps {
   context: VillageContext;
@@ -95,7 +96,7 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
               </span>
             </div>
             <p className="text-[11px] text-slate-300 mt-0.5">
-              Target: <strong className="text-white">{context.name}</strong> • Risk Level: {((context.riskScore || 0.9) * 100).toFixed(0)}%
+              Target: <strong className="text-white">{context.name}</strong> • Risk Level: {formatPercent(context?.riskScore ?? 0.9, 0)}
             </p>
           </div>
         </div>

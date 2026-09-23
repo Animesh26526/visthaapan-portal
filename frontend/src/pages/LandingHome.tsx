@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
+import { formatPopulation } from '../utils/formatters';
 
 export const LandingHome: React.FC = () => {
   const navigate = useNavigate();
@@ -13,8 +14,8 @@ export const LandingHome: React.FC = () => {
   } = useAppStore();
   const [activeTourTab, setActiveTourTab] = useState<number>(0);
 
-  const totalAtRisk = habitations.reduce((acc, h) => acc + (h.population || 0), 0);
-  const totalSafeCap = sites.reduce((acc, s) => acc + (s.resourceCapacity.effectiveCapacity || 0), 0);
+  const totalAtRisk = (habitations || []).reduce((acc, h) => acc + (h?.population || 0), 0);
+  const totalSafeCap = (sites || []).reduce((acc, s) => acc + (s?.resourceCapacity?.effectiveCapacity || 0), 0);
 
   const tourPillars = [
     {
@@ -146,12 +147,12 @@ export const LandingHome: React.FC = () => {
             <div className="hidden sm:block text-slate-300">|</div>
             <div>
               <span className="text-slate-500">Monitored Citizens:</span>{' '}
-              <strong className="text-slate-800 font-semibold">{totalAtRisk.toLocaleString()}</strong>
+              <strong className="text-slate-800 font-semibold">{formatPopulation(totalAtRisk)}</strong>
             </div>
             <div className="hidden sm:block text-slate-300">|</div>
             <div>
               <span className="text-slate-500">Safe Sites:</span>{' '}
-              <strong className="text-emerald-700 font-semibold">{sites.length} Active ({totalSafeCap.toLocaleString()} Cap)</strong>
+              <strong className="text-emerald-700 font-semibold">{sites.length} Active ({formatPopulation(totalSafeCap)} Cap)</strong>
             </div>
             <div className="hidden sm:block text-slate-300">|</div>
             <div>

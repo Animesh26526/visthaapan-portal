@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../stores/useAppStore';
+import { formatPopulation } from '../utils/formatters';
 
 export const ScenarioLab: React.FC = () => {
   const {
@@ -97,7 +98,7 @@ export const ScenarioLab: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900">2. Site Alpha Capacity Deficit</span>
               <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-mono text-[10px] font-bold rounded">
-                {siteAlphaCapacityOverride.toLocaleString()} BEDS
+                {formatPopulation(siteAlphaCapacityOverride)} BEDS
               </span>
             </div>
 

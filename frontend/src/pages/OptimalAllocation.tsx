@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../stores/useAppStore';
+import { formatPopulation } from '../utils/formatters';
 
 export const OptimalAllocation: React.FC = () => {
   const {
@@ -48,7 +49,7 @@ export const OptimalAllocation: React.FC = () => {
         <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
           <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Target Population</span>
           <span className="text-2xl font-extrabold text-slate-900 font-mono">
-            {allocationSummary.totalTargetPopulation.toLocaleString()}
+            {formatPopulation(allocationSummary?.totalTargetPopulation)}
           </span>
           <span className="block text-[10px] text-slate-500">28 Monitored Settlements</span>
         </div>
@@ -56,7 +57,7 @@ export const OptimalAllocation: React.FC = () => {
         <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
           <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Total Relocated</span>
           <span className="text-2xl font-extrabold text-emerald-700 font-mono">
-            {allocationSummary.totalAllocatedPopulation.toLocaleString()}
+            {formatPopulation(allocationSummary?.totalAllocatedPopulation)}
           </span>
           <span className="block text-[10px] text-emerald-700 font-bold">100% Safe Placement</span>
         </div>
@@ -64,7 +65,7 @@ export const OptimalAllocation: React.FC = () => {
         <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
           <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Capacity Deficit</span>
           <span className="text-2xl font-extrabold text-[#d9531e] font-mono">
-            {allocationSummary.unmetDemandTotal.toLocaleString()}
+            {formatPopulation(allocationSummary?.unmetDemandTotal)}
           </span>
           <span className="block text-[10px] text-[#d9531e] font-bold">Transparent Shelter Deficit</span>
         </div>
@@ -232,7 +233,7 @@ export const OptimalAllocation: React.FC = () => {
                   </td>
                   <td className="p-2.5 font-bold text-[#003366] font-sans">{item.siteName}</td>
                   <td className="p-2.5 text-right font-extrabold text-slate-900">
-                    {item.allocatedPopulation.toLocaleString()}
+                    {formatPopulation(item?.allocatedPopulation)}
                   </td>
                   <td className="p-2.5 text-right text-slate-600">{item.distanceKm} km</td>
                   <td className="p-2.5 text-right text-slate-600">{item.travelTimeMin} min</td>

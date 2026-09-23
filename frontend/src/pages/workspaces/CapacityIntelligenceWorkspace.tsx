@@ -4,6 +4,7 @@ import { RelocationCapacity } from '../RelocationCapacity';
 import { RiskIntelligence } from '../RiskIntelligence';
 import { OperationsResearch } from '../OperationsResearch';
 import { useAppStore } from '../../stores/useAppStore';
+import { formatPopulation } from '../../utils/formatters';
 
 export const CapacityIntelligenceWorkspace: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,8 +17,8 @@ export const CapacityIntelligenceWorkspace: React.FC = () => {
     setSearchParams({ tab });
   };
 
-  const totalEffectiveCapacity = sites.reduce((sum, s) => sum + s.resourceCapacity.effectiveCapacity, 0);
-  const totalTargetPopulation = habitations.reduce((sum, h) => sum + h.population, 0);
+  const totalEffectiveCapacity = (sites || []).reduce((sum, s) => sum + (s?.resourceCapacity?.effectiveCapacity || 0), 0);
+  const totalTargetPopulation = (habitations || []).reduce((sum, h) => sum + (h?.population || 0), 0);
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-56px)] bg-[#f8fafc]">
@@ -48,9 +49,9 @@ export const CapacityIntelligenceWorkspace: React.FC = () => {
           {/* Quick Stat */}
           <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded bg-slate-50 border border-slate-200 font-mono text-[10px] sm:text-[11px] shrink-0">
             <span className="text-slate-500 hidden xs:inline">Capacity:</span>
-            <strong className="text-emerald-700 font-bold">{totalEffectiveCapacity.toLocaleString()}</strong>
+            <strong className="text-emerald-700 font-bold">{formatPopulation(totalEffectiveCapacity)}</strong>
             <span className="text-slate-300">/</span>
-            <strong className="text-slate-900 font-bold">{totalTargetPopulation.toLocaleString()}</strong>
+            <strong className="text-slate-900 font-bold">{formatPopulation(totalTargetPopulation)}</strong>
           </div>
         </div>
 

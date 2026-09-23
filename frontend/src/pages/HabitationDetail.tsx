@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import { mockHabitations } from '../mock/data';
+import { formatNumber, formatPopulation, formatScore } from '../utils/formatters';
 
 export const HabitationDetail: React.FC = () => {
   const { habitationId: routeHabId } = useParams();
@@ -142,7 +143,7 @@ export const HabitationDetail: React.FC = () => {
                     <div>
                       <div className="font-bold text-xs text-slate-900">{hab.name}</div>
                       <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                        Code: {hab.code} • Pop: {hab.population.toLocaleString()}
+                        Code: {hab.code} • Pop: {formatPopulation(hab.population)}
                       </div>
                     </div>
                     <span
@@ -157,7 +158,7 @@ export const HabitationDetail: React.FC = () => {
                   </div>
 
                   <div className="mt-2 flex items-center justify-between text-[10px]">
-                    <span className="text-slate-600 font-medium">Risk: <strong>{hab.riskScore.toFixed(2)}</strong></span>
+                    <span className="text-slate-600 font-medium">Risk: <strong>{formatScore(hab.riskScore, 2)}</strong></span>
                     <span className="text-slate-500">Hazard: <strong>{hab.primaryHazard}</strong></span>
                     {hab.isInsideRedZone && (
                       <span className="text-red-600 font-bold flex items-center gap-0.5">
@@ -206,15 +207,15 @@ export const HabitationDetail: React.FC = () => {
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <span className="block text-[10px] text-slate-500 uppercase font-bold font-mono">Total Population</span>
                 <span className="text-xl font-extrabold text-slate-900 font-mono">
-                  {(currentHabitation.population || 0).toLocaleString()}
+                  {formatPopulation(currentHabitation?.population)}
                 </span>
-                <span className="block text-[10px] text-slate-500">{currentHabitation.households || 0} Households</span>
+                <span className="block text-[10px] text-slate-500">{formatNumber(currentHabitation?.households, 0, '—')} Households</span>
               </div>
 
               <div className="p-3 bg-red-50 rounded border border-red-200">
                 <span className="block text-[10px] text-red-700 uppercase font-bold font-mono">Composite Risk</span>
                 <span className="text-xl font-extrabold text-red-700 font-mono">
-                  {(currentHabitation.riskScore || 0).toFixed(2)}
+                  {formatScore(currentHabitation?.riskScore, 2)}
                 </span>
                 <span className="block text-[10px] text-red-600">Top 1% Critical Redline</span>
               </div>
@@ -222,7 +223,7 @@ export const HabitationDetail: React.FC = () => {
               <div className="p-3 bg-amber-50 rounded border border-amber-200">
                 <span className="block text-[10px] text-amber-800 uppercase font-bold font-mono">Vulnerability Score</span>
                 <span className="text-xl font-extrabold text-amber-800 font-mono">
-                  {(currentHabitation.vulnerabilityScore || 0).toFixed(2)}
+                  {formatScore(currentHabitation?.vulnerabilityScore, 2)}
                 </span>
                 <span className="block text-[10px] text-amber-700">High Demographic Immobility</span>
               </div>
@@ -230,7 +231,7 @@ export const HabitationDetail: React.FC = () => {
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <span className="block text-[10px] text-slate-500 uppercase font-bold font-mono">Slope Declivity</span>
                 <span className="text-xl font-extrabold text-slate-900 font-mono">
-                  {currentHabitation.slopeDegrees || 34.2}°
+                  {formatNumber(currentHabitation?.slopeDegrees, 1, '—')}°
                 </span>
                 <span className="block text-[10px] text-slate-500">Unstable Moraine Bed</span>
               </div>
@@ -248,7 +249,7 @@ export const HabitationDetail: React.FC = () => {
                 <div>
                   <span className="block text-[10px] text-slate-500 uppercase font-bold">Elderly Dependents (&gt;65y)</span>
                   <span className="text-lg font-bold text-slate-900 font-mono">
-                    {(currentHabitation.vulnerableGroups?.elderly || 0).toLocaleString()}
+                    {formatPopulation(currentHabitation?.vulnerableGroups?.elderly)}
                   </span>
                   <span className="block text-[10px] text-slate-500">Requires assisted evacuation</span>
                 </div>
@@ -259,7 +260,7 @@ export const HabitationDetail: React.FC = () => {
                 <div>
                   <span className="block text-[10px] text-slate-500 uppercase font-bold">Infants &amp; Children (&lt;10y)</span>
                   <span className="text-lg font-bold text-slate-900 font-mono">
-                    {(currentHabitation.vulnerableGroups?.children || 0).toLocaleString()}
+                    {formatPopulation(currentHabitation?.vulnerableGroups?.children)}
                   </span>
                   <span className="block text-[10px] text-slate-500">Requires pediatric shelter pack</span>
                 </div>
@@ -270,7 +271,7 @@ export const HabitationDetail: React.FC = () => {
                 <div>
                   <span className="block text-[10px] text-slate-500 uppercase font-bold">Persons with Disability</span>
                   <span className="text-lg font-bold text-slate-900 font-mono">
-                    {(currentHabitation.vulnerableGroups?.disabled || 0).toLocaleString()}
+                    {formatPopulation(currentHabitation?.vulnerableGroups?.disabled)}
                   </span>
                   <span className="block text-[10px] text-slate-500">Ambulant / stretcher transit</span>
                 </div>

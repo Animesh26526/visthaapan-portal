@@ -13,6 +13,12 @@ import {
   getSiteSuitabilityAudit,
   getGisHospitals,
   getGisCorridors,
+  getStateBoundaries,
+  getDistrictBoundaries,
+  getSubdistrictBoundaries,
+  getCensusSettlements,
+  getOsmRoads,
+  getOsmFacilities,
 } from '../controllers/gis.controller.js';
 
 export const gisRouter: Router = Router();
@@ -20,6 +26,18 @@ export const gisRouter: Router = Router();
 // Districts GIS layer with Phase 5 AI risk attributions
 gisRouter.get('/districts', getGisDistricts);
 gisRouter.get('/districts/:id', getGisDistrictById);
+
+// Official Survey of India Administrative Boundaries
+gisRouter.get('/boundaries/state', getStateBoundaries);
+gisRouter.get('/boundaries/districts', getDistrictBoundaries);
+gisRouter.get('/boundaries/subdistricts', getSubdistrictBoundaries);
+
+// Official Census 2011 Settlements (Towns & Villages)
+gisRouter.get('/census-settlements', getCensusSettlements);
+
+// OpenStreetMap Transport & Facilities
+gisRouter.get('/osm/roads', getOsmRoads);
+gisRouter.get('/osm/facilities', getOsmFacilities);
 
 // Active spatial hazard layers (polygons, buffer radius)
 gisRouter.get('/hazard-layers', getHazardLayers);

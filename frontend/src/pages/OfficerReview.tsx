@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
+import { formatPopulation } from '../utils/formatters';
 
 export const OfficerReview: React.FC = () => {
   const navigate = useNavigate();
@@ -152,7 +153,7 @@ export const OfficerReview: React.FC = () => {
         <div className="p-3 bg-slate-50 rounded border border-slate-200 text-xs font-mono space-y-1">
           <div className="text-slate-500 uppercase font-bold text-[10px]">CURRENT PLAN UNDER ADJUDICATION:</div>
           <div className="text-slate-900 font-bold">
-            Plan ID: {isReoptimized ? 'PLAN-REOPT-2026-CHM' : 'PLAN-BASE-2026-CHM'} • Relocated Souls: {allocationSummary.totalAllocatedPopulation.toLocaleString()} • Deficit: {allocationSummary.unmetDemandTotal.toLocaleString()}
+            Plan ID: {isReoptimized ? 'PLAN-REOPT-2026-CHM' : 'PLAN-BASE-2026-CHM'} • Relocated Souls: {formatPopulation(allocationSummary?.totalAllocatedPopulation)} • Deficit: {formatPopulation(allocationSummary?.unmetDemandTotal)}
           </div>
         </div>
 

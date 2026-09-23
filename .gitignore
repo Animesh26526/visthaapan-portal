@@ -33,3 +33,4 @@ __pycache__/
 # Raw Data Archives & Geospatial Downloads
 backend/data/*.zip
 backend/data/*.xlsx
+backend/data/*_extracted/

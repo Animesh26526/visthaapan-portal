@@ -193,6 +193,24 @@ export async function seedDemonstrationBenchmark(): Promise<BenchmarkSummary> {
       );
     }
 
+    // Link benchmark habitations to Census 2011 settlements if table exists
+    await client.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'census_settlements') THEN
+          UPDATE habitations h
+          SET census_settlement_id = cs.id,
+              census_code = cs.settlement_code
+          FROM census_settlements cs
+          WHERE (h.name LIKE 'Joshimath%' AND cs.settlement_code = '800291')
+             OR (h.name LIKE 'Malari%' AND cs.settlement_code = '040810')
+             OR (h.name LIKE 'Tharali%' AND cs.settlement_code = '041838')
+             OR (h.name LIKE 'Ghat%' AND cs.settlement_code = '800293')
+             OR (h.name LIKE 'Gwaldam%' AND cs.settlement_code = '041846');
+        END IF;
+      END $$;
+    `);
+
     // 4. Create Candidate Safe Relocation Sites & Bottleneck Capacities
     const relocationSites = [
       {

@@ -11,7 +11,14 @@ import type {
   DistrictGisFeatureProperties,
   SiteSuitabilityAudit,
   SuitabilityTier,
+  StateBoundaryProperties,
+  DistrictBoundaryProperties,
+  SubdistrictBoundaryProperties,
+  CensusSettlementProperties,
+  OsmRoadProperties,
+  OsmFacilityProperties,
 } from '../types/gis';
+import { formatNumber, formatPercent, formatDistance, formatArea, formatPopulation, formatScore } from '../utils/formatters';
 
 /* ── State / District Geo Config ── */
 const VIEWS = {
@@ -53,6 +60,92 @@ function geoJsonGeometryToPolygons(geom: any): [number, number][][] {
     return polys;
   }
   return [];
+}
+
+/* ── Convert GeoJSON LineString into Leaflet LatLng Array ── */
+function geoJsonLineStringToLatLngs(geom: any): [number, number][] {
+  if (!geom || !geom.coordinates) return [];
+  if (geom.type === 'LineString') {
+    return geom.coordinates.map(([lon, lat]: [number, number]) => [lat, lon] as [number, number]);
+  }
+  return [];
+}
+
+/* ── Census Settlement Markers ── */
+const censusTownIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:20px;height:20px;background:#0284c7;border:2px solid #fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:bold" title="Census Town">T</div>`,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  popupAnchor: [0, -10],
+});
+
+const censusVillageIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:16px;height:16px;background:#0d9488;border:2px solid #fff;transform:rotate(45deg);box-shadow:0 1px 4px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:#fff" title="Census Village"><span style="transform:rotate(-45deg);font-size:8px;font-weight:bold">V</span></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+  popupAnchor: [0, -10],
+});
+
+/* ── OSM Facility Marker Helper ── */
+function getOsmFacilityIcon(category: string) {
+  let bg = '#475569';
+  let symbol = '•';
+  if (category === 'healthcare') {
+    bg = '#dc2626';
+    symbol = '+';
+  } else if (category === 'emergency') {
+    bg = '#1d4ed8';
+    symbol = '★';
+  } else if (category === 'education') {
+    bg = '#7c3aed';
+    symbol = '🎓';
+  } else if (category === 'shelter') {
+    bg = '#d97706';
+    symbol = '⛺';
+  } else if (category === 'government') {
+    bg = '#334155';
+    symbol = '🏛';
+  }
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:22px;height:22px;background:${bg};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:bold">${symbol}</div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -12],
+  });
+}
+
+/* ── OSM Road Style Classifier ── */
+function getOsmRoadStyle(fclass: string) {
+  switch (fclass) {
+    case 'motorway':
+    case 'trunk':
+      return { color: '#ea580c', weight: 4, opacity: 0.9 };
+    case 'primary':
+      return { color: '#f59e0b', weight: 3.2, opacity: 0.85 };
+    case 'secondary':
+      return { color: '#eab308', weight: 2.4, opacity: 0.8 };
+    case 'tertiary':
+      return { color: '#64748b', weight: 1.8, opacity: 0.7 };
+    default:
+      return { color: '#94a3b8', weight: 1.2, opacity: 0.6 };
+  }
+}
+
+/* ── District Polygon Risk Styler ── */
+function getDistrictRiskPolygonStyle(riskTier: string | null, riskScore: number | null) {
+  if (riskTier === 'CRITICAL' || (riskScore !== null && riskScore >= 0.8)) {
+    return { color: '#991b1b', fillColor: '#ef4444', fillOpacity: 0.35, weight: 2.5 };
+  }
+  if (riskTier === 'HIGH' || (riskScore !== null && riskScore >= 0.6)) {
+    return { color: '#c2410c', fillColor: '#f97316', fillOpacity: 0.32, weight: 2.2 };
+  }
+  if (riskTier === 'MEDIUM' || (riskScore !== null && riskScore >= 0.4)) {
+    return { color: '#b45309', fillColor: '#f59e0b', fillOpacity: 0.28, weight: 2.0 };
+  }
+  return { color: '#047857', fillColor: '#10b981', fillOpacity: 0.25, weight: 1.8 };
 }
 
 /* ── Map Controller (Handles View + Resize Glitches) ── */
@@ -218,7 +311,7 @@ export const RiskGIS: React.FC = () => {
   const [viewLevel, setViewLevel] = useState<'india' | 'state' | 'district'>('district');
   const [tileLayer, setTileLayer] = useState<'osm' | 'satellite' | 'terrain'>('osm');
   const [isDrawerCollapsed, setIsDrawerCollapsed] = useState(() => window.innerWidth < 1024);
-  const [selectedViewType, setSelectedViewType] = useState<'habitation' | 'site' | 'district'>('site');
+  const [selectedViewType, setSelectedViewType] = useState<'habitation' | 'site' | 'district' | 'census' | 'osm'>('site');
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
 
   // Phase 6 Live Spatial Intelligence State
@@ -226,8 +319,26 @@ export const RiskGIS: React.FC = () => {
   const [gisSitesData, setGisSitesData] = useState<GeoJsonFeatureCollection<RelocationSiteFeatureProperties> | null>(null);
   const [districtsData, setDistrictsData] = useState<GeoJsonFeatureCollection<DistrictGisFeatureProperties> | null>(null);
   const [selectedSiteAudit, setSelectedSiteAudit] = useState<SiteSuitabilityAudit | null>(null);
-  const [selectedDistrictItem, setSelectedDistrictItem] = useState<DistrictGisFeatureProperties | null>(null);
+  const [selectedDistrictItem, setSelectedDistrictItem] = useState<DistrictGisFeatureProperties | DistrictBoundaryProperties | null>(null);
   const [isLoadingGis, setIsLoadingGis] = useState(false);
+
+  // Phase 9 Data Enrichment State (SOI, Census 2011, OSM)
+  const [soiStateData, setSoiStateData] = useState<GeoJsonFeatureCollection<StateBoundaryProperties> | null>(null);
+  const [soiDistrictsData, setSoiDistrictsData] = useState<GeoJsonFeatureCollection<DistrictBoundaryProperties> | null>(null);
+  const [soiSubdistrictsData, setSoiSubdistrictsData] = useState<GeoJsonFeatureCollection<SubdistrictBoundaryProperties> | null>(null);
+  const [censusSettlementsData, setCensusSettlementsData] = useState<GeoJsonFeatureCollection<CensusSettlementProperties> | null>(null);
+  const [osmRoadsData, setOsmRoadsData] = useState<GeoJsonFeatureCollection<OsmRoadProperties> | null>(null);
+  const [osmFacilitiesData, setOsmFacilitiesData] = useState<GeoJsonFeatureCollection<OsmFacilityProperties> | null>(null);
+
+  const [selectedCensusItem, setSelectedCensusItem] = useState<CensusSettlementProperties | null>(null);
+  const [selectedOsmFacilityItem, setSelectedOsmFacilityItem] = useState<OsmFacilityProperties | null>(null);
+
+  // Phase 9 Layer Toggles
+  const [showSoiDistricts, setShowSoiDistricts] = useState(true);
+  const [showSoiTehsils, setShowSoiTehsils] = useState(true);
+  const [showCensusSettlements, setShowCensusSettlements] = useState(true);
+  const [showOsmRoads, setShowOsmRoads] = useState(true);
+  const [showOsmFacilities, setShowOsmFacilities] = useState(true);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -235,19 +346,40 @@ export const RiskGIS: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch Phase 6 GIS Red Zones and Relocation Sites on mount
+  // Fetch Phase 6 & Phase 9 GIS layers on mount
   useEffect(() => {
     let isMounted = true;
     async function loadGisSpatialData() {
       setIsLoadingGis(true);
       try {
-        const [rzCollection, sitesCollection] = await Promise.all([
+        const [
+          rzCollection,
+          sitesCollection,
+          stateBoundary,
+          officialDistricts,
+          subdistricts,
+          censusData,
+          roadsData,
+          facilitiesData,
+        ] = await Promise.all([
           GisService.getRedZones(),
           GisService.getRelocationSites(),
+          GisService.getStateBoundaries(),
+          GisService.getOfficialDistrictBoundaries(),
+          GisService.getSubdistrictBoundaries('057'),
+          GisService.getCensusSettlements({ district_code: '057', geocoded_only: true, limit: 300 }),
+          GisService.getOsmRoads({ limit: 1200 }),
+          GisService.getOsmFacilities({ limit: 250 }),
         ]);
         if (isMounted) {
           setRedZonesData(rzCollection);
           setGisSitesData(sitesCollection);
+          setSoiStateData(stateBoundary);
+          setSoiDistrictsData(officialDistricts);
+          setSoiSubdistrictsData(subdistricts);
+          setCensusSettlementsData(censusData);
+          setOsmRoadsData(roadsData);
+          setOsmFacilitiesData(facilitiesData);
         }
       } catch (err) {
         console.warn('[RiskGIS] Failed to load spatial layers:', err);
@@ -497,7 +629,59 @@ export const RiskGIS: React.FC = () => {
         {/* Row 2: Architecture Provenance Badges + Layer Toggles */}
         <div className="flex items-center justify-between gap-2 text-[10px] font-mono flex-wrap">
           {/* Layer toggles */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              onClick={() => setShowSoiDistricts(!showSoiDistricts)}
+              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
+                showSoiDistricts ? 'bg-sky-50 border-sky-300 text-sky-800' : 'bg-slate-50 border-slate-200 text-slate-400'
+              }`}
+              title="Official Survey of India District Boundaries (EPSG:4326)"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${showSoiDistricts ? 'bg-sky-600' : 'bg-slate-300'}`}></span>
+              Districts (SOI)
+            </button>
+            {viewLevel === 'district' && (
+              <button
+                onClick={() => setShowSoiTehsils(!showSoiTehsils)}
+                className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
+                  showSoiTehsils ? 'bg-indigo-50 border-indigo-300 text-indigo-800' : 'bg-slate-50 border-slate-200 text-slate-400'
+                }`}
+                title="Official Survey of India Tehsil Boundaries (Chamoli 12 Tehsils)"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${showSoiTehsils ? 'bg-indigo-600' : 'bg-slate-300'}`}></span>
+                Tehsils (SOI)
+              </button>
+            )}
+            <button
+              onClick={() => setShowCensusSettlements(!showCensusSettlements)}
+              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
+                showCensusSettlements ? 'bg-teal-50 border-teal-300 text-teal-800' : 'bg-slate-50 border-slate-200 text-slate-400'
+              }`}
+              title="Census 2011 Settlements with official population baseline"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${showCensusSettlements ? 'bg-teal-600' : 'bg-slate-300'}`}></span>
+              Census 2011 Settlements
+            </button>
+            <button
+              onClick={() => setShowOsmRoads(!showOsmRoads)}
+              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
+                showOsmRoads ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-400'
+              }`}
+              title="OpenStreetMap classified mapped roads"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${showOsmRoads ? 'bg-amber-600' : 'bg-slate-300'}`}></span>
+              Mapped Roads (OSM)
+            </button>
+            <button
+              onClick={() => setShowOsmFacilities(!showOsmFacilities)}
+              className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
+                showOsmFacilities ? 'bg-rose-50 border-rose-300 text-rose-800' : 'bg-slate-50 border-slate-200 text-slate-400'
+              }`}
+              title="OpenStreetMap critical facilities (healthcare, education, emergency)"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${showOsmFacilities ? 'bg-rose-600' : 'bg-slate-300'}`}></span>
+              Facilities (OSM)
+            </button>
             <button
               onClick={() => setMapFilters({ showRedZones: !mapFilters.showRedZones })}
               className={`h-6 px-2 rounded border flex items-center gap-1 font-bold transition ${
@@ -514,7 +698,7 @@ export const RiskGIS: React.FC = () => {
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${mapFilters.showRelocationSites ? 'bg-emerald-600' : 'bg-slate-300'}`}></span>
-              Relocation Hubs (Suitability)
+              Relocation Hubs
             </button>
             <button
               onClick={() => setMapFilters({ showTransitCorridors: !mapFilters.showTransitCorridors })}
@@ -523,23 +707,23 @@ export const RiskGIS: React.FC = () => {
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${mapFilters.showTransitCorridors ? 'bg-[#003366]' : 'bg-slate-300'}`}></span>
-              Corridors
+              Transit Corridors
             </button>
           </div>
 
-          {/* Provenance Badges (Section 31 & Master Prompt Non-Fabrication Compliance) */}
-          <div className="hidden lg:flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-              Phase 5: Statistical AI (Macro)
+          {/* Provenance Badges */}
+          <div className="hidden xl:flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 text-[9px] font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
+              SOI: Official Boundaries
             </span>
-            <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
-              Phase 6: Spatial Engine (PostGIS)
+            <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 text-[9px] font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+              Census 2011: Baseline
             </span>
-            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold flex items-center gap-1" title="Cartosat-1 DEM covers western Gujarat (68°E-71°E, 21°N-24°N). Chamoli coordinates marked UNAVAILABLE per Section 8 non-fabrication rule.">
+            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-semibold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-              DEM Audit: Non-Fabrication Active
+              OSM: Mapped Vectors
             </span>
           </div>
         </div>
@@ -563,8 +747,243 @@ export const RiskGIS: React.FC = () => {
 
             <TileLayer url={activeTile.url} attribution={activeTile.attribution} />
 
-            {/* ── MACRO LEVEL: NATIONAL / STATE 785 DISTRICT CENTROIDS ── */}
-            {(viewLevel === 'india' || viewLevel === 'state') && districtsData?.features?.map((dist) => {
+            {/* ── PHASE 9: SURVEY OF INDIA STATE BOUNDARY (UTTARAKHAND) ── */}
+            {soiStateData?.features?.map((st, idx) => {
+              const polys = geoJsonGeometryToPolygons(st.geometry);
+              return polys.map((ring, rIdx) => (
+                <Polygon
+                  key={`soi-state-${idx}-${rIdx}`}
+                  positions={ring}
+                  pathOptions={{
+                    color: '#0284c7',
+                    weight: 2.2,
+                    fill: false,
+                    dashArray: '8, 6',
+                  }}
+                />
+              ));
+            })}
+
+            {/* ── PHASE 9: SURVEY OF INDIA 13 DISTRICT BOUNDARIES (OFFICIAL POLYGONS) ── */}
+            {showSoiDistricts && (viewLevel === 'india' || viewLevel === 'state' || viewLevel === 'district') && soiDistrictsData?.features?.map((dist) => {
+              const p = dist.properties;
+              const polys = geoJsonGeometryToPolygons(dist.geometry);
+              const style = getDistrictRiskPolygonStyle(p.riskTier, p.riskScore);
+
+              return polys.map((ring, rIdx) => (
+                <Polygon
+                  key={`soi-dist-${p.districtCode}-${rIdx}`}
+                  positions={ring}
+                  pathOptions={style}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedDistrictItem(p);
+                      setSelectedViewType('district');
+                      setIsDrawerCollapsed(false);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[220px]">
+                      <div className="font-bold text-[#003366] text-sm flex items-center justify-between">
+                        <span>{p.districtName}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono bg-blue-100 text-blue-800">
+                          SOI LGD: {p.districtCode}
+                        </span>
+                      </div>
+                      <div className="text-slate-500 font-mono text-[10px]">{p.stateName} • Survey of India Official</div>
+                      <div className="mt-1.5 border-t border-slate-100 pt-1 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Risk Tier:</span>
+                          <span className="font-bold uppercase text-[10px]" style={{ color: style.color }}>
+                            {p.riskTier || 'Standard'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Calibrated Risk:</span>
+                          <span className="font-bold font-mono text-red-700">{formatPercent(p.calibratedProbability, 1)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Vulnerability Score:</span>
+                          <span className="font-bold font-mono text-amber-700">{formatScore(p.vulnerabilityScore, 2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Area (SOI):</span>
+                          <span className="font-mono">{formatArea((p.shapeArea || 0) / 1000000)}</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-[9px] font-mono text-slate-400 italic">
+                        Provenance: {p.provenance}
+                      </div>
+                    </div>
+                  </Popup>
+                </Polygon>
+              ));
+            })}
+
+            {/* ── PHASE 9: SURVEY OF INDIA 12 TEHSILS / SUBDISTRICTS (CHAMOLI SECTOR) ── */}
+            {showSoiTehsils && viewLevel === 'district' && soiSubdistrictsData?.features?.map((subdist) => {
+              const p = subdist.properties;
+              const polys = geoJsonGeometryToPolygons(subdist.geometry);
+
+              return polys.map((ring, rIdx) => (
+                <Polygon
+                  key={`soi-subdist-${p.subdistrictCode}-${rIdx}`}
+                  positions={ring}
+                  pathOptions={{
+                    color: '#475569',
+                    weight: 1.5,
+                    fillColor: '#94a3b8',
+                    fillOpacity: 0.12,
+                    dashArray: '5, 4',
+                  }}
+                >
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[190px]">
+                      <div className="font-bold text-slate-800 text-sm">{p.subdistrictName}</div>
+                      <div className="text-slate-500 font-mono text-[10px]">Tehsil Code: {p.subdistrictCode} • {p.districtName}</div>
+                      <div className="mt-1 text-[9px] font-mono text-slate-500">
+                        Official Survey of India Sub-District Boundary
+                      </div>
+                    </div>
+                  </Popup>
+                </Polygon>
+              ));
+            })}
+
+            {/* ── PHASE 9: OPENSTREETMAP MAPPED ROADS (CLASSIFIED VECTORS) ── */}
+            {showOsmRoads && viewLevel === 'district' && osmRoadsData?.features?.map((road) => {
+              const coords = geoJsonLineStringToLatLngs(road.geometry);
+              if (!coords.length) return null;
+              const p = road.properties;
+              const style = getOsmRoadStyle(p.fclass);
+
+              return (
+                <Polyline
+                  key={`osm-road-${road.id}`}
+                  positions={coords}
+                  pathOptions={style}
+                >
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[200px]">
+                      <div className="font-bold text-slate-900">{p.name || 'Mapped Road'}</div>
+                      <div className="text-slate-500 font-mono text-[10px]">{p.ref ? `${p.ref} • ` : ''}Class: {p.fclass}</div>
+                      <div className="mt-1.5 border-t border-slate-100 pt-1 text-[10px] space-y-0.5">
+                        {p.maxspeed && <div>Max Speed: {p.maxspeed} km/h</div>}
+                        {p.oneway && <div>One-way: {p.oneway}</div>}
+                        {p.bridge && <div>Bridge: Yes</div>}
+                      </div>
+                      <div className="mt-2 text-[9px] font-mono text-amber-800 bg-amber-50 p-1 rounded">
+                        {p.classificationNotice}
+                      </div>
+                    </div>
+                  </Popup>
+                </Polyline>
+              );
+            })}
+
+            {/* ── PHASE 9: OPENSTREETMAP CRITICAL FACILITIES ── */}
+            {showOsmFacilities && viewLevel === 'district' && osmFacilitiesData?.features?.map((fac) => {
+              const geom = fac.geometry;
+              if (!geom || geom.type !== 'Point' || !geom.coordinates) return null;
+              const [lon, lat] = geom.coordinates;
+              const p = fac.properties;
+
+              return (
+                <Marker
+                  key={`osm-fac-${fac.id}`}
+                  position={[lat, lon]}
+                  icon={getOsmFacilityIcon(p.category)}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedOsmFacilityItem(p);
+                      setSelectedViewType('osm');
+                      setIsDrawerCollapsed(false);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[200px]">
+                      <div className="font-bold text-slate-900">{p.name}</div>
+                      <div className="text-[10px] font-mono text-blue-700 uppercase">{p.category} • {p.fclass}</div>
+                      <div className="mt-1.5 text-[9px] font-mono text-slate-500">
+                        {p.sourceNotice}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+            {/* ── PHASE 9: CENSUS 2011 SETTLEMENTS (TOWNS & VILLAGES) ── */}
+            {showCensusSettlements && viewLevel === 'district' && censusSettlementsData?.features?.map((settle) => {
+              const geom = settle.geometry;
+              if (!geom || geom.type !== 'Point' || !geom.coordinates) return null;
+              const [lon, lat] = geom.coordinates;
+              const p = settle.properties;
+              const isTown = p.settlementType === 'TOWN';
+
+              return (
+                <Marker
+                  key={`census-${settle.id}`}
+                  position={[lat, lon]}
+                  icon={isTown ? censusTownIcon : censusVillageIcon}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedCensusItem(p);
+                      setSelectedViewType('census');
+                      setIsDrawerCollapsed(false);
+                    },
+                  }}
+                >
+                  <Popup>
+                    <div className="text-xs font-sans min-w-[220px]">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#003366] text-sm">{p.settlementName}</span>
+                        <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded text-white ${isTown ? 'bg-sky-600' : 'bg-teal-600'}`}>
+                          {p.settlementType}
+                        </span>
+                      </div>
+                      <div className="text-slate-500 font-mono text-[10px]">
+                        Census Code: {p.settlementCode} • {p.districtName}
+                      </div>
+
+                      <table className="w-full mt-2 text-[11px]">
+                        <tbody>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">2011 Baseline Pop.</td>
+                            <td className="font-bold font-mono text-slate-900">{formatPopulation(p.population2011Baseline)}</td>
+                          </tr>
+                          <tr>
+                            <td className="text-slate-500 pr-2 py-0.5">Households</td>
+                            <td className="font-mono">{formatNumber(p.households2011Baseline, 0, 'Unavailable')}</td>
+                          </tr>
+                          {p.infrastructureMarkers?.tap_water_treated !== undefined && (
+                            <tr>
+                              <td className="text-slate-500 pr-2 py-0.5">Treated Tap Water</td>
+                              <td className="font-mono">{p.infrastructureMarkers.tap_water_treated === 1 ? 'Available' : 'Unavailable'}</td>
+                            </tr>
+                          )}
+                          {p.infrastructureMarkers?.all_weather_road !== undefined && (
+                            <tr>
+                              <td className="text-slate-500 pr-2 py-0.5">All Weather Road</td>
+                              <td className="font-mono">{p.infrastructureMarkers.all_weather_road === 1 ? 'Connected' : 'Unconnected'}</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+
+                      <div className="mt-2 text-[9px] font-mono text-slate-500 bg-slate-50 p-1 rounded">
+                        {p.temporalNotice}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+            {/* ── FALLBACK CENTROIDS FOR NON-UTTARAKHAND STATES IN NATIONAL VIEW ── */}
+            {viewLevel === 'india' && !soiDistrictsData && districtsData?.features?.map((dist) => {
               const geom = dist.geometry;
               if (!geom || geom.type !== 'Point' || !geom.coordinates) return null;
               const [lon, lat] = geom.coordinates;
@@ -576,7 +995,7 @@ export const RiskGIS: React.FC = () => {
                 <Circle
                   key={`dist-${p.canonicalDistrictId}`}
                   center={[lat, lon]}
-                  radius={viewLevel === 'india' ? radius * 2 : radius}
+                  radius={radius * 2}
                   pathOptions={{
                     color: circleColor,
                     weight: 2,
@@ -600,21 +1019,6 @@ export const RiskGIS: React.FC = () => {
                         <span className="font-bold uppercase text-[10px]" style={{ color: circleColor }}>
                           {p.tier || 'Unassigned'}
                         </span>
-                      </div>
-                      <div className="flex items-center justify-between py-0.5">
-                        <span className="text-slate-500">Risk Priority Weight:</span>
-                        <span className="font-bold font-mono text-slate-800">{(p.priorityWeight || 0).toFixed(3)}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-0.5">
-                        <span className="text-slate-500">Calibrated Risk Prob:</span>
-                        <span className="font-bold font-mono text-red-700">{((p.calibratedRiskProbability || 0) * 100).toFixed(1)}%</span>
-                      </div>
-                      <div className="flex items-center justify-between py-0.5">
-                        <span className="text-slate-500">Primary Hazard:</span>
-                        <span className="font-semibold text-slate-700 capitalize">{p.primaryHazard || 'Multi-Hazard'}</span>
-                      </div>
-                      <div className="mt-2 text-[10px] text-slate-400 font-mono italic">
-                        Centroid: {p.centroidProvenance}
                       </div>
                     </div>
                   </Popup>
@@ -654,7 +1058,7 @@ export const RiskGIS: React.FC = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Total Enclosed Area:</span>
-                          <span className="font-bold font-mono">{rz.properties.areaSqKm.toFixed(2)} km²</span>
+                          <span className="font-bold font-mono">{formatArea(rz.properties?.areaSqKm)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Constituent Hazards:</span>
@@ -717,10 +1121,10 @@ export const RiskGIS: React.FC = () => {
                       
                       <table className="w-full mt-2 text-[11px]">
                         <tbody>
-                          <tr><td className="text-slate-500 pr-2 py-0.5">Suitability Score</td><td className="font-bold font-mono">{(p.suitabilityScore * 100).toFixed(0)}%</td></tr>
-                          <tr><td className="text-slate-500 pr-2 py-0.5">Carrying Capacity</td><td className="font-bold font-mono text-emerald-700">{p.effectiveCapacity.toLocaleString()}</td></tr>
-                          <tr><td className="text-slate-500 pr-2 py-0.5">Nearest Hospital</td><td className="font-mono">{p.nearestHospitalKm ? `${p.nearestHospitalKm} km` : 'N/A'}</td></tr>
-                          <tr><td className="text-slate-500 pr-2 py-0.5">Road Access</td><td className="font-mono">{p.nearestRoadKm ? `${p.nearestRoadKm} km` : 'N/A'}</td></tr>
+                          <tr><td className="text-slate-500 pr-2 py-0.5">Suitability Score</td><td className="font-bold font-mono">{formatPercent(p.suitabilityScore, 0)}</td></tr>
+                          <tr><td className="text-slate-500 pr-2 py-0.5">Carrying Capacity</td><td className="font-bold font-mono text-emerald-700">{formatPopulation(p.effectiveCapacity)}</td></tr>
+                          <tr><td className="text-slate-500 pr-2 py-0.5">Nearest Hospital</td><td className="font-mono">{formatDistance(p.nearestHospitalKm)}</td></tr>
+                          <tr><td className="text-slate-500 pr-2 py-0.5">Road Access</td><td className="font-mono">{formatDistance(p.nearestRoadKm)}</td></tr>
                         </tbody>
                       </table>
 
@@ -761,8 +1165,8 @@ export const RiskGIS: React.FC = () => {
                     <div className="text-slate-500 font-mono text-[10px]">{hab.code} • {hab.subDistrict}</div>
                     <table className="w-full mt-2 text-[11px]">
                       <tbody>
-                        <tr><td className="text-slate-500 pr-3 py-0.5">Population</td><td className="font-bold text-slate-900 font-mono">{hab.population.toLocaleString()}</td></tr>
-                        <tr><td className="text-slate-500 pr-3 py-0.5">Risk Score</td><td className="font-bold text-red-700 font-mono">{(hab.riskScore * 100).toFixed(0)}%</td></tr>
+                        <tr><td className="text-slate-500 pr-3 py-0.5">Population</td><td className="font-bold text-slate-900 font-mono">{formatPopulation(hab.population)}</td></tr>
+                        <tr><td className="text-slate-500 pr-3 py-0.5">Risk Score</td><td className="font-bold text-red-700 font-mono">{formatPercent(hab.riskScore, 0)}</td></tr>
                         <tr><td className="text-slate-500 pr-3 py-0.5">Primary Hazard</td><td className="font-semibold">{hab.primaryHazard}</td></tr>
                         <tr><td className="text-slate-500 pr-3 py-0.5">Priority</td><td className="font-bold text-[#d9531e]">{hab.priority}</td></tr>
                       </tbody>
@@ -770,7 +1174,7 @@ export const RiskGIS: React.FC = () => {
                     <div className={`mt-2 text-[10px] font-bold px-2 py-1 rounded text-center ${
                       hab.isInsideRedZone ? 'bg-red-100 text-red-800' : 'bg-amber-50 text-amber-800'
                     }`}>
-                      {hab.isInsideRedZone ? '⚠ INSIDE MODEL-DERIVED RED ZONE' : `${hab.redZoneDistanceKm} km from Red Zone`}
+                      {hab.isInsideRedZone ? '⚠ INSIDE MODEL-DERIVED RED ZONE' : `${formatDistance(hab.redZoneDistanceKm)} from Red Zone`}
                     </div>
                   </div>
                 </Popup>
@@ -808,7 +1212,7 @@ export const RiskGIS: React.FC = () => {
 
           {/* Floating bottom-left coordinates */}
           <div className="absolute bottom-3 left-3 bg-white/95 rounded border border-slate-200 px-3 py-1.5 shadow-sm flex items-center gap-3 text-[11px] text-slate-600 font-mono z-[1000]">
-            <span className="text-[#003366] font-bold">{mapView.center[0].toFixed(2)}°N {mapView.center[1].toFixed(2)}°E</span>
+            <span className="text-[#003366] font-bold">{formatScore(mapView.center?.[0], 2)}°N {formatScore(mapView.center?.[1], 2)}°E</span>
             <span className="text-slate-300">|</span>
             <span>Zoom: {mapView.zoom}</span>
             <span className="text-slate-300">|</span>
@@ -839,7 +1243,15 @@ export const RiskGIS: React.FC = () => {
             >
               <span className="material-symbols-outlined text-[20px]">chevron_left</span>
               <span className="text-[10px] font-bold uppercase tracking-widest -rotate-90 whitespace-nowrap mt-10">
-                {selectedViewType === 'site' ? 'SITE SUITABILITY AUDIT' : selectedViewType === 'district' ? 'DISTRICT INTEL' : 'SETTLEMENT INTEL'}
+                {selectedViewType === 'site'
+                  ? 'SITE SUITABILITY AUDIT'
+                  : selectedViewType === 'district'
+                  ? 'DISTRICT INTEL'
+                  : selectedViewType === 'census'
+                  ? 'CENSUS SETTLEMENT'
+                  : selectedViewType === 'osm'
+                  ? 'OSM FACILITY'
+                  : 'SETTLEMENT INTEL'}
               </span>
             </button>
           ) : (
@@ -848,13 +1260,27 @@ export const RiskGIS: React.FC = () => {
               <div className="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1 text-[10px] tracking-wider text-[#003366] font-bold uppercase font-mono">
-                    <span>{selectedViewType === 'site' ? 'SITE SPATIAL SUITABILITY' : selectedViewType === 'district' ? 'DISTRICT MACRO AI' : 'SETTLEMENT RISK INTEL'}</span>
+                    <span>
+                      {selectedViewType === 'site'
+                        ? 'SITE SPATIAL SUITABILITY'
+                        : selectedViewType === 'district'
+                        ? 'DISTRICT MACRO AI'
+                        : selectedViewType === 'census'
+                        ? 'CENSUS 2011 SETTLEMENT'
+                        : selectedViewType === 'osm'
+                        ? 'OSM CRITICAL FACILITY'
+                        : 'SETTLEMENT RISK INTEL'}
+                    </span>
                   </div>
                   <h2 className="text-sm font-bold text-slate-900 leading-tight truncate mt-0.5">
                     {selectedViewType === 'site'
                       ? selectedSiteAudit?.siteName || currentSite.name
                       : selectedViewType === 'district'
                       ? selectedDistrictItem?.districtName || 'Selected District'
+                      : selectedViewType === 'census'
+                      ? selectedCensusItem?.settlementName || 'Census Settlement'
+                      : selectedViewType === 'osm'
+                      ? selectedOsmFacilityItem?.name || 'OSM Facility'
                       : selectedHabitation.name}
                   </h2>
                   <p className="text-[10px] text-slate-500 font-mono truncate">
@@ -862,6 +1288,10 @@ export const RiskGIS: React.FC = () => {
                       ? `${selectedSiteAudit?.district || 'Chamoli'}, ${selectedSiteAudit?.state || 'Uttarakhand'} • Elev: ${currentSite.elevationMeters}m`
                       : selectedViewType === 'district'
                       ? `${selectedDistrictItem?.stateName} • Code: ${selectedDistrictItem?.districtCode}`
+                      : selectedViewType === 'census'
+                      ? `${selectedCensusItem?.districtName || 'Chamoli'}${selectedCensusItem?.subdistrictName ? ` • ${selectedCensusItem.subdistrictName}` : ''} • Code: ${selectedCensusItem?.settlementCode || '—'}`
+                      : selectedViewType === 'osm'
+                      ? `${selectedOsmFacilityItem?.category || 'Facility'} • ${selectedOsmFacilityItem?.fclass || 'Infrastructure'}`
                       : `${selectedHabitation.subDistrict} • ${selectedHabitation.code}`}
                   </p>
                 </div>
@@ -901,6 +1331,26 @@ export const RiskGIS: React.FC = () => {
                     District
                   </button>
                 )}
+                {selectedCensusItem && (
+                  <button
+                    onClick={() => setSelectedViewType('census')}
+                    className={`flex-1 py-1.5 text-center border-b-2 transition ${
+                      selectedViewType === 'census' ? 'border-[#003366] bg-white text-[#003366]' : 'border-transparent text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Census
+                  </button>
+                )}
+                {selectedOsmFacilityItem && (
+                  <button
+                    onClick={() => setSelectedViewType('osm')}
+                    className={`flex-1 py-1.5 text-center border-b-2 transition ${
+                      selectedViewType === 'osm' ? 'border-[#003366] bg-white text-[#003366]' : 'border-transparent text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Facility
+                  </button>
+                )}
               </div>
 
               {/* Drawer Body */}
@@ -922,7 +1372,7 @@ export const RiskGIS: React.FC = () => {
                       </span>
                     </div>
                     <span className="px-1.5 py-0.5 bg-black/25 text-[9px] rounded-sm font-bold font-mono">
-                      SCORE: {((selectedSiteAudit?.suitabilityScore ?? 0.85) * 100).toFixed(0)}%
+                      SCORE: {formatPercent(selectedSiteAudit?.suitabilityScore ?? 0.85, 0)}
                     </span>
                   </div>
 
@@ -931,19 +1381,19 @@ export const RiskGIS: React.FC = () => {
                     <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
                       <span className="block text-[9px] text-slate-500 font-bold uppercase">Effective Cap</span>
                       <span className="text-sm font-bold text-slate-800 font-mono">
-                        {(selectedSiteAudit?.effectiveCapacity || currentSite.resourceCapacity.effectiveCapacity).toLocaleString()}
+                        {formatPopulation(selectedSiteAudit?.effectiveCapacity ?? currentSite?.resourceCapacity?.effectiveCapacity)}
                       </span>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
                       <span className="block text-[9px] text-slate-500 font-bold uppercase">Safety Score</span>
                       <span className="text-sm font-bold text-emerald-700 font-mono">
-                        {((selectedSiteAudit?.safetyScore ?? 0.95) * 100).toFixed(0)}%
+                        {formatPercent(selectedSiteAudit?.safetyScore ?? 0.95, 0)}
                       </span>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
                       <span className="block text-[9px] text-slate-500 font-bold uppercase">Bottleneck</span>
                       <span className="text-[11px] font-bold text-amber-800 font-mono block truncate">
-                        {selectedSiteAudit?.bottleneck || currentSite.resourceCapacity.bottleneck}
+                        {selectedSiteAudit?.bottleneck || currentSite?.resourceCapacity?.bottleneck || 'None'}
                       </span>
                     </div>
                   </div>
@@ -1064,7 +1514,9 @@ export const RiskGIS: React.FC = () => {
                       </div>
                     </div>
                     <span className="px-2 py-0.5 bg-white/20 text-[10px] font-mono font-bold rounded uppercase">
-                      {selectedDistrictItem?.tier || 'Macro View'}
+                      {selectedDistrictItem
+                        ? ('tier' in selectedDistrictItem ? selectedDistrictItem.tier : selectedDistrictItem.riskTier) || 'Macro View'
+                        : 'Macro View'}
                     </span>
                   </div>
 
@@ -1072,44 +1524,77 @@ export const RiskGIS: React.FC = () => {
                     <>
                       <div className="grid grid-cols-3 gap-2 text-center">
                         <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                          <span className="block text-[9px] text-slate-500 font-bold uppercase">RPW Score</span>
+                          <span className="block text-[9px] text-slate-500 font-bold uppercase">
+                            {'priorityWeight' in selectedDistrictItem ? 'RPW Score' : 'Risk Score'}
+                          </span>
                           <span className="text-sm font-bold text-[#003366] font-mono">
-                            {(selectedDistrictItem.priorityWeight || 0).toFixed(3)}
+                            {formatScore(
+                              'priorityWeight' in selectedDistrictItem
+                                ? selectedDistrictItem.priorityWeight
+                                : selectedDistrictItem.riskScore,
+                              3
+                            )}
                           </span>
                         </div>
                         <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
                           <span className="block text-[9px] text-slate-500 font-bold uppercase">Risk Prob</span>
                           <span className="text-sm font-bold text-red-700 font-mono">
-                            {((selectedDistrictItem.calibratedRiskProbability || 0) * 100).toFixed(1)}%
+                            {formatPercent(
+                              'calibratedRiskProbability' in selectedDistrictItem
+                                ? selectedDistrictItem.calibratedRiskProbability
+                                : selectedDistrictItem.calibratedProbability,
+                              1
+                            )}
                           </span>
                         </div>
                         <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
-                          <span className="block text-[9px] text-slate-500 font-bold uppercase">Hospitals</span>
+                          <span className="block text-[9px] text-slate-500 font-bold uppercase">
+                            {'hospitalCount' in selectedDistrictItem ? 'Hospitals' : 'Area'}
+                          </span>
                           <span className="text-sm font-bold text-slate-800 font-mono">
-                            {selectedDistrictItem.geocodedHospitalCount || selectedDistrictItem.hospitalCount || 0}
+                            {'hospitalCount' in selectedDistrictItem
+                              ? formatNumber(selectedDistrictItem.geocodedHospitalCount || selectedDistrictItem.hospitalCount, 0, '0')
+                              : formatArea(selectedDistrictItem.shapeArea ? selectedDistrictItem.shapeArea / 1000000 : null, 0)}
                           </span>
                         </div>
                       </div>
 
                       <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
-                        <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700">
-                          Phase 5 AI District Profile
+                        <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700 flex items-center justify-between">
+                          <span>{'hospitalCount' in selectedDistrictItem ? 'Phase 5 AI District Profile' : 'Survey of India Official Boundary'}</span>
+                          <span className="text-[10px] font-mono text-slate-500">LGD: {selectedDistrictItem.districtCode}</span>
                         </div>
+                        {'primaryHazard' in selectedDistrictItem && (
+                          <div className="flex items-center justify-between p-2">
+                            <span className="text-slate-600">Primary Hazard</span>
+                            <span className="font-semibold text-slate-800 capitalize">{selectedDistrictItem.primaryHazard || 'Multi-Hazard'}</span>
+                          </div>
+                        )}
+                        {'hazardReportsTotal' in selectedDistrictItem && (
+                          <div className="flex items-center justify-between p-2">
+                            <span className="text-slate-600">Hazard Events Total</span>
+                            <span className="font-bold font-mono">{selectedDistrictItem.activeEventsTotal ?? 0} active / {selectedDistrictItem.hazardReportsTotal ?? 0} total</span>
+                          </div>
+                        )}
+                        {'censusPopulationTotal' in selectedDistrictItem && selectedDistrictItem.censusPopulationTotal != null && (
+                          <div className="flex items-center justify-between p-2">
+                            <span className="text-slate-600">Census Population</span>
+                            <span className="font-bold font-mono">{formatPopulation(selectedDistrictItem.censusPopulationTotal)}</span>
+                          </div>
+                        )}
+                        {'vulnerabilityScore' in selectedDistrictItem && (
+                          <div className="flex items-center justify-between p-2">
+                            <span className="text-slate-600">Vulnerability Score</span>
+                            <span className="font-bold font-mono text-amber-700">{formatScore(selectedDistrictItem.vulnerabilityScore, 2)}</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Primary Hazard</span>
-                          <span className="font-semibold text-slate-800 capitalize">{selectedDistrictItem.primaryHazard || 'Multi-Hazard'}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Hazard Events Total</span>
-                          <span className="font-bold font-mono">{selectedDistrictItem.activeEventsTotal} active / {selectedDistrictItem.hazardReportsTotal} total</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Census Population</span>
-                          <span className="font-bold font-mono">{(selectedDistrictItem.censusPopulationTotal || 0).toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2">
-                          <span className="text-slate-600">Centroid Provenance</span>
-                          <span className="font-mono text-[10px] text-slate-500">{selectedDistrictItem.centroidProvenance}</span>
+                          <span className="text-slate-600">Data Provenance</span>
+                          <span className="font-mono text-[10px] text-slate-500">
+                            {'centroidProvenance' in selectedDistrictItem
+                              ? selectedDistrictItem.centroidProvenance
+                              : selectedDistrictItem.provenance}
+                          </span>
                         </div>
                       </div>
 
@@ -1130,6 +1615,182 @@ export const RiskGIS: React.FC = () => {
                     </div>
                   )}
                 </div>
+              ) : selectedViewType === 'census' ? (
+                /* ── CENSUS 2011 SETTLEMENT VIEW ── */
+                <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
+                  {selectedCensusItem ? (
+                    <>
+                      <div className={`text-white p-2.5 rounded-sm flex items-center justify-between ${
+                        selectedCensusItem.settlementType === 'TOWN' ? 'bg-sky-700' : 'bg-teal-700'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-white"></span>
+                          <span className="text-[11px] font-bold tracking-wider uppercase">
+                            CENSUS {selectedCensusItem.settlementType}
+                          </span>
+                        </div>
+                        <span className="px-1.5 py-0.5 bg-black/25 text-[9px] rounded-sm font-bold font-mono">
+                          CODE: {selectedCensusItem.settlementCode}
+                        </span>
+                      </div>
+
+                      {/* Baseline Demographic Statistics */}
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
+                          <span className="block text-[9px] text-slate-500 font-bold uppercase">2011 Baseline Pop.</span>
+                          <span className="text-base font-bold text-slate-900 font-mono">
+                            {formatPopulation(selectedCensusItem.population2011Baseline)}
+                          </span>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
+                          <span className="block text-[9px] text-slate-500 font-bold uppercase">Households</span>
+                          <span className="text-base font-bold text-slate-900 font-mono">
+                            {formatNumber(selectedCensusItem.households2011Baseline, 0, '—')}
+                          </span>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
+                          <span className="block text-[9px] text-slate-500 font-bold uppercase">Sex Ratio (M/F)</span>
+                          <span className="text-xs font-bold text-slate-800 font-mono leading-relaxed mt-1 block">
+                            {selectedCensusItem.malePopulation2011 != null && selectedCensusItem.femalePopulation2011 != null
+                              ? `${formatNumber(selectedCensusItem.malePopulation2011)} / ${formatNumber(selectedCensusItem.femalePopulation2011)}`
+                              : '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Location & Administrative Hierarchy */}
+                      <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
+                        <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700 flex items-center justify-between">
+                          <span>Administrative Hierarchy</span>
+                          <span className="text-[9px] font-mono text-slate-500">Census 2011 MDDS</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2">
+                          <span className="text-slate-600">District</span>
+                          <span className="font-semibold text-slate-800">{selectedCensusItem.districtName} ({selectedCensusItem.districtCode})</span>
+                        </div>
+                        {selectedCensusItem.subdistrictName && (
+                          <div className="flex items-center justify-between p-2">
+                            <span className="text-slate-600">Subdistrict / Tehsil</span>
+                            <span className="font-semibold text-slate-800">{selectedCensusItem.subdistrictName}</span>
+                          </div>
+                        )}
+                        {selectedCensusItem.cdBlockName && (
+                          <div className="flex items-center justify-between p-2">
+                            <span className="text-slate-600">CD Block</span>
+                            <span className="font-semibold text-slate-800">{selectedCensusItem.cdBlockName}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between p-2">
+                          <span className="text-slate-600">Coordinates</span>
+                          <span className="font-mono text-[11px] text-slate-700">
+                            {selectedCensusItem.latitude != null && selectedCensusItem.longitude != null
+                              ? `${formatNumber(selectedCensusItem.latitude, 4)}°N, ${formatNumber(selectedCensusItem.longitude, 4)}°E`
+                              : '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Infrastructure Markers (from Census DCHB) */}
+                      {selectedCensusItem.infrastructureMarkers && Object.keys(selectedCensusItem.infrastructureMarkers).length > 0 && (
+                        <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
+                          <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700">
+                            Census 2011 Infrastructure Amenities
+                          </div>
+                          {Object.entries(selectedCensusItem.infrastructureMarkers).map(([key, val]) => (
+                            <div key={key} className="flex items-center justify-between p-2">
+                              <span className="text-slate-600 capitalize">{key.replace(/_/g, ' ')}</span>
+                              <span className="font-semibold font-mono text-[11px] text-slate-800">
+                                {typeof val === 'boolean' ? (val ? 'Available' : 'Unavailable') : String(val ?? '—')}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Official Provenance & Temporal Disclaimer */}
+                      <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-sm space-y-1 text-xs">
+                        <div className="font-bold text-amber-900 text-[10px] uppercase tracking-wider flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">history_edu</span>
+                          Data Provenance & Temporal Baseline Notice
+                        </div>
+                        <p className="text-[10px] text-amber-900 leading-relaxed font-sans">
+                          {selectedCensusItem.temporalNotice || 'Official Census 2011 baseline data. Reflects 2011 statutory enumeration; not real-time population.'}
+                        </p>
+                        <div className="text-[9px] font-mono text-amber-800 pt-1 border-t border-amber-200/60">
+                          Source: {selectedCensusItem.provenance || 'Census of India 2011, Directorate of Census Operations Uttarakhand'}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-500 text-center py-8">
+                      Click any Census settlement point on the map to inspect baseline demographics and infrastructure.
+                    </div>
+                  )}
+                </div>
+              ) : selectedViewType === 'osm' ? (
+                /* ── OSM CRITICAL FACILITY VIEW ── */
+                <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
+                  {selectedOsmFacilityItem ? (
+                    <>
+                      <div className="bg-[#003366] text-white p-2.5 rounded-sm flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                          <span className="text-[11px] font-bold tracking-wider uppercase">
+                            {selectedOsmFacilityItem.category} FACILITY
+                          </span>
+                        </div>
+                        <span className="px-1.5 py-0.5 bg-white/20 text-[9px] rounded-sm font-bold font-mono">
+                          OSM ID: {selectedOsmFacilityItem.osmId}
+                        </span>
+                      </div>
+
+                      {/* Facility Attribute Details */}
+                      <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 text-xs">
+                        <div className="p-2 bg-slate-50 font-bold text-[11px] text-slate-700">
+                          Facility Spatial Attributes
+                        </div>
+                        <div className="flex items-center justify-between p-2">
+                          <span className="text-slate-600">Facility Name</span>
+                          <span className="font-bold text-slate-900">{selectedOsmFacilityItem.name}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2">
+                          <span className="text-slate-600">Classification (fclass)</span>
+                          <span className="font-semibold text-slate-800 font-mono">{selectedOsmFacilityItem.fclass}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2">
+                          <span className="text-slate-600">Functional Category</span>
+                          <span className="font-semibold text-[#003366] capitalize">{selectedOsmFacilityItem.category}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2">
+                          <span className="text-slate-600">Coordinates (WGS84)</span>
+                          <span className="font-mono text-[11px] text-slate-700">
+                            {selectedOsmFacilityItem.latitude != null && selectedOsmFacilityItem.longitude != null
+                              ? `${formatNumber(selectedOsmFacilityItem.latitude, 4)}°N, ${formatNumber(selectedOsmFacilityItem.longitude, 4)}°E`
+                              : '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Crowdsource Provenance Notice */}
+                      <div className="bg-sky-50 border border-sky-200 p-2.5 rounded-sm space-y-1 text-xs">
+                        <div className="font-bold text-sky-900 text-[10px] uppercase tracking-wider flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">public</span>
+                          OpenStreetMap Crowdsource Notice
+                        </div>
+                        <p className="text-[10px] text-sky-900 leading-relaxed font-sans">
+                          {selectedOsmFacilityItem.sourceNotice || 'OpenStreetMap crowdsourced geometry. For planning reference; not field-verified by government surveyors.'}
+                        </p>
+                        <div className="text-[9px] font-mono text-sky-800 pt-1 border-t border-sky-200/60">
+                          Source: {selectedOsmFacilityItem.provenance || 'OpenStreetMap Contributors, Geofabrik Northern Zone extract'}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-500 text-center py-8">
+                      Click any OSM critical facility marker on the map to inspect spatial attributes and classification.
+                    </div>
+                  )}
+                </div>
               ) : (
                 /* ── HABITATION VIEW ── */
                 <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
@@ -1146,15 +1807,15 @@ export const RiskGIS: React.FC = () => {
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-slate-50 border border-slate-200 p-2 rounded-sm">
                       <span className="block text-[9px] text-slate-500 font-bold uppercase">Pop.</span>
-                      <span className="text-base font-bold text-slate-900 font-mono">{selectedHabitation.population.toLocaleString()}</span>
+                      <span className="text-base font-bold text-slate-900 font-mono">{formatPopulation(selectedHabitation?.population)}</span>
                     </div>
                     <div className="bg-amber-50 border border-amber-200 p-2 rounded-sm">
                       <span className="block text-[9px] text-amber-900 font-bold uppercase">Exposure</span>
-                      <span className="text-base font-bold text-amber-900 font-mono">{(selectedHabitation.hazardExposureScore * 100).toFixed(0)}%</span>
+                      <span className="text-base font-bold text-amber-900 font-mono">{formatPercent(selectedHabitation?.hazardExposureScore, 0)}</span>
                     </div>
                     <div className="bg-red-50 border border-red-200 p-2 rounded-sm">
                       <span className="block text-[9px] text-red-900 font-bold uppercase">Risk</span>
-                      <span className="text-base font-bold text-red-700 font-mono">{selectedHabitation.riskScore.toFixed(2)}</span>
+                      <span className="text-base font-bold text-red-700 font-mono">{formatScore(selectedHabitation?.riskScore, 2)}</span>
                     </div>
                   </div>
 
@@ -1164,14 +1825,14 @@ export const RiskGIS: React.FC = () => {
                         <span className="material-symbols-outlined text-[14px] text-red-600">local_hospital</span>
                         Healthcare
                       </span>
-                      <span className="font-bold text-red-700 font-mono text-[11px]">{selectedHabitation.infrastructure.healthcare}</span>
+                      <span className="font-bold text-red-700 font-mono text-[11px]">{selectedHabitation?.infrastructure?.healthcare || '—'}</span>
                     </div>
                     <div className="flex items-center justify-between px-3 py-2">
                       <span className="flex items-center gap-1.5 text-slate-600">
                         <span className="material-symbols-outlined text-[14px] text-[#d9531e]">alt_route</span>
                         Roads
                       </span>
-                      <span className="font-bold text-amber-700 font-mono text-[11px]">{selectedHabitation.infrastructure.roads}</span>
+                      <span className="font-bold text-amber-700 font-mono text-[11px]">{selectedHabitation?.infrastructure?.roads || '—'}</span>
                     </div>
                     <div className="flex items-center justify-between px-3 py-2 bg-slate-50">
                       <span className="flex items-center gap-1.5 text-slate-600">
