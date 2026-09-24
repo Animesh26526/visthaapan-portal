@@ -39,19 +39,20 @@ export interface Habitation {
   elevationMeters: number;
   slopeDegrees: number;
   hazards: string[];
-  primaryHazard: 'Flash Flood' | 'Landslide' | 'Cloudburst' | 'Subsidence' | 'Debris Flow';
+  primaryHazard: 'Flash Flood' | 'Landslide' | 'Cloudburst' | 'Subsidence' | 'Debris Flow' | 'River Inundation' | 'Slope Creep' | string;
   riskScore: number;          // 0.0 to 1.0
   vulnerabilityScore: number; // 0.0 to 1.0
   hazardExposureScore: number;
   priorityScore: number;
   priority: UrgencyTier;
-  evacuationStatus: 'Pending Review' | 'Evacuation Ordered' | 'Transit En Route' | 'Relocated' | 'Sheltered' | 'Standby';
+  evacuationStatus: 'Pending Review' | 'Evacuation Ordered' | 'Transit En Route' | 'Relocated' | 'Sheltered' | 'Standby' | string;
   infrastructure: {
-    healthcare: 'None' | 'Primary Health Post' | 'Sub-center' | 'Community Health Center';
-    water: 'Disrupted' | 'Contaminated' | 'Tanker Dependent' | 'Piped Normal';
-    roads: 'Blocked' | 'Severely Compromised' | 'Single-lane Passable' | 'Normal';
-    powerGrid: 'Outage' | 'Intermittent' | 'Operational';
+    healthcare: string;
+    water: string;
+    roads: string;
+    powerGrid: string;
   };
+
   historicalEventsCount: number;
   lastIncidentYear: number;
   redZoneDistanceKm: number;
@@ -86,14 +87,14 @@ export interface ResourceCapacity {
   sanitationCapacity: number;
   healthcareCapacity: number;
   effectiveCapacity: number; // MIN of above
-  bottleneck: 'Area' | 'Water' | 'Shelter' | 'Sanitation' | 'Healthcare';
+  bottleneck: 'Area' | 'Water' | 'Shelter' | 'Sanitation' | 'Healthcare' | string;
 }
 
 export interface RelocationSite {
   id: string;
   code: string;
   name: string;
-  type: 'Highland Ridge Enclave' | 'Riverine Buffer Grounds' | 'Stadium Complex' | 'Plateau Camp' | 'Aerodrome Grounds';
+  type: string;
   location: string;
   district: string;
   coordinates: Coordinates;
@@ -105,10 +106,10 @@ export interface RelocationSite {
   totalAllocated: number;
   availableCapacity: number;
   utilizationRate: number; // %
-  accessibility: 'All-weather Highway' | 'Paved Secondary' | 'Gravel Access' | 'Restricted Convoy';
+  accessibility: string;
   routeDistanceKm: number;
   transitTimeMinutes: number;
-  logisticsStatus: 'Fully Operational' | 'Mobilizing' | 'At Capacity' | 'Constrained';
+  logisticsStatus: string;
   facilities: {
     hasFieldHospital: boolean;
     hasWaterPurification: boolean;
@@ -121,18 +122,22 @@ export interface AllocationItem {
   id: string;
   habitationId: string;
   habitationName: string;
-  sourcePopulation: number;
-  priority: UrgencyTier;
+  sourceHabitationId?: string;
+  sourceHabitationName?: string;
+  sourcePopulation?: number;
+  priority?: UrgencyTier;
   siteId: string;
   siteName: string;
+  targetSiteId?: string;
+  targetSiteName?: string;
   allocatedPopulation: number;
-  unmetDemand: number;
-  distanceKm: number;
-  travelTimeMin: number;
-  costInLakhs: number;
-  transitStatus: 'Staged' | 'In Transit' | 'Arrived' | 'Standby';
-  transportMode: 'Convoy Bus' | 'Utility 4x4' | 'Helicopter Air-Bridge' | 'Foot Escort';
-  assignedAgency: 'NDRF 8th Bn' | 'SDRF Uttarakhand' | 'ITBP Force' | 'District Transport Corp';
+  unmetDemand?: number;
+  distanceKm?: number;
+  travelTimeMin?: number;
+  costInLakhs?: number;
+  transitStatus?: string;
+  transportMode?: string;
+  assignedAgency?: string;
 }
 
 export interface AllocationSummary {
@@ -141,9 +146,9 @@ export interface AllocationSummary {
   unmetDemandTotal: number;
   totalDistanceKm: number;
   totalEstimatedCostLakhs: number;
-  averageCapacityUtilization: number;
-  bottleneckCount: number;
-  highPrioritySatisfactionRate: number;
+  averageCapacityUtilization?: number;
+  bottleneckCount?: number;
+  highPrioritySatisfactionRate?: number;
 }
 
 export interface AllocationExplanation {
@@ -171,7 +176,7 @@ export interface ScenarioModification {
   siteCapacityOverrides: Record<string, number>;
   closedRoutes: string[];
   siteActiveStatus: Record<string, boolean>;
-  hazardMultiplier: number; // e.g. 1.25 for +25% rainfall
+  hazardMultiplier: number;
   addedSites: Partial<RelocationSite>[];
 }
 
@@ -186,13 +191,13 @@ export interface ScenarioComparison {
 }
 
 export interface RelocationPlanPhase {
-  phase: 'Immediate (0-24h)' | 'Short-Term (1-7d)' | 'Medium-Term (weeks/months)';
+  phase: string;
   items: {
     habitation: string;
     destination: string;
     headcount: number;
     agency: string;
-    status: 'Pending Authorisation' | 'Convoy Staged' | 'Active Transit' | 'Completed';
+    status: 'Pending Authorisation' | 'Convoy Staged' | 'Active Transit' | 'Completed' | string;
     criticalNeed: string;
   }[];
 }
@@ -200,8 +205,8 @@ export interface RelocationPlanPhase {
 export interface OfficerDecision {
   id: string;
   timestamp: string;
-  date: string;
-  time: string;
+  date?: string;
+  time?: string;
   officerName: string;
   officerRole: string;
   action: 'ACCEPTED' | 'MODIFIED' | 'REJECTED';
@@ -212,7 +217,10 @@ export interface OfficerDecision {
   statutoryReference: string;
   previousAllocationSummary: string;
   newAllocationSummary: string;
+  digitalSignatureHash?: string;
+  status?: string;
 }
+
 
 export interface DataSourceProvenance {
   id: string;

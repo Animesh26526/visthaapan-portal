@@ -21,6 +21,8 @@ optimizationRouter.post('/run', runOptimizationHandler);
 
 // Latest optimization run with full allocations, explanations, and constraints
 optimizationRouter.get('/runs/latest', getLatestRunHandler);
+optimizationRouter.get('/latest', getLatestRunHandler);
+optimizationRouter.get('/', getLatestRunHandler);
 
 // Historical optimization runs list
 optimizationRouter.get('/runs', listRunsHandler);

@@ -14,7 +14,7 @@ import type {
 } from '../types';
 
 export const mockCurrentOfficer: GovernmentOfficer = {
-  id: 'OFF-IND-2024-8841',
+  id: 'OFF-IND-2026-8841',
   name: 'Shri R. K. Sharma, IAS',
   designation: 'District Magistrate & Incident Commander',
   department: 'DDMA Chamoli / Revenue & Disaster Management Dept',
@@ -29,212 +29,252 @@ export const mockCurrentOfficer: GovernmentOfficer = {
 
 export const mockHabitations: Habitation[] = [
   {
-    id: 'HAB-001',
-    code: 'VIL-A-MAL',
-    name: 'Village A (Malari Upper / Joshimath Ridge)',
+    id: 'hab-joshimath',
+    code: 'HAB-JOSHIMATH',
+    name: 'Joshimath',
     subDistrict: 'Joshimath',
     district: 'Chamoli',
     state: 'Uttarakhand',
-    population: 8240,
-    households: 1850,
-    vulnerableGroups: { elderly: 1240, children: 1980, disabled: 310 },
-    coordinates: { lat: 30.556, lng: 79.563 },
+    population: 4500,
+    households: 1020,
+    vulnerableGroups: { elderly: 740, children: 1120, disabled: 180 },
+    coordinates: { lat: 30.5564, lng: 79.5645 },
     elevationMeters: 2180,
     slopeDegrees: 34.2,
-    hazards: ['Active Subsidence', 'Flash Flood', 'Debris Avalanches'],
-    primaryHazard: 'Subsidence',
-    riskScore: 0.94,
-    vulnerabilityScore: 0.89,
-    hazardExposureScore: 0.96,
-    priorityScore: 0.92,
+    hazards: ['Active Land Subsidence', 'Slope Instability', 'Ground Cracks'],
+    primaryHazard: 'Land Subsidence',
+    riskScore: 0.95,
+    vulnerabilityScore: 0.91,
+    hazardExposureScore: 0.98,
+    priorityScore: 0.95,
+    priority: 'Immediate',
+    evacuationStatus: 'Pending Review',
+    infrastructure: {
+      healthcare: 'Severely Strained',
+      water: 'Disrupted (Subsidence Shear)',
+      roads: 'Single-Lane Compromised',
+      powerGrid: 'Intermittent'
+    },
+    historicalEventsCount: 8,
+    lastIncidentYear: 2024,
+    redZoneDistanceKm: 0.0,
+    isInsideRedZone: true
+  },
+  {
+    id: 'hab-raini',
+    code: 'HAB-RAINI',
+    name: 'Raini',
+    subDistrict: 'Joshimath',
+    district: 'Chamoli',
+    state: 'Uttarakhand',
+    population: 1800,
+    households: 390,
+    vulnerableGroups: { elderly: 290, children: 440, disabled: 75 },
+    coordinates: { lat: 30.485, lng: 79.712 },
+    elevationMeters: 1980,
+    slopeDegrees: 36.5,
+    hazards: ['Glacial Lake Outburst Vulnerability', 'Flash Flood', 'Debris Flow'],
+    primaryHazard: 'Flash Flood',
+    riskScore: 0.91,
+    vulnerabilityScore: 0.86,
+    hazardExposureScore: 0.94,
+    priorityScore: 0.90,
+    priority: 'Immediate',
+    evacuationStatus: 'Pending Review',
+    infrastructure: {
+      healthcare: 'None (Sub-Center Destroyed)',
+      water: 'Spring Source Compromised',
+      roads: 'NH-58 Ext Impassable',
+      powerGrid: 'Outage'
+    },
+    historicalEventsCount: 6,
+    lastIncidentYear: 2024,
+    redZoneDistanceKm: 0.0,
+    isInsideRedZone: true
+  },
+  {
+    id: 'hab-tapovan',
+    code: 'HAB-TAPOVAN',
+    name: 'Tapovan',
+    subDistrict: 'Joshimath',
+    district: 'Chamoli',
+    state: 'Uttarakhand',
+    population: 3150,
+    households: 710,
+    vulnerableGroups: { elderly: 480, children: 760, disabled: 120 },
+    coordinates: { lat: 30.492, lng: 79.628 },
+    elevationMeters: 1910,
+    slopeDegrees: 31.0,
+    hazards: ['Debris Flow', 'Riverbank Erosion', 'Flash Flood'],
+    primaryHazard: 'Debris Flow',
+    riskScore: 0.88,
+    vulnerabilityScore: 0.83,
+    hazardExposureScore: 0.90,
+    priorityScore: 0.87,
     priority: 'Immediate',
     evacuationStatus: 'Pending Review',
     infrastructure: {
       healthcare: 'Primary Health Post',
       water: 'Disrupted',
-      roads: 'Severely Compromised',
-      powerGrid: 'Intermittent'
+      roads: 'Single-Lane Passable',
+      powerGrid: 'Partial'
     },
-    historicalEventsCount: 7,
+    historicalEventsCount: 5,
     lastIncidentYear: 2023,
     redZoneDistanceKm: 0.2,
     isInsideRedZone: true
   },
   {
-    id: 'HAB-002',
-    code: 'VIL-B-HEL',
-    name: 'Village B (Helang Valley Corridor)',
+    id: 'hab-helang',
+    code: 'HAB-HELANG',
+    name: 'Helang',
     subDistrict: 'Joshimath',
     district: 'Chamoli',
     state: 'Uttarakhand',
-    population: 6700,
-    households: 1480,
-    vulnerableGroups: { elderly: 890, children: 1420, disabled: 210 },
+    population: 2800,
+    households: 620,
+    vulnerableGroups: { elderly: 410, children: 670, disabled: 95 },
     coordinates: { lat: 30.518, lng: 79.497 },
     elevationMeters: 1840,
     slopeDegrees: 28.5,
-    hazards: ['Debris Flow', 'River Inundation', 'Slope Failure'],
-    primaryHazard: 'Debris Flow',
-    riskScore: 0.89,
-    vulnerabilityScore: 0.82,
-    hazardExposureScore: 0.91,
-    priorityScore: 0.84,
+    hazards: ['Active Landslide Zone', 'Highway Slope Failure'],
+    primaryHazard: 'Landslide',
+    riskScore: 0.84,
+    vulnerabilityScore: 0.79,
+    hazardExposureScore: 0.86,
+    priorityScore: 0.83,
     priority: 'Immediate',
     evacuationStatus: 'Pending Review',
     infrastructure: {
-      healthcare: 'None',
+      healthcare: 'Primary Health Post',
       water: 'Contaminated',
-      roads: 'Single-lane Passable',
-      powerGrid: 'Outage'
-    },
-    historicalEventsCount: 5,
-    lastIncidentYear: 2024,
-    redZoneDistanceKm: 0.6,
-    isInsideRedZone: true
-  },
-  {
-    id: 'HAB-003',
-    code: 'VIL-C-PIP',
-    name: 'Village C (Pipalkoti East Flank)',
-    subDistrict: 'Chamoli',
-    district: 'Chamoli',
-    state: 'Uttarakhand',
-    population: 4100,
-    households: 920,
-    vulnerableGroups: { elderly: 510, children: 830, disabled: 115 },
-    coordinates: { lat: 30.432, lng: 79.431 },
-    elevationMeters: 1320,
-    slopeDegrees: 22.0,
-    hazards: ['Flash Flood', 'Torrential Runoff'],
-    primaryHazard: 'Flash Flood',
-    riskScore: 0.82,
-    vulnerabilityScore: 0.76,
-    hazardExposureScore: 0.85,
-    priorityScore: 0.78,
-    priority: 'Short-term',
-    evacuationStatus: 'Standby',
-    infrastructure: {
-      healthcare: 'Sub-center',
-      water: 'Tanker Dependent',
       roads: 'Single-lane Passable',
       powerGrid: 'Operational'
     },
-    historicalEventsCount: 3,
-    lastIncidentYear: 2021,
-    redZoneDistanceKm: 1.4,
-    isInsideRedZone: false
+    historicalEventsCount: 4,
+    lastIncidentYear: 2024,
+    redZoneDistanceKm: 0.4,
+    isInsideRedZone: true
   },
   {
-    id: 'HAB-004',
-    code: 'VIL-D-TAP',
-    name: 'Village D (Tapovan Buffer Hamlet)',
+    id: 'hab-pandukeshwar',
+    code: 'HAB-PANDUKESHWAR',
+    name: 'Pandukeshwar',
     subDistrict: 'Joshimath',
     district: 'Chamoli',
     state: 'Uttarakhand',
-    population: 3400,
-    households: 750,
-    vulnerableGroups: { elderly: 420, children: 680, disabled: 95 },
-    coordinates: { lat: 30.492, lng: 79.628 },
-    elevationMeters: 1910,
-    slopeDegrees: 31.0,
-    hazards: ['Glacial Outburst Vulnerability', 'Flash Flood'],
-    primaryHazard: 'Flash Flood',
-    riskScore: 0.68,
-    vulnerabilityScore: 0.64,
-    hazardExposureScore: 0.72,
-    priorityScore: 0.65,
+    population: 3200,
+    households: 730,
+    vulnerableGroups: { elderly: 460, children: 780, disabled: 110 },
+    coordinates: { lat: 30.64, lng: 79.545 },
+    elevationMeters: 1820,
+    slopeDegrees: 29.8,
+    hazards: ['River Gorge Inundation', 'Slope Instability'],
+    primaryHazard: 'River Inundation',
+    riskScore: 0.81,
+    vulnerabilityScore: 0.77,
+    hazardExposureScore: 0.83,
+    priorityScore: 0.80,
+    priority: 'Immediate',
+    evacuationStatus: 'Pending Review',
+    infrastructure: {
+      healthcare: 'Sub-Center',
+      water: 'Piped Supply',
+      roads: 'NH-07 Passable',
+      powerGrid: 'Operational'
+    },
+    historicalEventsCount: 3,
+    lastIncidentYear: 2023,
+    redZoneDistanceKm: 0.8,
+    isInsideRedZone: true
+  },
+  // Peripheral and Short-Term Habitations
+  {
+    id: 'hab-gopeshwar',
+    code: 'HAB-GOPESHWAR',
+    name: 'Gopeshwar',
+    subDistrict: 'Chamoli',
+    district: 'Chamoli',
+    state: 'Uttarakhand',
+    population: 2400,
+    households: 540,
+    vulnerableGroups: { elderly: 320, children: 510, disabled: 70 },
+    coordinates: { lat: 30.418, lng: 79.332 },
+    elevationMeters: 1450,
+    slopeDegrees: 22.0,
+    hazards: ['Heavy Runoff', 'Slope Creep'],
+    primaryHazard: 'Slope Creep',
+    riskScore: 0.65,
+    vulnerabilityScore: 0.62,
+    hazardExposureScore: 0.67,
+    priorityScore: 0.64,
     priority: 'Short-term',
     evacuationStatus: 'Standby',
     infrastructure: {
-      healthcare: 'Sub-center',
-      water: 'Piped Normal',
-      roads: 'Normal',
+      healthcare: 'District Hospital',
+      water: 'Operational',
+      roads: 'All-Weather Highway',
+      powerGrid: 'Operational'
+    },
+    historicalEventsCount: 2,
+    lastIncidentYear: 2022,
+    redZoneDistanceKm: 3.2,
+    isInsideRedZone: false
+  },
+  {
+    id: 'hab-nandprayag',
+    code: 'HAB-NANDPRAYAG',
+    name: 'Nandprayag',
+    subDistrict: 'Chamoli',
+    district: 'Chamoli',
+    state: 'Uttarakhand',
+    population: 1950,
+    households: 430,
+    vulnerableGroups: { elderly: 240, children: 390, disabled: 50 },
+    coordinates: { lat: 30.33, lng: 79.32 },
+    elevationMeters: 1100,
+    slopeDegrees: 19.5,
+    hazards: ['River Confluence Swell'],
+    primaryHazard: 'River Inundation',
+    riskScore: 0.58,
+    vulnerabilityScore: 0.55,
+    hazardExposureScore: 0.60,
+    priorityScore: 0.57,
+    priority: 'Short-term',
+    evacuationStatus: 'Standby',
+    infrastructure: {
+      healthcare: 'Primary Health Post',
+      water: 'Operational',
+      roads: 'All-Weather Highway',
       powerGrid: 'Operational'
     },
     historicalEventsCount: 2,
     lastIncidentYear: 2021,
-    redZoneDistanceKm: 2.8,
-    isInsideRedZone: false
-  },
-  {
-    id: 'HAB-005',
-    code: 'VIL-E-RIN',
-    name: 'Village E (Rini Settlement)',
-    subDistrict: 'Joshimath',
-    district: 'Chamoli',
-    state: 'Uttarakhand',
-    population: 2150,
-    households: 480,
-    vulnerableGroups: { elderly: 260, children: 410, disabled: 60 },
-    coordinates: { lat: 30.485, lng: 79.712 },
-    elevationMeters: 1980,
-    slopeDegrees: 24.1,
-    hazards: ['Stream Bank Erosion', 'Rockfall'],
-    primaryHazard: 'Landslide',
-    riskScore: 0.54,
-    vulnerabilityScore: 0.58,
-    hazardExposureScore: 0.51,
-    priorityScore: 0.55,
-    priority: 'Medium-term',
-    evacuationStatus: 'Sheltered',
-    infrastructure: {
-      healthcare: 'Primary Health Post',
-      water: 'Piped Normal',
-      roads: 'Normal',
-      powerGrid: 'Operational'
-    },
-    historicalEventsCount: 4,
-    lastIncidentYear: 2021,
-    redZoneDistanceKm: 4.1,
+    redZoneDistanceKm: 4.5,
     isInsideRedZone: false
   }
 ];
 
+// Backward-compatibility mapping
+export const HABITATION_ALIAS_MAP: Record<string, string> = {
+  'HAB-001': 'hab-joshimath',
+  'HAB-002': 'hab-raini',
+  'HAB-003': 'hab-tapovan',
+  'HAB-004': 'hab-helang',
+  'HAB-005': 'hab-pandukeshwar',
+};
+
 export const mockSites: RelocationSite[] = [
   {
-    id: 'SITE-001',
-    code: 'SITE-A-HLR',
-    name: 'Safe Site Alpha (Highland Ridge Enclave, Pipalkoti)',
-    type: 'Highland Ridge Enclave',
-    location: 'Pipalkoti North Plateau, Sector 4',
-    district: 'Chamoli',
-    coordinates: { lat: 30.415, lng: 79.380 },
-    elevationMeters: 1540,
-    safetyScore: 0.96,
-    isOutsideRedZone: true,
-    resourceCapacity: {
-      areaCapacity: 15000,
-      waterCapacity: 12000,
-      shelterCapacity: 10000,
-      sanitationCapacity: 9200,
-      healthcareCapacity: 13000,
-      effectiveCapacity: 9200, // MIN is sanitation
-      bottleneck: 'Sanitation'
-    },
-    totalAllocated: 9200,
-    availableCapacity: 0,
-    utilizationRate: 100,
-    accessibility: 'All-weather Highway',
-    routeDistanceKm: 18.4,
-    transitTimeMinutes: 42,
-    logisticsStatus: 'At Capacity',
-    facilities: {
-      hasFieldHospital: true,
-      hasWaterPurification: true,
-      hasHelipad: true,
-      hasElectricitySubstation: true
-    }
-  },
-  {
-    id: 'SITE-002',
-    code: 'SITE-B-RBG',
-    name: 'Safe Site Beta (Gauchar Aerodrome Buffer Grounds)',
-    type: 'Aerodrome Grounds',
+    id: 'site-gauchar',
+    code: 'SITE-GAUCHAR',
+    name: 'Gauchar Relocation Site',
+    type: 'Strategic Aerodrome Terrace',
     location: 'Gauchar West Terrace, Alaknanda Bank',
     district: 'Chamoli',
-    coordinates: { lat: 30.288, lng: 79.155 },
+    coordinates: { lat: 30.2854, lng: 79.1542 },
     elevationMeters: 820,
-    safetyScore: 0.91,
+    safetyScore: 0.96,
     isOutsideRedZone: true,
     resourceCapacity: {
       areaCapacity: 8000,
@@ -242,15 +282,117 @@ export const mockSites: RelocationSite[] = [
       shelterCapacity: 6000,
       sanitationCapacity: 5500,
       healthcareCapacity: 7000,
-      effectiveCapacity: 5500, // MIN is sanitation
+      effectiveCapacity: 5500, // Limiting is Sanitation
       bottleneck: 'Sanitation'
     },
-    totalAllocated: 5500,
+    totalAllocated: 4500,
+    availableCapacity: 1000,
+    utilizationRate: 81.8,
+    accessibility: 'All-weather National Highway NH-07',
+    routeDistanceKm: 79.2,
+    transitTimeMinutes: 136,
+    logisticsStatus: 'Operational',
+    facilities: {
+      hasFieldHospital: true,
+      hasWaterPurification: true,
+      hasHelipad: true,
+      hasElectricitySubstation: true
+    }
+  },
+  {
+    id: 'site-karnaprayag',
+    code: 'SITE-KARNAPRAYAG',
+    name: 'Karnaprayag Relocation Site',
+    type: 'Plateau Shelter Hub',
+    location: 'Karnaprayag Upper Plateau, Sector 2',
+    district: 'Chamoli',
+    coordinates: { lat: 30.2589, lng: 79.2198 },
+    elevationMeters: 860,
+    safetyScore: 0.94,
+    isOutsideRedZone: true,
+    resourceCapacity: {
+      areaCapacity: 6000,
+      waterCapacity: 5000,
+      shelterCapacity: 4500,
+      sanitationCapacity: 3800,
+      healthcareCapacity: 4800,
+      effectiveCapacity: 3800, // Limiting is Sanitation
+      bottleneck: 'Sanitation'
+    },
+    totalAllocated: 1800,
+    availableCapacity: 2000,
+    utilizationRate: 47.4,
+    accessibility: 'All-weather National Highway NH-07',
+    routeDistanceKm: 68.5,
+    transitTimeMinutes: 118,
+    logisticsStatus: 'Operational',
+    facilities: {
+      hasFieldHospital: true,
+      hasWaterPurification: true,
+      hasHelipad: false,
+      hasElectricitySubstation: true
+    }
+  },
+  {
+    id: 'site-rudraprayag',
+    code: 'SITE-RUDRAPRAYAG',
+    name: 'Rudraprayag Relocation Site',
+    type: 'District Egress Camp',
+    location: 'Rudraprayag South Bench, Sector 1',
+    district: 'Rudraprayag',
+    coordinates: { lat: 30.2842, lng: 78.9812 },
+    elevationMeters: 890,
+    safetyScore: 0.93,
+    isOutsideRedZone: true,
+    resourceCapacity: {
+      areaCapacity: 6500,
+      waterCapacity: 5500,
+      shelterCapacity: 5000,
+      sanitationCapacity: 4200,
+      healthcareCapacity: 5000,
+      effectiveCapacity: 4200, // Limiting is Sanitation
+      bottleneck: 'Sanitation'
+    },
+    totalAllocated: 3150,
+    availableCapacity: 1050,
+    utilizationRate: 75.0,
+    accessibility: 'All-weather National Highway NH-07',
+    routeDistanceKm: 112.4,
+    transitTimeMinutes: 190,
+    logisticsStatus: 'Operational',
+    facilities: {
+      hasFieldHospital: true,
+      hasWaterPurification: true,
+      hasHelipad: true,
+      hasElectricitySubstation: true
+    }
+  },
+  {
+    id: 'site-srinagar',
+    code: 'SITE-SRINAGAR',
+    name: 'Srinagar Relocation Site',
+    type: 'Regional Base Facility',
+    location: 'Srinagar University Buffer Grounds',
+    district: 'Pauri Garhwal',
+    coordinates: { lat: 30.2215, lng: 78.7845 },
+    elevationMeters: 560,
+    safetyScore: 0.98,
+    isOutsideRedZone: true,
+    resourceCapacity: {
+      areaCapacity: 12000,
+      waterCapacity: 10000,
+      shelterCapacity: 8000,
+      sanitationCapacity: 6000,
+      healthcareCapacity: 9500,
+      effectiveCapacity: 6000, // Limiting is Sanitation
+      bottleneck: 'Sanitation'
+    },
+    totalAllocated: 6000,
     availableCapacity: 0,
-    utilizationRate: 100,
-    accessibility: 'All-weather Highway',
-    routeDistanceKm: 46.2,
-    transitTimeMinutes: 78,
+    utilizationRate: 100.0,
+    accessibility: 'All-weather 4-Lane Highway Corridor',
+    routeDistanceKm: 148.0,
+    transitTimeMinutes: 240,
     logisticsStatus: 'At Capacity',
     facilities: {
       hasFieldHospital: true,
@@ -260,32 +402,32 @@ export const mockSites: RelocationSite[] = [
     }
   },
   {
-    id: 'SITE-003',
-    code: 'SITE-C-GPC',
-    name: 'Safe Site Gamma (Ghingran Plateau Complex)',
-    type: 'Plateau Camp',
-    location: 'Gopeshwar-Ghingran Inter-District Corridor',
+    id: 'site-pipalkoti',
+    code: 'SITE-PIPALKOTI',
+    name: 'Pipalkoti Transit Site',
+    type: 'Transit Staging Shelter',
+    location: 'Pipalkoti Escarpment Terrace',
     district: 'Chamoli',
-    coordinates: { lat: 30.402, lng: 79.319 },
-    elevationMeters: 1720,
-    safetyScore: 0.89,
-    isOutsideRedZone: true,
+    coordinates: { lat: 30.4321, lng: 79.4312 },
+    elevationMeters: 1320,
+    safetyScore: 0.35,
+    isOutsideRedZone: false, // Inside Red Zone!
     resourceCapacity: {
-      areaCapacity: 6500,
-      waterCapacity: 4800,
-      shelterCapacity: 5500,
-      sanitationCapacity: 5000,
-      healthcareCapacity: 5200,
-      effectiveCapacity: 4800, // MIN is water
-      bottleneck: 'Water'
+      areaCapacity: 5000,
+      waterCapacity: 4000,
+      shelterCapacity: 3500,
+      sanitationCapacity: 3000,
+      healthcareCapacity: 2500,
+      effectiveCapacity: 0, // Hard Hazard Exclusion
+      bottleneck: 'Hard Hazard Exclusion'
     },
-    totalAllocated: 4800,
+    totalAllocated: 0,
     availableCapacity: 0,
-    utilizationRate: 100,
-    accessibility: 'Paved Secondary',
-    routeDistanceKm: 32.1,
-    transitTimeMinutes: 65,
-    logisticsStatus: 'At Capacity',
+    utilizationRate: 0.0,
+    accessibility: 'Restricted - High-Angle Escarpment Hazard',
+    routeDistanceKm: 34.0,
+    transitTimeMinutes: 60,
+    logisticsStatus: 'Restricted by Hazard',
     facilities: {
       hasFieldHospital: false,
       hasWaterPurification: true,
@@ -295,196 +437,297 @@ export const mockSites: RelocationSite[] = [
   }
 ];
 
+export const SITE_ALIAS_MAP: Record<string, string> = {
+  'SITE-001': 'site-gauchar',
+  'SITE-002': 'site-karnaprayag',
+  'SITE-003': 'site-rudraprayag',
+  'SITE-004': 'site-srinagar',
+  'SITE-005': 'site-pipalkoti',
+};
+
+// Exact OR-Generated Optimal Baseline Allocations
 export const mockAllocations: AllocationItem[] = [
   {
     id: 'AL-001',
-    habitationId: 'HAB-001',
-    habitationName: 'Village A (Malari Upper)',
-    sourcePopulation: 8240,
+    habitationId: 'hab-joshimath',
+    habitationName: 'Joshimath',
+    sourcePopulation: 4500,
     priority: 'Immediate',
-    siteId: 'SITE-001',
-    siteName: 'Safe Site Alpha (Highland Ridge)',
-    allocatedPopulation: 7000,
+    siteId: 'site-gauchar',
+    siteName: 'Gauchar Relocation Site',
+    allocatedPopulation: 4500,
     unmetDemand: 0,
-    distanceKm: 18.4,
-    travelTimeMin: 42,
-    costInLakhs: 14.8,
-    transitStatus: 'In Transit',
+    distanceKm: 79.2,
+    travelTimeMin: 136,
+    costInLakhs: 16.5,
+    transitStatus: 'Staged',
     transportMode: 'Convoy Bus',
-    assignedAgency: 'NDRF 8th Bn'
+    assignedAgency: 'ITBP Force'
   },
   {
     id: 'AL-002',
-    habitationId: 'HAB-001',
-    habitationName: 'Village A (Malari Upper)',
-    sourcePopulation: 8240,
+    habitationId: 'hab-raini',
+    habitationName: 'Raini',
+    sourcePopulation: 1800,
     priority: 'Immediate',
-    siteId: 'SITE-003',
-    siteName: 'Safe Site Gamma (Ghingran Plateau)',
-    allocatedPopulation: 1240,
+    siteId: 'site-karnaprayag',
+    siteName: 'Karnaprayag Relocation Site',
+    allocatedPopulation: 1800,
     unmetDemand: 0,
-    distanceKm: 32.1,
-    travelTimeMin: 65,
-    costInLakhs: 4.2,
+    distanceKm: 68.5,
+    travelTimeMin: 118,
+    costInLakhs: 12.0,
     transitStatus: 'Staged',
     transportMode: 'Utility 4x4',
     assignedAgency: 'SDRF Uttarakhand'
   },
   {
     id: 'AL-003',
-    habitationId: 'HAB-002',
-    habitationName: 'Village B (Helang Valley)',
-    sourcePopulation: 6700,
+    habitationId: 'hab-tapovan',
+    habitationName: 'Tapovan',
+    sourcePopulation: 3150,
     priority: 'Immediate',
-    siteId: 'SITE-001',
-    siteName: 'Safe Site Alpha (Highland Ridge)',
-    allocatedPopulation: 2200,
+    siteId: 'site-rudraprayag',
+    siteName: 'Rudraprayag Relocation Site',
+    allocatedPopulation: 3150,
     unmetDemand: 0,
-    distanceKm: 21.0,
-    travelTimeMin: 48,
-    costInLakhs: 5.6,
+    distanceKm: 112.4,
+    travelTimeMin: 190,
+    costInLakhs: 15.2,
     transitStatus: 'Staged',
     transportMode: 'Convoy Bus',
-    assignedAgency: 'District Transport Corp'
+    assignedAgency: 'ITBP Force'
   },
   {
     id: 'AL-004',
-    habitationId: 'HAB-002',
-    habitationName: 'Village B (Helang Valley)',
-    sourcePopulation: 6700,
+    habitationId: 'hab-helang',
+    habitationName: 'Helang',
+    sourcePopulation: 2800,
     priority: 'Immediate',
-    siteId: 'SITE-002',
-    siteName: 'Safe Site Beta (Gauchar Aerodrome)',
-    allocatedPopulation: 4500,
+    siteId: 'site-srinagar',
+    siteName: 'Srinagar Relocation Site',
+    allocatedPopulation: 2800,
     unmetDemand: 0,
-    distanceKm: 46.2,
-    travelTimeMin: 78,
-    costInLakhs: 16.4,
-    transitStatus: 'Standby',
+    distanceKm: 135.0,
+    travelTimeMin: 220,
+    costInLakhs: 14.0,
+    transitStatus: 'Staged',
     transportMode: 'Convoy Bus',
     assignedAgency: 'ITBP Force'
   },
   {
     id: 'AL-005',
-    habitationId: 'HAB-003',
-    habitationName: 'Village C (Pipalkoti Flank)',
-    sourcePopulation: 4100,
-    priority: 'Short-term',
-    siteId: 'SITE-002',
-    siteName: 'Safe Site Beta (Gauchar Aerodrome)',
-    allocatedPopulation: 1000,
+    habitationId: 'hab-pandukeshwar',
+    habitationName: 'Pandukeshwar',
+    sourcePopulation: 3200,
+    priority: 'Immediate',
+    siteId: 'site-srinagar',
+    siteName: 'Srinagar Relocation Site',
+    allocatedPopulation: 3200,
     unmetDemand: 0,
-    distanceKm: 38.5,
-    travelTimeMin: 62,
-    costInLakhs: 3.1,
-    transitStatus: 'Standby',
-    transportMode: 'Utility 4x4',
-    assignedAgency: 'District Transport Corp'
-  },
-  {
-    id: 'AL-006',
-    habitationId: 'HAB-003',
-    habitationName: 'Village C (Pipalkoti Flank)',
-    sourcePopulation: 4100,
-    priority: 'Short-term',
-    siteId: 'SITE-003',
-    siteName: 'Safe Site Gamma (Ghingran Plateau)',
-    allocatedPopulation: 3100,
-    unmetDemand: 0,
-    distanceKm: 28.4,
-    travelTimeMin: 55,
-    costInLakhs: 8.9,
-    transitStatus: 'Standby',
+    distanceKm: 148.0,
+    travelTimeMin: 240,
+    costInLakhs: 18.5,
+    transitStatus: 'Staged',
     transportMode: 'Convoy Bus',
-    assignedAgency: 'SDRF Uttarakhand'
+    assignedAgency: 'ITBP Force'
   }
 ];
 
 export const mockAllocationSummary: AllocationSummary = {
-  totalTargetPopulation: 24590,
-  totalAllocatedPopulation: 19500,
-  unmetDemandTotal: 5090, // Transparent deficit as per Framework Section 12
-  totalDistanceKm: 202.6,
-  totalEstimatedCostLakhs: 53.0,
-  averageCapacityUtilization: 100.0,
-  bottleneckCount: 3,
+  totalTargetPopulation: 15450,
+  totalAllocatedPopulation: 15450,
+  unmetDemandTotal: 0,
+  totalDistanceKm: 1436.9,
+  totalEstimatedCostLakhs: 76.2,
+  averageCapacityUtilization: 79.2,
+  bottleneckCount: 2,
   highPrioritySatisfactionRate: 100.0
 };
 
 export const mockRiskIntelligence: Record<string, RiskIntelligenceAssessment> = {
-  'HAB-001': {
-    habitationId: 'HAB-001',
-    overallRisk: 0.94,
-    vulnerabilityIndex: 0.89,
-    hazardExposureIndex: 0.96,
-    infrastructureFragilityIndex: 0.91,
-    confidenceScore: 0.93,
-    calibratedThreshold: 'T1 - Critical Redline (>0.85)',
+  'hab-joshimath': {
+    habitationId: 'hab-joshimath',
+    overallRisk: 0.95,
+    vulnerabilityIndex: 0.91,
+    hazardExposureIndex: 0.98,
+    infrastructureFragilityIndex: 0.94,
+    confidenceScore: 0.96,
+    calibratedThreshold: 'Tier 1 - Immediate Relocation (>0.85)',
     recommendationUrgency: 'Immediate',
-    narrativeExplanation: 'Village A (Malari Upper) exhibits active ground displacement exceeding 14 mm/week across its north-eastern flank, combined with severe slope declivity (34°) and complete lack of alternative escape routes if NH-07 bridge is severed.',
+    narrativeExplanation: 'Joshimath exhibits active ground displacement exceeding 14 mm/week across its Sunil and Manohar Bagh wards, combined with steep slope declivity (34°) and compromised road integrity along NH-07.',
     features: [
       {
-        feature: 'InSAR Satellite Land Subsidence Velocity',
+        feature: 'InSAR Satellite Ground Subsidence Velocity',
         category: 'Hazard Exposure',
-        importanceWeight: 0.38,
-        shapValue: +0.41,
+        importanceWeight: 0.42,
+        shapValue: +0.45,
         description: 'Permanent radar scatterers demonstrate accelerated ground subsidence velocity of -18.2 mm/month.'
       },
       {
         feature: 'Demographic Age Vulnerability & Immobility',
         category: 'Vulnerability',
-        importanceWeight: 0.26,
-        shapValue: +0.29,
-        description: '39% of resident population consists of elderly individuals and young children unable to evacuate steep slopes unassisted.'
+        importanceWeight: 0.28,
+        shapValue: +0.31,
+        description: '41% of resident population consists of elderly individuals and children requiring assisted transit.'
       },
       {
-        feature: 'Single-Point Road Failure Risk (NH-07)',
+        feature: 'Single-Point Road Vulnerability (NH-07)',
         category: 'Infrastructure',
-        importanceWeight: 0.22,
-        shapValue: +0.24,
-        description: 'Primary egress route traverses a known active landslide zone at Km Post 212.'
+        importanceWeight: 0.18,
+        shapValue: +0.20,
+        description: 'Primary egress route traverses active shear crack zones.'
       },
       {
-        feature: 'Historical Cloudburst Impact Index',
+        feature: 'Slope Declivity and Drainage Shear',
         category: 'Terrain',
-        importanceWeight: 0.14,
-        shapValue: +0.16,
-        description: '7 major debris incidents recorded in the watershed catchment since 2013.'
+        importanceWeight: 0.12,
+        shapValue: +0.14,
+        description: '34.2° slope combined with subsurface seepage acceleration.'
+      }
+    ]
+  },
+  'hab-raini': {
+    habitationId: 'hab-raini',
+    overallRisk: 0.91,
+    vulnerabilityIndex: 0.86,
+    hazardExposureIndex: 0.94,
+    infrastructureFragilityIndex: 0.92,
+    confidenceScore: 0.94,
+    calibratedThreshold: 'Tier 1 - Immediate Relocation (>0.85)',
+    recommendationUrgency: 'Immediate',
+    narrativeExplanation: 'Raini settlement is situated directly downstream of the Rishiganga-Dhauliganga confluence, exposed to flash flood inundation and severe riverbank erosion.',
+    features: [
+      {
+        feature: 'Glacial Catchment Flash Flood Exposure',
+        category: 'Hazard Exposure',
+        importanceWeight: 0.45,
+        shapValue: +0.48,
+        description: 'High velocity flood risk corridor along Dhauliganga gorge.'
+      },
+      {
+        feature: 'Egress Severance Risk',
+        category: 'Infrastructure',
+        importanceWeight: 0.30,
+        shapValue: +0.32,
+        description: 'Bridge connection to Joshimath vulnerable to high river flow.'
+      }
+    ]
+  },
+  'hab-tapovan': {
+    habitationId: 'hab-tapovan',
+    overallRisk: 0.88,
+    vulnerabilityIndex: 0.83,
+    hazardExposureIndex: 0.90,
+    infrastructureFragilityIndex: 0.85,
+    confidenceScore: 0.93,
+    calibratedThreshold: 'Tier 1 - Immediate Relocation (>0.85)',
+    recommendationUrgency: 'Immediate',
+    narrativeExplanation: 'Tapovan is situated in the Dhauliganga alluvial fan, exposed to torrential debris flow and barrage backwater rise during peak monsoon.',
+    features: [
+      {
+        feature: 'Debris Flow Vulnerability',
+        category: 'Hazard Exposure',
+        importanceWeight: 0.40,
+        shapValue: +0.42,
+        description: 'Active sedimentation channel adjacent to residential cluster.'
+      }
+    ]
+  },
+  'hab-helang': {
+    habitationId: 'hab-helang',
+    overallRisk: 0.84,
+    vulnerabilityIndex: 0.79,
+    hazardExposureIndex: 0.86,
+    infrastructureFragilityIndex: 0.82,
+    confidenceScore: 0.92,
+    calibratedThreshold: 'Tier 1 - Immediate Relocation (>0.80)',
+    recommendationUrgency: 'Immediate',
+    narrativeExplanation: 'Helang valley corridor exhibits active rockfall and highway slope failures along the NH-07 bypass route.',
+    features: [
+      {
+        feature: 'Highway Escarpment Instability',
+        category: 'Hazard Exposure',
+        importanceWeight: 0.38,
+        shapValue: +0.39,
+        description: 'Pagal Nala debris slump zone frequently closes arterial access.'
+      }
+    ]
+  },
+  'hab-pandukeshwar': {
+    habitationId: 'hab-pandukeshwar',
+    overallRisk: 0.81,
+    vulnerabilityIndex: 0.77,
+    hazardExposureIndex: 0.83,
+    infrastructureFragilityIndex: 0.80,
+    confidenceScore: 0.91,
+    calibratedThreshold: 'Tier 1 - Immediate Relocation (>0.80)',
+    recommendationUrgency: 'Immediate',
+    narrativeExplanation: 'Pandukeshwar river terrace is exposed to high water levels and glacial discharge from the Badrinath watershed.',
+    features: [
+      {
+        feature: 'River Inundation Risk',
+        category: 'Hazard Exposure',
+        importanceWeight: 0.36,
+        shapValue: +0.37,
+        description: 'Alaknanda high flood buffer zone boundary intersection.'
       }
     ]
   }
 };
 
+// Aliases for legacy IDs
+mockRiskIntelligence['HAB-001'] = mockRiskIntelligence['hab-joshimath'];
+mockRiskIntelligence['HAB-002'] = mockRiskIntelligence['hab-raini'];
+mockRiskIntelligence['HAB-003'] = mockRiskIntelligence['hab-tapovan'];
+mockRiskIntelligence['HAB-004'] = mockRiskIntelligence['hab-helang'];
+mockRiskIntelligence['HAB-005'] = mockRiskIntelligence['hab-pandukeshwar'];
+
 export const mockAllocationExplanation: AllocationExplanation = {
-  allocationId: 'AL-EXEC-2024-001',
+  allocationId: 'VST-2026-CHM-014',
   prioritizedHabitations: [
     {
-      name: 'Village A (Malari Upper)',
-      rationale: 'Assigned maximum priority due to active structural subsidence (0.94 risk) and 100% Red Zone ingress.',
-      factors: ['0.94 composite risk score', '1,240 elderly dependents', 'Imminent slope failure within 48h']
+      name: 'Joshimath',
+      rationale: 'Assigned maximum priority due to active structural subsidence (0.95 risk score) and 100% intersection with the Joshimath Subsidence Red Zone.',
+      factors: ['0.95 composite risk score', '740 elderly dependents requiring assisted transit', 'Imminent slope failure within 48h']
     },
     {
-      name: 'Village B (Helang Valley)',
-      rationale: 'Assigned secondary immediate priority due to riverine overflow threat and contaminated potable aquifer.',
-      factors: ['0.89 risk score', 'Direct river proximity', 'Disrupted electricity grid']
+      name: 'Raini',
+      rationale: 'Assigned immediate priority due to flash flood risk along the Dhauliganga gorge and single-point bridge vulnerability.',
+      factors: ['0.91 risk score', 'Direct river proximity', 'Disrupted road network']
+    },
+    {
+      name: 'Tapovan',
+      rationale: 'Assigned immediate priority due to active debris avalanche risk and damaged water infrastructure.',
+      factors: ['0.88 risk score', 'Debris flow corridor', 'Limited healthcare capacity']
     }
   ],
   selectedSites: [
     {
-      name: 'Safe Site Alpha (Highland Ridge)',
-      advantage: 'Optimal proximity (18.4 km) and existing level-3 surgical trauma unit.',
-      bottleneckMitigation: 'Sanitation capacity constrained at 9,200; mobile biotoilet units dispatched from Srinagar.'
+      name: 'Gauchar Relocation Site',
+      advantage: 'Optimal highway proximity (79.2 km) along NH-07 and strategic aerodrome air-bridge runway clearance for emergency supply logistics.',
+      bottleneckMitigation: 'Effective capacity constrained by sanitation (5,500 beds); 4,500 allocated leaving 1,000 remaining buffer.'
     },
     {
-      name: 'Safe Site Beta (Gauchar Aerodrome)',
-      advantage: 'Air-bridge runway clearance for C-130J aircraft and heavy logistics offloading.',
-      bottleneckMitigation: 'Water tanker rotation active to support population overflow.'
+      name: 'Karnaprayag Relocation Site',
+      advantage: 'Plateau shelter hub outside red zones with rapid access along NH-07.',
+      bottleneckMitigation: 'Sanitation capacity constrained at 3,800; 1,800 allocated leaving 2,000 available capacity.'
+    },
+    {
+      name: 'Rudraprayag Relocation Site',
+      advantage: 'Major district egress camp with field hospital and helipad facilities.',
+      bottleneckMitigation: 'Sanitation capacity constrained at 4,200; 3,150 allocated leaving 1,050 available capacity.'
+    },
+    {
+      name: 'Srinagar Relocation Site',
+      advantage: 'Highest regional base capacity (6,000 effective safe beds) with university campus logistics support.',
+      bottleneckMitigation: 'Binding capacity at 6,000 / 6,000; safely accommodates Helang (2,800) and Pandukeshwar (3,200).'
     }
   ],
   rejectedAlternatives: [
     {
-      alternative: 'Safe Site Delta (Pandukeshwar Meadow)',
-      rejectionReason: 'Disqualified due to proximity to secondary flood plain (Falls within 200m buffer of River Alaknanda).'
+      alternative: 'Pipalkoti Transit Site',
+      rejectionReason: 'Strictly disqualified by hard hazard exclusion constraint because the facility boundary intersects the Pipalkoti High-Angle Escarpment Red Zone.'
     },
     {
       alternative: 'Govt Polytechnic Campus, Helang',
@@ -495,36 +738,52 @@ export const mockAllocationExplanation: AllocationExplanation = {
 
 export const mockDecisions: OfficerDecision[] = [
   {
-    id: 'DEC-2024-089',
-    timestamp: '2026-09-08 18:30 IST',
-    date: '08 Sep 2026',
-    time: '18:30:14',
+    id: 'DEC-2026-014',
+    timestamp: '2026-09-18 17:30 IST',
+    date: '18 Sep 2026',
+    time: '17:30:00',
     officerName: 'Shri R. K. Sharma, IAS',
     officerRole: 'Incident Commander / DM Chamoli',
     action: 'ACCEPTED',
-    planId: 'PLAN-PHASE-1-OPT',
-    affectedHabitations: ['Village A (Malari Upper)', 'Village B (Helang Valley)'],
-    affectedSites: ['Site Alpha (Highland Ridge)', 'Site Beta (Gauchar)'],
+    planId: 'VST-2026-CHM-014',
+    affectedHabitations: ['Joshimath', 'Raini', 'Tapovan', 'Helang', 'Pandukeshwar'],
+    affectedSites: ['Gauchar Relocation Site', 'Karnaprayag Relocation Site', 'Rudraprayag Relocation Site', 'Srinagar Relocation Site'],
     rationale: 'All computational constraints verified against ground survey reports from Sub-Divisional Magistrate Joshimath. Approved immediate mobilization of NDRF 8th Bn convoys.',
-    statutoryReference: 'Section 30(2)(v) Disaster Management Act 2005 / NDMA Guidelines 2024',
-    previousAllocationSummary: 'Algorithmic Linear Program Optimal Matrix (19,500 relocated)',
-    newAllocationSummary: 'Accepted without modifications. Executive Dispatch Order DDMA/2026/CHM/901 issued.'
+    statutoryReference: 'Planning Recommendation / Incident Commander Review',
+    previousAllocationSummary: 'Algorithmic Linear Program Optimal Matrix (15,450 relocated)',
+    newAllocationSummary: 'Plan Accepted without modifications. Dispatch directive issued.'
   },
   {
-    id: 'DEC-2024-088',
-    timestamp: '2026-09-08 14:15 IST',
-    date: '08 Sep 2026',
+    id: 'DEC-2026-013',
+    timestamp: '2026-09-12 14:15 IST',
+    date: '12 Sep 2026',
     time: '14:15:00',
     officerName: 'Shri R. K. Sharma, IAS',
     officerRole: 'Incident Commander / DM Chamoli',
     action: 'MODIFIED',
-    planId: 'PLAN-PRE-OPT-02',
-    affectedHabitations: ['Village C (Pipalkoti Flank)'],
-    affectedSites: ['Site Beta (Gauchar Aerodrome)', 'Site Gamma (Ghingran Plateau)'],
-    rationale: 'Local SDM reported active rockfall on link road between Pipalkoti and Site Beta. Diverted 1,000 persons from Gauchar route to Ghingran Plateau road via interior bypass.',
-    statutoryReference: 'Emergency Powers DDMA Act Section 34',
-    previousAllocationSummary: '2,000 allocated to Site Beta; 2,100 to Site Gamma',
-    newAllocationSummary: '1,000 allocated to Site Beta; 3,100 to Site Gamma'
+    planId: 'VST-2026-CHM-013',
+    affectedHabitations: ['Tapovan', 'Helang'],
+    affectedSites: ['Karnaprayag Relocation Site', 'Gauchar Relocation Site'],
+    rationale: 'Local SDM reported debris on NH-07 link near Birahi. Re-routed 1,000 citizens from southern corridor to Karnaprayag bypass.',
+    statutoryReference: 'Planning Recommendation / Incident Commander Review',
+    previousAllocationSummary: 'Initial baseline plan prior to corridor rerouting',
+    newAllocationSummary: 'Plan Modified. Rerouting verified in OR solver.'
+  },
+  {
+    id: 'DEC-2026-012',
+    timestamp: '2026-09-04 11:00 IST',
+    date: '04 Sep 2026',
+    time: '11:00:00',
+    officerName: 'Shri R. K. Sharma, IAS',
+    officerRole: 'Incident Commander / DM Chamoli',
+    action: 'REJECTED',
+    planId: 'VST-2026-CHM-012',
+    affectedHabitations: ['Joshimath'],
+    affectedSites: ['Pipalkoti Transit Site'],
+    rationale: 'Rejected proposed allocation to Pipalkoti facility due to active slope instability detected on highway escarpment.',
+    statutoryReference: 'Planning Recommendation / Incident Commander Review',
+    previousAllocationSummary: 'Proposal included Pipalkoti staging',
+    newAllocationSummary: 'Plan Rejected. Hard hazard exclusion enforced.'
   }
 ];
 
@@ -533,28 +792,44 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
     phase: 'Immediate (0-24h)',
     items: [
       {
-        habitation: 'Village A (Malari Upper)',
-        destination: 'Safe Site Alpha (Highland Ridge)',
-        headcount: 7000,
-        agency: 'NDRF 8th Bn',
+        habitation: 'Joshimath',
+        destination: 'Gauchar Relocation Site',
+        headcount: 4500,
+        agency: 'ITBP Force',
         status: 'Active Transit',
-        criticalNeed: 'Wheelchair ambulant assistance & portable oxygen'
+        criticalNeed: 'Wheelchair ambulant assistance & portable medical oxygen'
       },
       {
-        habitation: 'Village A (Malari Upper)',
-        destination: 'Safe Site Gamma (Ghingran Plateau)',
-        headcount: 1240,
+        habitation: 'Raini',
+        destination: 'Karnaprayag Relocation Site',
+        headcount: 1800,
         agency: 'SDRF Uttarakhand',
         status: 'Convoy Staged',
-        criticalNeed: 'Infant nutritional packets & tarp kits'
+        criticalNeed: 'Infant nutritional packets & tarp shelter kits'
       },
       {
-        habitation: 'Village B (Helang Valley)',
-        destination: 'Safe Site Alpha (Highland Ridge)',
-        headcount: 2200,
-        agency: 'District Transport Corp',
+        habitation: 'Tapovan',
+        destination: 'Rudraprayag Relocation Site',
+        headcount: 3150,
+        agency: 'ITBP Force',
         status: 'Convoy Staged',
-        criticalNeed: 'Water filtration tablets'
+        criticalNeed: 'Water filtration tablets & emergency rations'
+      },
+      {
+        habitation: 'Helang',
+        destination: 'Srinagar Relocation Site',
+        headcount: 2800,
+        agency: 'ITBP Force',
+        status: 'Convoy Staged',
+        criticalNeed: 'Emergency blankets & warm clothing'
+      },
+      {
+        habitation: 'Pandukeshwar',
+        destination: 'Srinagar Relocation Site',
+        headcount: 3200,
+        agency: 'ITBP Force',
+        status: 'Convoy Staged',
+        criticalNeed: 'Medical triage kits & senior citizen assistance'
       }
     ]
   },
@@ -562,17 +837,17 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
     phase: 'Short-Term (1-7d)',
     items: [
       {
-        habitation: 'Village B (Helang Valley)',
-        destination: 'Safe Site Beta (Gauchar Aerodrome)',
-        headcount: 4500,
-        agency: 'ITBP Force',
+        habitation: 'Gopeshwar Buffer',
+        destination: 'Gauchar Relocation Site',
+        headcount: 2400,
+        agency: 'District Administration',
         status: 'Pending Authorisation',
         criticalNeed: 'Large family weatherized tents'
       },
       {
-        habitation: 'Village C (Pipalkoti Flank)',
-        destination: 'Safe Site Gamma (Ghingran Plateau)',
-        headcount: 3100,
+        habitation: 'Nandprayag Flank',
+        destination: 'Karnaprayag Relocation Site',
+        headcount: 1950,
         agency: 'SDRF Uttarakhand',
         status: 'Pending Authorisation',
         criticalNeed: 'Livestock temporary penning facilities'
@@ -583,20 +858,41 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
     phase: 'Medium-Term (weeks/months)',
     items: [
       {
-        habitation: 'Village C (Pipalkoti Flank)',
-        destination: 'Safe Site Beta (Gauchar Aerodrome)',
-        headcount: 1000,
-        agency: 'District Administration',
+        habitation: 'Tharali Valley',
+        destination: 'Gwaldam Safe Plateau',
+        headcount: 1600,
+        agency: 'Town & Country Planning Dept',
         status: 'Pending Authorisation',
         criticalNeed: 'Prefabricated modular community shelters'
       },
       {
-        habitation: 'Village D (Tapovan Buffer Hamlet)',
-        destination: 'Site E (Permanent Relocation Colony, Karnaprayag)',
-        headcount: 3400,
+        habitation: 'Ghat Settlement',
+        destination: 'Karnaprayag Relocation Site',
+        headcount: 1350,
+        agency: 'District Administration',
+        status: 'Pending Authorisation',
+        criticalNeed: 'Community water purification units'
+      }
+    ]
+  },
+  {
+    phase: 'Long-Term (permanent)',
+    items: [
+      {
+        habitation: 'Malari Border Ward',
+        destination: 'Srinagar Urban Buffer',
+        headcount: 1100,
+        agency: 'Revenue & Land Rehabilitation Dept',
+        status: 'Pending Authorisation',
+        criticalNeed: 'Permanent housing construction grants'
+      },
+      {
+        habitation: 'Mana Upper Hamlet',
+        destination: 'Srinagar Urban Buffer',
+        headcount: 850,
         agency: 'Town & Country Planning Dept',
         status: 'Pending Authorisation',
-        criticalNeed: 'Land titling and agricultural rehabilitation grants'
+        criticalNeed: 'Rehabilitation titling & educational access'
       }
     ]
   }
@@ -608,7 +904,7 @@ export const mockDataProvenances: DataSourceProvenance[] = [
     layerName: 'High-Resolution Synthetic Aperture Radar (SAR) Inundation Matrix',
     category: 'Satellite Radar (SAR)',
     sourceAgency: 'ISRO NRSC',
-    acquisitionDate: '08 Sep 2026, 06:00 IST',
+    acquisitionDate: '18 Sep 2026, 06:00 IST',
     spatialResolution: '0.5m Ground Resolution',
     coveragePercentage: 98.4,
     confidenceIndex: 0.97,
@@ -621,7 +917,7 @@ export const mockDataProvenances: DataSourceProvenance[] = [
     layerName: 'Multi-Temporal Subsidence Velocity Vector (InSAR)',
     category: 'Satellite Radar (SAR)',
     sourceAgency: 'ISRO NRSC',
-    acquisitionDate: '07 Sep 2026, 18:30 IST',
+    acquisitionDate: '17 Sep 2026, 18:30 IST',
     spatialResolution: '1.0m Pixel Grid',
     coveragePercentage: 94.2,
     confidenceIndex: 0.94,
@@ -634,7 +930,7 @@ export const mockDataProvenances: DataSourceProvenance[] = [
     layerName: 'Chamoli Catchment River Hydro-Telemetry & Discharge Sensor Array',
     category: 'Hydro Telemetry',
     sourceAgency: 'CWC',
-    acquisitionDate: '08 Sep 2026, 22:45 IST',
+    acquisitionDate: '18 Sep 2026, 12:45 IST',
     spatialResolution: '12 Telemetry Gauging Stations',
     coveragePercentage: 100.0,
     confidenceIndex: 0.99,
@@ -696,7 +992,7 @@ export const mockScenarios: ScenarioModification[] = [
   {
     scenarioId: 'BASE-001',
     name: 'Baseline Chamoli Operations Plan',
-    description: 'Baseline allocation under full road passability.',
+    description: 'Baseline allocation under full road passability with all designated transit corridors open.',
     siteCapacityOverrides: {},
     closedRoutes: [],
     siteActiveStatus: {},
@@ -705,13 +1001,22 @@ export const mockScenarios: ScenarioModification[] = [
   },
   {
     scenarioId: 'SCEN-002',
-    name: 'Road R12 Landslide Closure',
-    description: 'NH-07 blocked at Km 212, diverting to Site Gamma and Beta.',
-    siteCapacityOverrides: { 'SITE-001': 5000 },
-    closedRoutes: ['NH-07-R12'],
+    name: 'Reduce Srinagar Capacity (6,000 → 4,000)',
+    description: 'Simulates municipal water line damage and sanitary constraint reducing intake at Srinagar Hub by 2,000 beds.',
+    siteCapacityOverrides: { 'site-srinagar': 4000 },
+    closedRoutes: [],
+    siteActiveStatus: {},
+    hazardMultiplier: 1.0,
+    addedSites: []
+  },
+  {
+    scenarioId: 'SCEN-003',
+    name: 'NH-07 Pagal Nala Route Closure',
+    description: 'Simulates severe debris collapse on NH-07 Pagal Nala corridor forcing diversion to alternative hubs.',
+    siteCapacityOverrides: {},
+    closedRoutes: ['route-joshimath-pipalkoti', 'R12'],
     siteActiveStatus: {},
     hazardMultiplier: 1.25,
     addedSites: []
   }
 ];
-
