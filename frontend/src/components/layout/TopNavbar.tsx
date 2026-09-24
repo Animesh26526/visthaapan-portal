@@ -182,7 +182,7 @@ const NAV_SECTIONS: NavSection[] = [
 export const TopNavbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, logout, isAuthenticated } = useAppStore();
+  const { currentUser, logout, isAuthenticated, startWalkthrough } = useAppStore();
 
   const { currentLanguage, setLanguage, supportedLanguages, currentLanguageMeta, t } = useLanguage();
   const { isInstalled, installApp } = usePWAInstall();
@@ -261,14 +261,11 @@ export const TopNavbar: React.FC = () => {
 
             <div className="leading-tight">
               <div className="flex items-center gap-1.5">
-                <span className="font-black tracking-wider text-white text-sm sm:text-base font-sans drop-shadow-xs">
+                <span className="font-extrabold tracking-wide text-white text-xs sm:text-sm font-sans drop-shadow-xs">
                   {t('portalTitle')}
                 </span>
-                <span className="px-1.5 py-0.2 rounded bg-amber-400/90 text-[#002244] text-[9px] font-black uppercase font-mono tracking-wider">
-                  UK-DM
-                </span>
               </div>
-              <p className="text-[10px] text-slate-300 font-medium hidden sm:block truncate max-w-[210px] xl:max-w-[260px]">
+              <p className="text-[9px] text-slate-300 font-normal hidden sm:block truncate max-w-[210px] xl:max-w-[260px]">
                 {t('portalSubtitle')}
               </p>
             </div>
@@ -293,19 +290,19 @@ export const TopNavbar: React.FC = () => {
                     navigate(section.defaultPath);
                     setActiveDropdown(null);
                   }}
-                  className={`flex items-center gap-1 px-2 xl:px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition ${
+                  className={`flex items-center gap-1 px-2 xl:px-2 py-1 text-[11px] font-semibold uppercase tracking-wider rounded-md transition ${
                     active
-                      ? 'bg-white/15 text-white font-extrabold border-b-2 border-amber-400'
+                      ? 'bg-white/15 text-white font-bold border-b-2 border-amber-400'
                       : 'text-slate-200 hover:text-white hover:bg-white/10'
                   }`}
                   aria-expanded={isOpen}
                 >
-                  <span className="material-symbols-outlined text-[16px] text-slate-300">
+                  <span className="material-symbols-outlined text-[14px] text-slate-300">
                     {section.icon}
                   </span>
                   <span>{t(section.labelKey)}</span>
                   <span
-                    className={`material-symbols-outlined text-[14px] text-slate-400 transition-transform duration-150 ${
+                    className={`material-symbols-outlined text-[12px] text-slate-400 transition-transform duration-150 ${
                       isOpen ? 'rotate-180 text-amber-400' : ''
                     }`}
                   >
@@ -391,19 +388,30 @@ export const TopNavbar: React.FC = () => {
             </button>
           )}
 
-          {/* Indian Multilingual Selector Dropdown (Prominent & Visible) */}
+          {/* Website Tour Button (Direct Navbar Access) */}
+          <button
+            onClick={startWalkthrough}
+            className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded text-[11px] font-semibold transition shadow-xs cursor-pointer select-none"
+            title="Start Interactive Website Tour"
+            aria-label="Start Interactive Website Tour"
+          >
+            <span className="material-symbols-outlined text-[14px]">explore</span>
+            <span className="hidden md:inline">{t('tour.btnTour', 'Website Tour')}</span>
+          </button>
+
+          {/* Indian Multilingual Selector Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-[#002244] hover:bg-black/30 border border-white/20 rounded text-xs font-semibold text-white transition shadow-xs"
+              className="flex items-center gap-1 px-2 py-0.5 bg-[#002244] hover:bg-black/30 border border-white/20 rounded text-[11px] font-semibold text-white transition shadow-xs cursor-pointer"
               title="Select Indian Language (13 Languages)"
               aria-label="Language Switcher"
               aria-expanded={isLangMenuOpen}
             >
-              <span className="material-symbols-outlined text-[16px] text-amber-400">translate</span>
-              <span className="text-xs font-bold hidden sm:inline">{currentLanguageMeta.nativeName}</span>
-              <span className="text-xs font-bold sm:hidden uppercase font-mono">{currentLanguage}</span>
-              <span className="material-symbols-outlined text-[14px] text-slate-400">
+              <span className="material-symbols-outlined text-[14px] text-amber-400">translate</span>
+              <span className="text-[11px] font-bold hidden sm:inline">{currentLanguageMeta.nativeName}</span>
+              <span className="text-[10px] font-bold sm:hidden uppercase font-mono">{currentLanguage}</span>
+              <span className="material-symbols-outlined text-[12px] text-slate-400">
                 {isLangMenuOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
               </span>
             </button>
@@ -440,16 +448,16 @@ export const TopNavbar: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setIsOfficerMenuOpen(!isOfficerMenuOpen)}
-                className="flex items-center gap-1.5 p-1 pl-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-md transition"
+                className="flex items-center gap-1 p-0.5 pl-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-md transition cursor-pointer"
                 aria-label="Officer Profile Menu"
               >
                 <div className="hidden sm:block text-right">
-                  <div className="text-xs font-bold text-white leading-none">
+                  <div className="text-[11px] font-bold text-white leading-none">
                     {currentUser.name.split(',')[0]}
                   </div>
-                  <div className="text-[10px] text-slate-300 leading-none mt-1">DM Chamoli</div>
+                  <div className="text-[9px] text-slate-300 leading-none mt-0.5">DM Chamoli</div>
                 </div>
-                <div className="w-7 h-7 rounded bg-amber-400 text-[#002244] font-black text-xs flex items-center justify-center shadow-xs">
+                <div className="w-6 h-6 rounded bg-amber-400 text-[#002244] font-black text-[10px] flex items-center justify-center shadow-xs">
                   DM
                 </div>
               </button>
@@ -499,7 +507,7 @@ export const TopNavbar: React.FC = () => {
           ) : (
             <NavLink
               to="/login"
-              className="px-3 py-1 bg-white text-[#003366] hover:bg-slate-100 text-xs font-bold rounded shadow-xs transition"
+              className="px-2.5 py-0.5 bg-white text-[#003366] hover:bg-slate-100 text-[11px] font-bold rounded shadow-xs transition"
             >
               {t('btnLogin')}
             </NavLink>
@@ -544,11 +552,11 @@ export const TopNavbar: React.FC = () => {
           ))}
 
           {/* Mobile Language Switcher */}
-          <div className="py-3">
-            <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">
+          <div className="py-2.5 border-t border-white/10 mt-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-1.5">
               Select Language (13 Indian Languages)
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-1">
               {supportedLanguages.map((lang) => (
                 <button
                   key={lang.code}
@@ -556,10 +564,10 @@ export const TopNavbar: React.FC = () => {
                     setLanguage(lang.code);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`px-2 py-1 text-xs text-left rounded ${
+                  className={`px-2 py-1 text-[11px] text-left rounded cursor-pointer ${
                     currentLanguage === lang.code
                       ? 'bg-amber-400 text-slate-950 font-bold'
-                      : 'bg-white/5 text-slate-300'
+                      : 'bg-white/5 text-slate-300 hover:bg-white/10'
                   }`}
                 >
                   {lang.nativeName}

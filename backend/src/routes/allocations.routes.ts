@@ -65,7 +65,7 @@ allocationsRouter.get('/summary', async (req: Request, res: Response, next: Next
       totalCapacity: capacitySum.totalSafeEffectiveCapacity,
       effectiveCapacity: capacitySum.totalSafeEffectiveCapacity,
       capacityUtilization: capacitySum.totalSafeEffectiveCapacity > 0
-        ? Number(((latest.totalAllocated / capacitySum.totalSafeEffectiveCapacity) * 100).toFixed(1))
+        ? Math.min(100.0, Number(((latest.totalAllocated / capacitySum.totalSafeEffectiveCapacity) * 100).toFixed(1)))
         : 0.0,
       totalDistanceKm: latest.totalTransitDistanceKm,
       averageDistanceKm: latest.totalAllocated > 0

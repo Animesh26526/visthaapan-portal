@@ -1,15 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAppStore } from '../../stores/useAppStore';
 import { BriefingService, type ChatMessage } from '../../services/briefing.service';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 import { useLanguage } from '../../i18n';
 
 export const HomeAIChatbot: React.FC = () => {
-  const { currentLanguage } = useLanguage();
+  const { currentLanguage, t } = useLanguage();
+  const {
+    habitations,
+    sites,
+    allocationSummary,
+    activePlanId,
+    scenario,
+    roadR12Blocked,
+  } = useAppStore();
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg-welcome',
       role: 'assistant',
-      text: `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant powered by Groq (openai/gpt-oss-20b).\n\nI can explain our Operations Research (OR) evacuation algorithms, live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`,
+      text: t(
+        'sahayak.welcome',
+        `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant powered by Groq (openai/gpt-oss-20b).\n\nI can explain our Operations Research (OR) evacuation algorithms, live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`
+      ),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -52,8 +65,32 @@ export const HomeAIChatbot: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
+    const planningContext = {
+      activePlanId,
+      totalTargetPopulation: allocationSummary?.totalTargetPopulation || 12250,
+      totalAllocatedPopulation: allocationSummary?.totalAllocatedPopulation || 12250,
+      unmetDemandTotal: allocationSummary?.unmetDemandTotal || 0,
+      activeScenario: scenario?.isScenarioActive ? scenario.scenarioName : 'Nominal Baseline',
+      roadR12Blocked: !!roadR12Blocked,
+      monitoredHabitations: habitations.map((h) => ({
+        name: h.name,
+        priority: h.priority,
+        population: h.population,
+      })),
+      safeShelters: sites.map((s) => ({
+        name: s.name,
+        effectiveCapacity: s.resourceCapacity?.effectiveCapacity,
+        bottleneck: s.resourceCapacity?.bottleneck,
+      })),
+    };
+
     try {
-      const response = await BriefingService.callAssistant(messages, messageText, currentLanguage);
+      const response = await BriefingService.callAssistant(
+        messages,
+        messageText,
+        currentLanguage,
+        planningContext
+      );
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
@@ -65,7 +102,7 @@ export const HomeAIChatbot: React.FC = () => {
       const fallbackMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        text: `### 🛡️ VISTHAAPAN System Intelligence\n\nI am actively monitoring the **Chamoli Disaster Relocation Operation** (19,500 at-risk residents across Malari, Helang, Raini, and Joshimath).\n\nYou can launch the **Operations Dashboard** to view live evacuation rosters, audit shelter capacities, or review the deterministic OR relocation plan.\n\n*Powered by Groq Cloud (openai/gpt-oss-20b).*`,
+        text: `### 🛡️ VISTHAAPAN System Intelligence\n\nI am actively monitoring the **Chamoli Disaster Relocation Operation** (12,250 at-risk residents across Joshimath, Raini, Tapovan, Helang, and Pandukeshwar).\n\nYou can launch the **Operations Dashboard** to view live evacuation rosters, audit shelter capacities, or review the deterministic OR relocation plan.\n\n*Powered by Groq Cloud (openai/gpt-oss-20b).*`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, fallbackMessage]);
@@ -75,7 +112,11 @@ export const HomeAIChatbot: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden flex flex-col h-[560px] max-w-4xl mx-auto font-sans">
+    <div
+      id="tour-home-ai-chat"
+      data-tour="home-ai-chat"
+      className="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden flex flex-col h-[560px] max-w-4xl mx-auto font-sans"
+    >
       {/* ── CHATBOT HEADER ── */}
       <div className="bg-[#002244] text-white p-3.5 sm:p-4 flex items-center justify-between shrink-0 border-b border-[#003366]">
         <div className="flex items-center gap-3">
@@ -84,14 +125,14 @@ export const HomeAIChatbot: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-sm tracking-wide">VISTHAAPAN Sahayak</h3>
+              <h3 className="font-bold text-sm tracking-wide">{t('sahayak.title', 'VISTHAAPAN Sahayak')}</h3>
               <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Groq GPT-OSS-20B
+                {t('sahayak.statusReady', 'Groq GPT-OSS-20B')}
               </span>
             </div>
             <p className="text-[11px] text-slate-300">
-              Conversational Disaster Relocation Intelligence • Groq Cloud AI Assistant
+              {t('sahayak.subtitle', 'Conversational Disaster Relocation Intelligence • Groq Cloud AI Assistant')}
             </p>
           </div>
         </div>
@@ -170,7 +211,7 @@ export const HomeAIChatbot: React.FC = () => {
                 <span className="w-2 h-2 rounded-full bg-[#003366] animate-bounce"></span>
                 <span className="w-2 h-2 rounded-full bg-[#003366] animate-bounce [animation-delay:0.2s]"></span>
                 <span className="w-2 h-2 rounded-full bg-[#003366] animate-bounce [animation-delay:0.4s]"></span>
-                <span className="ml-1 text-[11px]">Sahayak AI thinking...</span>
+                <span className="ml-1 text-[11px]">{t('sahayak.thinking', 'Sahayak AI thinking...')}</span>
               </div>
             </div>
           </div>
@@ -190,7 +231,7 @@ export const HomeAIChatbot: React.FC = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything about VISTHAAPAN, Chamoli evacuations, or OR models..."
+            placeholder={t('sahayak.placeholder', 'Ask anything about VISTHAAPAN, Chamoli evacuations, or OR models...')}
             disabled={isTyping}
             className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#003366] outline-none transition"
           />

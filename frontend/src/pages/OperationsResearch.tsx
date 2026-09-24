@@ -78,7 +78,7 @@ export const OperationsResearch: React.FC = () => {
 
           <div className="p-3 bg-red-50 rounded border border-red-200 space-y-2 text-xs font-mono">
             <div className="flex justify-between">
-              <span className="text-slate-600">Critical Village A Stranded:</span>
+              <span className="text-slate-600">Critical Joshimath Population Stranded:</span>
               <span className="font-bold text-red-700">3,400 souls unmet!</span>
             </div>
             <div className="flex justify-between">
@@ -97,18 +97,18 @@ export const OperationsResearch: React.FC = () => {
 
           <div className="p-3 bg-slate-50 rounded text-xs text-slate-600">
             <div className="font-bold text-slate-800 mb-1">Fatal Flaw:</div>
-            Village C (Moderate Risk, closer to highway) completely fills Site Alpha. When Village A (subsidence crisis) needs evacuation 12 hours later, Site Alpha has zero beds left!
+            Moderate-risk habitations closer to the highway consume all safe shelter capacity at Gauchar Aerodrome, leaving critical high-risk Joshimath populations stranded when emergency subsidence accelerates.
           </div>
         </div>
 
         {/* VISTHAAPAN GLOBAL OR OPTIMIZATION */}
-        <div className="bg-white border-2 border-emerald-500 rounded-lg shadow-sm p-5 space-y-4">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-xs p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div>
               <span className="text-[10px] font-mono font-bold text-emerald-700 uppercase">
                 VISTHAAPAN ALGORITHMIC APPROACH
               </span>
-              <h3 className="text-lg font-bold text-emerald-900">2. Multi-Objective Linear Optimization</h3>
+              <h3 className="text-lg font-bold text-[#003366]">2. Multi-Objective Linear Optimization</h3>
             </div>
             <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono rounded">
               GLOBAL OPTIMAL
@@ -121,7 +121,7 @@ export const OperationsResearch: React.FC = () => {
 
           <div className="p-3 bg-emerald-50 rounded border border-emerald-300 space-y-2 text-xs font-mono">
             <div className="flex justify-between">
-              <span className="text-slate-600">Critical Village A Stranded:</span>
+              <span className="text-slate-600">Critical Joshimath Population Stranded:</span>
               <span className="font-bold text-emerald-700">0 (100% Relocated!)</span>
             </div>
             <div className="flex justify-between">
@@ -140,7 +140,7 @@ export const OperationsResearch: React.FC = () => {
 
           <div className="p-3 bg-slate-50 rounded text-xs text-slate-600">
             <div className="font-bold text-slate-800 mb-1">VISTHAAPAN Resolution:</div>
-            The Linear Program splits Village A (7,000 to Alpha, 1,240 to Gamma) and directs Village B and C into Beta, ensuring 100% of immediate-tier lives are secured within safe carrying capacities.
+            The Operations Research solver routes high-risk Joshimath and Raini populations into Gauchar Aerodrome and Karnaprayag Hub with guaranteed reservations, while directing transitional habitations into Rudraprayag and Srinagar Base, ensuring 100% of critical lives are secured within safe carrying capacities.
           </div>
         </div>
       </div>

@@ -128,7 +128,7 @@ export const FEATURE_GUIDE_CONFIG: Record<string, PageFeatureGuide> = {
       'Authorize emergency resource replenishment to raise effective capacity',
     ],
     technicalNote:
-      'Effective capacity is strictly determined by the minimum resource constraint (Leontief production function) to prevent catastrophic shelter over-crowding.',
+      'Effective capacity is strictly determined by the minimum resource constraint (Lifeline Capacity Bottleneck Audit) to prevent catastrophic shelter over-crowding.',
   },
   '/planning/allocation': {
     route: '/planning/allocation',

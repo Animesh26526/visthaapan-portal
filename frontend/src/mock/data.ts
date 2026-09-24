@@ -268,7 +268,7 @@ export const mockSites: RelocationSite[] = [
   {
     id: 'site-gauchar',
     code: 'SITE-GAUCHAR',
-    name: 'Gauchar Relocation Site',
+    name: 'Gauchar Aerodrome',
     type: 'Strategic Aerodrome Terrace',
     location: 'Gauchar West Terrace, Alaknanda Bank',
     district: 'Chamoli',
@@ -302,7 +302,7 @@ export const mockSites: RelocationSite[] = [
   {
     id: 'site-karnaprayag',
     code: 'SITE-KARNAPRAYAG',
-    name: 'Karnaprayag Relocation Site',
+    name: 'Karnaprayag Hub',
     type: 'Plateau Shelter Hub',
     location: 'Karnaprayag Upper Plateau, Sector 2',
     district: 'Chamoli',
@@ -336,7 +336,7 @@ export const mockSites: RelocationSite[] = [
   {
     id: 'site-rudraprayag',
     code: 'SITE-RUDRAPRAYAG',
-    name: 'Rudraprayag Relocation Site',
+    name: 'Rudraprayag Camp',
     type: 'District Egress Camp',
     location: 'Rudraprayag South Bench, Sector 1',
     district: 'Rudraprayag',
@@ -370,7 +370,7 @@ export const mockSites: RelocationSite[] = [
   {
     id: 'site-srinagar',
     code: 'SITE-SRINAGAR',
-    name: 'Srinagar Relocation Site',
+    name: 'Srinagar Base',
     type: 'Regional Base Facility',
     location: 'Srinagar University Buffer Grounds',
     district: 'Pauri Garhwal',
@@ -404,7 +404,7 @@ export const mockSites: RelocationSite[] = [
   {
     id: 'site-pipalkoti',
     code: 'SITE-PIPALKOTI',
-    name: 'Pipalkoti Transit Site',
+    name: 'Pipalkoti',
     type: 'Transit Staging Shelter',
     location: 'Pipalkoti Escarpment Terrace',
     district: 'Chamoli',
@@ -454,7 +454,7 @@ export const mockAllocations: AllocationItem[] = [
     sourcePopulation: 4500,
     priority: 'Immediate',
     siteId: 'site-gauchar',
-    siteName: 'Gauchar Relocation Site',
+    siteName: 'Gauchar Aerodrome',
     allocatedPopulation: 4500,
     unmetDemand: 0,
     distanceKm: 79.2,
@@ -471,7 +471,7 @@ export const mockAllocations: AllocationItem[] = [
     sourcePopulation: 1800,
     priority: 'Immediate',
     siteId: 'site-karnaprayag',
-    siteName: 'Karnaprayag Relocation Site',
+    siteName: 'Karnaprayag Hub',
     allocatedPopulation: 1800,
     unmetDemand: 0,
     distanceKm: 68.5,
@@ -488,7 +488,7 @@ export const mockAllocations: AllocationItem[] = [
     sourcePopulation: 3150,
     priority: 'Immediate',
     siteId: 'site-rudraprayag',
-    siteName: 'Rudraprayag Relocation Site',
+    siteName: 'Rudraprayag Camp',
     allocatedPopulation: 3150,
     unmetDemand: 0,
     distanceKm: 112.4,
@@ -505,7 +505,7 @@ export const mockAllocations: AllocationItem[] = [
     sourcePopulation: 2800,
     priority: 'Immediate',
     siteId: 'site-srinagar',
-    siteName: 'Srinagar Relocation Site',
+    siteName: 'Srinagar Base',
     allocatedPopulation: 2800,
     unmetDemand: 0,
     distanceKm: 135.0,
@@ -522,7 +522,7 @@ export const mockAllocations: AllocationItem[] = [
     sourcePopulation: 3200,
     priority: 'Immediate',
     siteId: 'site-srinagar',
-    siteName: 'Srinagar Relocation Site',
+    siteName: 'Srinagar Base',
     allocatedPopulation: 3200,
     unmetDemand: 0,
     distanceKm: 148.0,
@@ -793,7 +793,7 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
     items: [
       {
         habitation: 'Joshimath',
-        destination: 'Gauchar Relocation Site',
+        destination: 'Gauchar Aerodrome',
         headcount: 4500,
         agency: 'ITBP Force',
         status: 'Active Transit',
@@ -801,7 +801,7 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
       },
       {
         habitation: 'Raini',
-        destination: 'Karnaprayag Relocation Site',
+        destination: 'Karnaprayag Hub',
         headcount: 1800,
         agency: 'SDRF Uttarakhand',
         status: 'Convoy Staged',
@@ -809,7 +809,7 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
       },
       {
         habitation: 'Tapovan',
-        destination: 'Rudraprayag Relocation Site',
+        destination: 'Rudraprayag Camp',
         headcount: 3150,
         agency: 'ITBP Force',
         status: 'Convoy Staged',
@@ -817,7 +817,7 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
       },
       {
         habitation: 'Helang',
-        destination: 'Srinagar Relocation Site',
+        destination: 'Srinagar Base',
         headcount: 2800,
         agency: 'ITBP Force',
         status: 'Convoy Staged',
@@ -825,7 +825,7 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
       },
       {
         habitation: 'Pandukeshwar',
-        destination: 'Srinagar Relocation Site',
+        destination: 'Srinagar Base',
         headcount: 3200,
         agency: 'ITBP Force',
         status: 'Convoy Staged',
@@ -837,19 +837,19 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
     phase: 'Short-Term (1-7d)',
     items: [
       {
-        habitation: 'Gopeshwar Buffer',
-        destination: 'Gauchar Relocation Site',
+        habitation: 'Gopeshwar',
+        destination: 'Gauchar Aerodrome',
         headcount: 2400,
         agency: 'District Administration',
-        status: 'Pending Authorisation',
+        status: 'Pending Review',
         criticalNeed: 'Large family weatherized tents'
       },
       {
-        habitation: 'Nandprayag Flank',
-        destination: 'Karnaprayag Relocation Site',
+        habitation: 'Nandprayag',
+        destination: 'Karnaprayag Hub',
         headcount: 1950,
         agency: 'SDRF Uttarakhand',
-        status: 'Pending Authorisation',
+        status: 'Pending Review',
         criticalNeed: 'Livestock temporary penning facilities'
       }
     ]
@@ -858,19 +858,19 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
     phase: 'Medium-Term (weeks/months)',
     items: [
       {
-        habitation: 'Tharali Valley',
-        destination: 'Gwaldam Safe Plateau',
+        habitation: 'Helang',
+        destination: 'Rudraprayag Camp',
         headcount: 1600,
-        agency: 'Town & Country Planning Dept',
-        status: 'Pending Authorisation',
+        agency: 'District Administration',
+        status: 'Pending Review',
         criticalNeed: 'Prefabricated modular community shelters'
       },
       {
-        habitation: 'Ghat Settlement',
-        destination: 'Karnaprayag Relocation Site',
+        habitation: 'Tapovan',
+        destination: 'Karnaprayag Hub',
         headcount: 1350,
         agency: 'District Administration',
-        status: 'Pending Authorisation',
+        status: 'Pending Review',
         criticalNeed: 'Community water purification units'
       }
     ]
@@ -879,19 +879,19 @@ export const mockRelocationPhases: RelocationPlanPhase[] = [
     phase: 'Long-Term (permanent)',
     items: [
       {
-        habitation: 'Malari Border Ward',
-        destination: 'Srinagar Urban Buffer',
+        habitation: 'Raini',
+        destination: 'Srinagar Base',
         headcount: 1100,
-        agency: 'Revenue & Land Rehabilitation Dept',
-        status: 'Pending Authorisation',
+        agency: 'Revenue & Rehabilitation Dept',
+        status: 'Pending Review',
         criticalNeed: 'Permanent housing construction grants'
       },
       {
-        habitation: 'Mana Upper Hamlet',
-        destination: 'Srinagar Urban Buffer',
+        habitation: 'Pandukeshwar',
+        destination: 'Srinagar Base',
         headcount: 850,
         agency: 'Town & Country Planning Dept',
-        status: 'Pending Authorisation',
+        status: 'Pending Review',
         criticalNeed: 'Rehabilitation titling & educational access'
       }
     ]

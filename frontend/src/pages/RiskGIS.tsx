@@ -559,7 +559,7 @@ export const RiskGIS: React.FC = () => {
   return (
     <div className="relative w-full h-[calc(100vh-5.5rem)] min-h-[650px] flex flex-col bg-[#f8fafc] select-none font-sans">
       {/* ── TOP OPERATIONAL TOOLBAR ── */}
-      <div id="tour-gis-toolbar" className="sticky top-0 py-2 w-full bg-white border-b border-slate-200 px-3 sm:px-4 space-y-2 shadow-xs z-30 shrink-0">
+      <div id="tour-gis-toolbar" data-tour="gis-toolbar" className="sticky top-0 py-2 w-full bg-white border-b border-slate-200 px-3 sm:px-4 space-y-2 shadow-xs z-30 shrink-0">
         {/* ROW 1: SCOPE SELECTOR, PHASE FILTER, SEARCH BAR, TILE PICKER */}
         <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-2 flex-wrap">
@@ -890,7 +890,7 @@ export const RiskGIS: React.FC = () => {
       {/* ── MAP CONTAINER + OPERATIONAL DRAWER ── */}
       <div className="relative flex-1 w-full flex overflow-hidden min-h-[500px]">
         {/* LEAFLET MAP VIEW */}
-        <div id="tour-gis-map" className="relative flex-1 h-full w-full min-h-[500px]">
+        <div id="tour-gis-map" data-tour="gis-map" className="relative flex-1 h-full w-full min-h-[500px]">
           <MapContainer
             center={mapView.center}
             zoom={mapView.zoom}

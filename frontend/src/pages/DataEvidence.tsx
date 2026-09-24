@@ -96,7 +96,7 @@ export const DataEvidence: React.FC = () => {
               Syncing database evidence...
             </span>
           )}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0">
+          <div id="tour-evidence-filters" data-tour="evidence-filters" className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0">
           <button
             onClick={() => setActiveTab('provenance')}
             className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${
@@ -174,7 +174,7 @@ export const DataEvidence: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="tour-evidence-list" data-tour="evidence-list" className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {provenanceList.map((item) => (
               <div key={item.id} className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">

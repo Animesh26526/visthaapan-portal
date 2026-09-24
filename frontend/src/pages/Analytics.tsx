@@ -40,7 +40,7 @@ export const Analytics: React.FC = () => {
       </div>
 
       {/* 2. TOP METRIC CARDS STRIP */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div id="tour-analytics-kpi-summary" data-tour="analytics-kpi-summary" className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-xs">
           <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Immediate Relocation Tier</span>
           <span className="text-2xl font-extrabold text-red-600 font-mono">14,940</span>
@@ -71,7 +71,7 @@ export const Analytics: React.FC = () => {
       {/* 3. ANALYTICAL CHARTS & BREAKDOWNS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Hazard Exposure by Habitation */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
+        <div id="tour-analytics-risk-trends" data-tour="analytics-risk-trends" className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <h3 className="text-xs font-bold text-[#003366] uppercase tracking-wider">
               1. Settlement Hazard Exposure Index
@@ -104,7 +104,7 @@ export const Analytics: React.FC = () => {
         </div>
 
         {/* Carrying Capacity Bottlenecks Bar Chart */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
+        <div id="tour-analytics-relocation-stats" data-tour="analytics-relocation-stats" className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <h3 className="text-xs font-bold text-[#003366] uppercase tracking-wider">
               2. Site Effective Capacity vs. Physical Space

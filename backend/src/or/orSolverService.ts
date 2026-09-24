@@ -97,11 +97,11 @@ const CANONICAL_DEMAND_NODES = [
 ];
 
 const CANONICAL_SITES = [
-  { id: 'site-gauchar', name: 'Gauchar Relocation Site', effective_capacity: 5500, hard_hazard_exclusion: false, bottleneck_dimension: 'sanitation' },
-  { id: 'site-karnaprayag', name: 'Karnaprayag Relocation Site', effective_capacity: 3800, hard_hazard_exclusion: false, bottleneck_dimension: 'sanitation' },
-  { id: 'site-rudraprayag', name: 'Rudraprayag Relocation Site', effective_capacity: 4200, hard_hazard_exclusion: false, bottleneck_dimension: 'sanitation' },
-  { id: 'site-srinagar', name: 'Srinagar Relocation Site', effective_capacity: 6000, hard_hazard_exclusion: false, bottleneck_dimension: 'sanitation' },
-  { id: 'site-pipalkoti', name: 'Pipalkoti Transit Site', effective_capacity: 0, hard_hazard_exclusion: true, bottleneck_dimension: 'sanitation' },
+  { id: 'site-gauchar', name: 'Gauchar Aerodrome', effective_capacity: 5500, hard_hazard_exclusion: false, bottleneck_dimension: 'sanitation' },
+  { id: 'site-karnaprayag', name: 'Karnaprayag Hub', effective_capacity: 3800, hard_hazard_exclusion: false, bottleneck_dimension: 'sanitation' },
+  { id: 'site-rudraprayag', name: 'Rudraprayag Camp', effective_capacity: 4200, hard_hazard_exclusion: false, bottleneck_dimension: 'sanitation' },
+  { id: 'site-srinagar', name: 'Srinagar Base', effective_capacity: 6000, hard_hazard_exclusion: false, bottleneck_dimension: 'sanitation' },
+  { id: 'site-pipalkoti', name: 'Pipalkoti', effective_capacity: 0, hard_hazard_exclusion: true, bottleneck_dimension: 'sanitation' },
 ];
 
 const CANONICAL_ROUTES = [

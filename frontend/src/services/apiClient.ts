@@ -30,8 +30,11 @@ class ApiClient {
   }
 
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const baseUrl = this.getBaseUrl();
+    if (baseUrl.endsWith('/api/v1') && cleanEndpoint.startsWith('/api/v1/')) {
+      cleanEndpoint = cleanEndpoint.substring('/api/v1'.length);
+    }
     const url = new URL(`${baseUrl}${cleanEndpoint}`);
 
     if (params) {

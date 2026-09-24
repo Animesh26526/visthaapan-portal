@@ -28,7 +28,7 @@ export const DataQuality: React.FC = () => {
       </div>
 
       {/* 2. QUALITY BENCHMARKS TABLE */}
-      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
+      <div id="tour-quality-coverage" data-tour="quality-coverage" className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <h3 className="text-xs font-bold text-[#003366] uppercase tracking-wider font-mono">
             Core Data Quality Metrics &amp; Targets

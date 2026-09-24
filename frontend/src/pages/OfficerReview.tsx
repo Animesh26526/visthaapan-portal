@@ -2,41 +2,143 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
 import { formatPopulation } from '../utils/formatters';
+import { useLanguage } from '../i18n';
+import { speechTextNormalizer, getPreferredVoice, splitIntoSentenceChunks } from '../utils/speechNormalizer';
+import { BriefingService, generateDeterministicBriefing, type VillageContext } from '../services/briefing.service';
+import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 
 export const OfficerReview: React.FC = () => {
   const navigate = useNavigate();
+  const { currentLanguage, t } = useLanguage();
   const {
     currentUser,
     recordOfficerDecision,
     allocationSummary,
     activePlanId,
     sites,
+    roadR12Blocked,
   } = useAppStore();
-
 
   const [selectedAction, setSelectedAction] = useState<'ACCEPTED' | 'MODIFIED' | 'REJECTED'>('ACCEPTED');
   const [rationale, setRationale] = useState(
-    'All algorithmic constraints verified against ground survey reports from Sub-Divisional Magistrate Joshimath. Approved immediate mobilization of NDRF 8th Bn and SDRF convoys under Section 30(2)(v) and Section 34 of Disaster Management Act 2005.'
+    'All algorithmic constraints verified against ground survey reports from Sub-Divisional Magistrate Joshimath. Approved immediate mobilization of NDRF 8th Bn and SDRF convoys in accordance with district operational relocation protocols.'
   );
   const [statutoryChecked, setStatutoryChecked] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Web Speech API Text-to-Speech State
+  // Web Speech API Text-to-Speech & Localized Brief State
   const [ttsState, setTtsState] = useState<'idle' | 'playing' | 'paused'>('idle');
+  const [briefText, setBriefText] = useState<string>('');
+  const [isLoadingBrief, setIsLoadingBrief] = useState<boolean>(false);
+  const [voiceWarning, setVoiceWarning] = useState<string | null>(null);
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const chunkIndexRef = useRef<number>(0);
+  const chunksRef = useRef<string[]>([]);
+  const isPlayingRef = useRef<boolean>(false);
 
-  const situationBriefText = `Attention District Emergency Operations Center Chamoli. This is the automated AI Situation Brief for Operational Plan ${activePlanId}. Priority wards in Joshimath and Raini remain under active surveillance due to measured ground deformation and IMD precipitation advisories. Total target relocation demand stands at ${formatPopulation(
-    allocationSummary.totalTargetPopulation
-  )} citizens across high-risk habitations. Deterministic Operations Research optimization has assigned evacuees across safe hubs in Gauchar, Karnaprayag, and Rudraprayag, with Pipalkoti transit hub excluded due to slope hazard. NH-07 Rishikesh-Badrinath highway is open with single-lane monitoring at Helang. All resource feasibility constraints are satisfied with zero deficit. Section 30 and 34 statutory authorizations are awaiting District Magistrate digital review.`;
+  const villageContext: VillageContext = {
+    id: 'HAB-001',
+    name: 'Joshimath Wards 4-7',
+    code: 'JSM-04',
+    population: allocationSummary?.totalTargetPopulation || 12250,
+    priority: 'Immediate',
+    riskScore: 0.94,
+    vulnerabilityScore: 0.89,
+    slopeDegrees: 34.2,
+    primaryHazard: 'Subsidence & Moraine Slump',
+    roadR12Blocked: !!roadR12Blocked,
+  };
 
-  // Speech synthesis cleanup
+  const localizedFallbackBrief = generateDeterministicBriefing(villageContext, 'dossier', currentLanguage);
+
+  // Fetch or regenerate the localized situation brief whenever language, plan, or road status changes
   useEffect(() => {
+    let isCancelled = false;
+    // Immediately set localized brief for snappy instant transition when language changes
+    setBriefText(localizedFallbackBrief);
+
+    const fetchBrief = async () => {
+      setIsLoadingBrief(true);
+      try {
+        const brief = await BriefingService.generateCommandBrief(
+          villageContext,
+          'dossier',
+          `Plan ${activePlanId} with ${allocationSummary?.totalTargetPopulation || 12250} evacuees across Chamoli sector.`,
+          currentLanguage
+        );
+        if (!isCancelled && brief) {
+          setBriefText(brief);
+        }
+      } catch {
+        if (!isCancelled) {
+          setBriefText(localizedFallbackBrief);
+        }
+      } finally {
+        if (!isCancelled) setIsLoadingBrief(false);
+      }
+    };
+
+    fetchBrief();
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentLanguage, activePlanId, allocationSummary?.totalTargetPopulation, roadR12Blocked]);
+
+  // Speech synthesis voice loader & cleanup
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const handleVoices = () => {
+        window.speechSynthesis.getVoices();
+      };
+      window.speechSynthesis.onvoiceschanged = handleVoices;
+      window.speechSynthesis.getVoices();
+    }
+
     return () => {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        isPlayingRef.current = false;
         window.speechSynthesis.cancel();
       }
     };
   }, []);
+
+  const playChunk = (index: number, voiceResult: ReturnType<typeof getPreferredVoice>) => {
+    if (!isPlayingRef.current) return;
+    if (index >= chunksRef.current.length) {
+      isPlayingRef.current = false;
+      setTtsState('idle');
+      return;
+    }
+
+    const chunkText = chunksRef.current[index];
+    const utterance = new SpeechSynthesisUtterance(chunkText);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+
+    if (voiceResult.voice) {
+      utterance.voice = voiceResult.voice;
+    }
+    utterance.lang = voiceResult.langCode;
+
+    // Retain global reference to avoid Chromium garbage collection dropping audio mid-playback
+    (window as any).__currentUtterance = utterance;
+    speechUtteranceRef.current = utterance;
+
+    utterance.onend = () => {
+      if (!isPlayingRef.current) return;
+      chunkIndexRef.current = index + 1;
+      playChunk(index + 1, voiceResult);
+    };
+
+    utterance.onerror = (e) => {
+      console.warn('TTS playback chunk error, advancing to next sentence:', e);
+      if (!isPlayingRef.current) return;
+      chunkIndexRef.current = index + 1;
+      playChunk(index + 1, voiceResult);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handlePlayBrief = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -52,25 +154,30 @@ export const OfficerReview: React.FC = () => {
 
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(situationBriefText);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    // Prepare and normalize spoken text: strip document metadata headers & format spoken units
+    const textToSpeak = briefText || localizedFallbackBrief;
+    const spokenContent = speechTextNormalizer(textToSpeak, currentLanguage);
+    const chunks = splitIntoSentenceChunks(spokenContent, currentLanguage);
 
-    // Try finding an Indian English voice
-    const voices = window.speechSynthesis.getVoices();
-    const inVoice = voices.find(
-      (v) => v.lang.includes('en-IN') || v.lang.includes('hi-IN') || v.name.includes('India')
-    );
-    if (inVoice) {
-      utterance.voice = inVoice;
+    if (chunks.length === 0) {
+      return;
     }
 
-    utterance.onend = () => setTtsState('idle');
-    utterance.onerror = () => setTtsState('idle');
+    // Detect and assign preferred voice for currentLanguage
+    const voiceResult = getPreferredVoice(currentLanguage);
+    if (!voiceResult.isNative && currentLanguage !== 'en') {
+      setVoiceWarning('Speech voice unavailable for this language on this device.');
+      setTtsState('idle');
+      return;
+    }
 
-    speechUtteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    setVoiceWarning(null);
+    chunksRef.current = chunks;
+    chunkIndexRef.current = 0;
+    isPlayingRef.current = true;
     setTtsState('playing');
+
+    playChunk(0, voiceResult);
   };
 
   const handlePauseBrief = () => {
@@ -82,6 +189,9 @@ export const OfficerReview: React.FC = () => {
 
   const handleStopBrief = () => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      isPlayingRef.current = false;
+      chunksRef.current = [];
+      chunkIndexRef.current = 0;
       window.speechSynthesis.cancel();
       setTtsState('idle');
     }
@@ -90,11 +200,11 @@ export const OfficerReview: React.FC = () => {
   const handleSubmitDecision = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!statutoryChecked) {
-      alert('Please check the statutory declaration checkbox before signing the official record.');
+      alert('Please check the confirmation checkbox before recording the decision.');
       return;
     }
     if (!rationale.trim()) {
-      alert('A detailed operational rationale is mandatory for all officer adjudications.');
+      alert('A detailed operational rationale is mandatory for all officer determinations.');
       return;
     }
 
@@ -152,7 +262,11 @@ export const OfficerReview: React.FC = () => {
       </div>
 
       {/* ── 2. OFFICER IDENTIFICATION CARD ── */}
-      <div id="tour-review-authority" className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div
+        id="tour-review-authority"
+        data-tour="review-authority"
+        className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+      >
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-[#003366] text-amber-400 border-2 border-amber-400 flex items-center justify-center font-bold text-base shadow shrink-0">
             DM
@@ -160,8 +274,8 @@ export const OfficerReview: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-900 text-sm">{currentUser?.name || 'Shri R. K. Sharma, IAS'}</span>
-              <span className="px-2 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold rounded">
-                STATUTORY INCIDENT COMMANDER
+              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold rounded">
+                INCIDENT COMMANDER REVIEW
               </span>
             </div>
             <p className="text-xs text-slate-500 font-mono mt-0.5">
@@ -171,24 +285,28 @@ export const OfficerReview: React.FC = () => {
         </div>
 
         <div className="text-right text-xs font-mono text-slate-600 space-y-0.5">
-          <div>STATUTORY AUTHORITY: <strong className="text-slate-800">Sec. 30 &amp; 34 DM Act 2005</strong></div>
+          <div>OPERATIONAL ROLE: <strong className="text-slate-800">Incident Commander</strong></div>
           <div>JURISDICTION: <strong className="text-slate-800">District Chamoli, Uttarakhand</strong></div>
         </div>
       </div>
 
       {/* ── 3. AI SITUATION BRIEF WITH SPEECH SYNTHESIS (TTS) ── */}
-      <div id="tour-review-brief" className="bg-gradient-to-r from-blue-900 to-[#002244] text-white rounded-lg p-4 sm:p-5 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+      <div
+        id="tour-review-brief"
+        data-tour="review-brief"
+        className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center text-amber-400">
-              <span className="material-symbols-outlined text-[20px]">record_voice_over</span>
+            <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-[#003366]">
+              <span className="material-symbols-outlined text-[22px]">record_voice_over</span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">
-                AI OPERATIONAL SITUATION BRIEF
+              <h3 className="text-sm font-bold text-[#003366] tracking-wide uppercase font-mono">
+                {t('decisions.briefTitle', 'AI OPERATIONAL SITUATION BRIEF')}
               </h3>
-              <p className="text-xs text-slate-300">
-                Generated from active planning state • Web Speech API Text-to-Speech
+              <p className="text-xs text-slate-500 font-sans">
+                {t('sahayak.subtitle', 'Disaster Operations Assistant • Groq (openai/gpt-oss-20b)')}
               </p>
             </div>
           </div>
@@ -198,51 +316,74 @@ export const OfficerReview: React.FC = () => {
             {ttsState === 'playing' ? (
               <button
                 onClick={handlePauseBrief}
-                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded text-xs flex items-center gap-1 shadow-xs transition"
+                className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">pause</span>
-                <span>Pause</span>
+                <span>{t('btnPause', 'Pause')}</span>
               </button>
             ) : (
               <button
                 onClick={handlePlayBrief}
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-xs flex items-center gap-1 shadow-xs transition"
+                className="px-4 py-1.5 bg-[#003366] hover:bg-[#002244] text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                <span>{ttsState === 'paused' ? 'Resume Brief' : 'Listen Audio Brief'}</span>
+                <span>{ttsState === 'paused' ? t('btnResume', 'Resume Brief') : t('btnListenBrief', 'Listen Audio Brief')}</span>
               </button>
             )}
 
             {ttsState !== 'idle' && (
               <button
                 onClick={handleStopBrief}
-                className="px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white font-semibold rounded text-xs flex items-center gap-1 transition"
+                className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-lg text-xs flex items-center gap-1 transition cursor-pointer border border-red-200"
               >
                 <span className="material-symbols-outlined text-[16px]">stop</span>
-                <span>Stop</span>
+                <span>{t('btnStop', 'Stop')}</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Audio Waveform State Indicator */}
-        {ttsState === 'playing' && (
-          <div className="flex items-center gap-2 py-1 px-3 bg-white/10 rounded text-xs text-emerald-300 font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>VOICE PLAYBACK ACTIVE (WEB SPEECH TTS)</span>
+        {/* Runtime Voice Fallback Warning Banner */}
+        {voiceWarning && (
+          <div className="flex items-center gap-2 py-2 px-3.5 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 font-sans">
+            <span className="material-symbols-outlined text-[18px] text-amber-700 shrink-0">info</span>
+            <span>{t('decisions.voiceUnavailable', voiceWarning)}</span>
           </div>
         )}
 
-        <div className="text-xs text-slate-200 leading-relaxed font-sans bg-black/20 p-3 rounded border border-white/10">
-          "{situationBriefText}"
+        {/* Audio Waveform State Indicator */}
+        {ttsState === 'playing' && (
+          <div className="flex items-center gap-2 py-1.5 px-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 font-mono">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>
+            <span>{t('decisions.speechActive', 'VOICE PLAYBACK ACTIVE (WEB SPEECH TTS)')}</span>
+          </div>
+        )}
+
+        {/* Briefing Narrative Display (Crisp Light Surface for High Contrast) */}
+        <div className="text-xs sm:text-sm text-slate-900 leading-relaxed font-sans bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 max-h-96 overflow-y-auto">
+          {isLoadingBrief ? (
+            <div className="flex items-center gap-2.5 text-slate-500 font-mono py-4 justify-center">
+              <span className="w-4 h-4 rounded-full border-2 border-[#003366] border-t-transparent animate-spin"></span>
+              <span>{t('sahayak.thinking', 'Generating operational situation brief...')} ({currentLanguage.toUpperCase()})</span>
+            </div>
+          ) : (
+            <div className="text-slate-900">
+              <MarkdownRenderer content={briefText || localizedFallbackBrief} />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── 4. ADJUDICATION FORM ── */}
-      <form id="tour-review-actions" onSubmit={handleSubmitDecision} className="bg-white border border-slate-200 rounded-lg shadow-xs p-5 space-y-5">
+      {/* ── 4. OPERATIONAL DECISION FORM ── */}
+      <form
+        id="tour-review-actions"
+        data-tour="review-actions"
+        onSubmit={handleSubmitDecision}
+        className="bg-white border border-slate-200 rounded-lg shadow-xs p-5 space-y-5"
+      >
         <div>
           <h3 className="text-xs font-bold text-[#003366] uppercase tracking-wider mb-2 font-mono">
-            1. Executive Determination Selection
+            1. Operational Decision Selection
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -256,11 +397,11 @@ export const OfficerReview: React.FC = () => {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-sm text-emerald-900">ACCEPT PLAN</span>
+                <span className="font-bold text-sm text-emerald-900">{t('decisions.actionAccept', 'ACCEPT PLAN')}</span>
                 <span className="material-symbols-outlined text-emerald-600 text-[24px]">check_circle</span>
               </div>
               <p className="text-[11px] text-slate-600 mt-2 leading-normal">
-                Endorse algorithmic linear programming dispatch matrix as authoritative. Issue immediate mobilization orders to NDRF/SDRF under Section 34 DMA 2005.
+                Endorse Operations Research dispatch matrix as operational baseline. Direct immediate mobilization of emergency response teams.
               </p>
             </div>
 
@@ -274,7 +415,7 @@ export const OfficerReview: React.FC = () => {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-sm text-amber-900">MODIFY IN SCENARIO LAB</span>
+                <span className="font-bold text-sm text-amber-900">{t('decisions.actionModify', 'MODIFY IN SCENARIO LAB')}</span>
                 <span className="material-symbols-outlined text-amber-600 text-[24px]">tune</span>
               </div>
               <p className="text-[11px] text-slate-600 mt-2 leading-normal">
@@ -292,11 +433,11 @@ export const OfficerReview: React.FC = () => {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-sm text-red-900">REJECT PLAN</span>
+                <span className="font-bold text-sm text-red-900">{t('decisions.actionReject', 'REJECT PLAN')}</span>
                 <span className="material-symbols-outlined text-red-600 text-[24px]">cancel</span>
               </div>
               <p className="text-[11px] text-slate-600 mt-2 leading-normal">
-                Remand plan back to the Incident Management Team with statutory directions and ground safety objections.
+                Remand plan back to the planning team with ground observations and requested adjustments.
               </p>
             </div>
           </div>
@@ -305,7 +446,7 @@ export const OfficerReview: React.FC = () => {
         {/* Plan Summary Preview */}
         <div className="p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-xs font-mono space-y-1">
           <div className="text-slate-500 uppercase font-bold text-[10px]">
-            ACTIVE OPERATIONAL PLAN UNDER ADJUDICATION:
+            ACTIVE OPERATIONAL PLAN UNDER REVIEW:
           </div>
           <div className="text-slate-900 font-bold flex flex-wrap items-center gap-3">
             <span>Plan ID: {activePlanId}</span>
@@ -374,7 +515,7 @@ export const OfficerReview: React.FC = () => {
                 ? 'Proceed to Scenario Planner'
                 : isSubmitting
                 ? 'Recording Order...'
-                : 'Sign & Record Executive Order in Audit Ledger'}
+                : 'Record Operational Decision in Audit Ledger'}
             </span>
           </button>
         </div>

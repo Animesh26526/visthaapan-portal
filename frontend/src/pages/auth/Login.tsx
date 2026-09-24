@@ -75,7 +75,7 @@ export const Login: React.FC = () => {
 
                 <div className="mt-4 p-3 bg-white rounded-lg border border-slate-200 shadow-2xs">
                   <div className="text-[10px] font-mono font-bold uppercase text-[#d9531e] tracking-wider">
-                    Official Sovereign Mandate
+                    Official Operational Mission
                   </div>
                   <p className="text-xs text-slate-700 mt-0.5 font-medium leading-relaxed">
                     Operations Research (OR) mathematical allocation engine and InSAR satellite subsidence radar for equitable, rapid, and verifiable Himalayan population relocation.
@@ -105,7 +105,7 @@ export const Login: React.FC = () => {
                         SUBSIDENCE: -18.2mm/mo
                       </span>
                       <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[10.5px] font-bold font-mono">
-                        SAFE SITE ALPHA: READY
+                        GAUCHAR AERODROME: READY
                       </span>
                     </div>
 
@@ -115,7 +115,7 @@ export const Login: React.FC = () => {
                     </div>
 
                     <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-slate-600">
-                      <span>Target: <strong className="text-slate-900">21,040 Citizens</strong></span>
+                      <span>Target: <strong className="text-slate-900">15,450 Citizens</strong></span>
                       <span>Safe Cap: <strong className="text-emerald-700">19,500 Beds</strong></span>
                     </div>
                   </div>
@@ -123,11 +123,11 @@ export const Login: React.FC = () => {
                   <div className="grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 text-center py-2 text-xs">
                     <div className="px-2">
                       <span className="block text-[9px] font-semibold text-slate-500 uppercase">Monitored</span>
-                      <span className="font-bold text-slate-900 font-mono">28 Villages</span>
+                      <span className="font-bold text-slate-900 font-mono">7 Habitations</span>
                     </div>
                     <div className="px-2">
                       <span className="block text-[9px] font-semibold text-slate-500 uppercase">Capacity Deficit</span>
-                      <span className="font-bold text-[#d9531e] font-mono">5,090 Unmet</span>
+                      <span className="font-bold text-emerald-700 font-mono">0 Deficit</span>
                     </div>
                     <div className="px-2">
                       <span className="block text-[9px] font-semibold text-slate-500 uppercase">OR Solver</span>
@@ -153,7 +153,7 @@ export const Login: React.FC = () => {
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">v2.4</span>
                 </div>
                 <h2 className="text-xl font-bold text-[#003366] mt-2">Government Officer Login</h2>
-                <p className="text-xs text-slate-500 mt-1">Authorized personnel only. Access subject to statutory audit log under NDMA Act 2005.</p>
+                <p className="text-xs text-slate-500 mt-1">Authorized personnel only. Access subject to administrative audit logging.</p>
 
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                   <div>

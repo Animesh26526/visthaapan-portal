@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import type { SupportedLanguage, LanguageOption, TranslationDictionary } from './types';
+import type { SupportedLanguage, LanguageOption } from './types';
 import { SUPPORTED_LANGUAGES } from './types';
 import { translations } from './translations';
 
 interface LanguageContextType {
   currentLanguage: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
-  t: (key: keyof TranslationDictionary, fallback?: string) => string;
+  t: (key: string, fallback?: string, params?: Record<string, string | number>) => string;
   supportedLanguages: LanguageOption[];
   currentLanguageMeta: LanguageOption;
 }
@@ -14,6 +14,20 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'visthaapan_lang';
+
+function resolveKey(obj: any, keyPath: string): string | undefined {
+  if (!obj || typeof obj !== 'object') return undefined;
+  if (typeof obj[keyPath] === 'string') return obj[keyPath];
+
+  // Try dot-separated traversal
+  const parts = keyPath.split('.');
+  let current: any = obj;
+  for (const part of parts) {
+    if (current === undefined || current === null) return undefined;
+    current = current[part];
+  }
+  return typeof current === 'string' ? current : undefined;
+}
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentLanguage, setCurrentLanguageState] = useState<SupportedLanguage>(() => {
@@ -49,16 +63,20 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   }, [currentLanguage]);
 
-  const t = (key: keyof TranslationDictionary, fallback?: string): string => {
-    const dict = translations[currentLanguage];
-    if (dict && dict[key]) {
-      return dict[key];
+  const t = (key: string, fallback?: string, params?: Record<string, string | number>): string => {
+    let resolved =
+      resolveKey(translations[currentLanguage], key) ||
+      resolveKey(translations.en, key) ||
+      fallback ||
+      key;
+
+    if (params && typeof resolved === 'string') {
+      for (const [k, v] of Object.entries(params)) {
+        resolved = resolved.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      }
     }
-    const defaultDict = translations.en;
-    if (defaultDict && defaultDict[key]) {
-      return defaultDict[key];
-    }
-    return fallback || (key as string);
+
+    return resolved;
   };
 
   return (

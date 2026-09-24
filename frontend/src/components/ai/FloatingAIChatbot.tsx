@@ -11,14 +11,23 @@ export const FloatingAIChatbot: React.FC = () => {
     setChatbotOpen,
     chatbotInitialPrompt,
     openChatbotWithPrompt,
+    habitations,
+    sites,
+    allocationSummary,
+    activePlanId,
+    scenario,
+    roadR12Blocked,
   } = useAppStore();
-  const { currentLanguage } = useLanguage();
+  const { currentLanguage, t } = useLanguage();
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg-welcome',
       role: 'assistant',
-      text: `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant powered by Groq (openai/gpt-oss-20b).\n\nI can explain our Operations Research (OR) evacuation algorithms, live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`,
+      text: t(
+        'sahayak.welcome',
+        `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant powered by Groq (openai/gpt-oss-20b).\n\nI can explain our Operations Research (OR) evacuation algorithms, live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`
+      ),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -79,8 +88,32 @@ export const FloatingAIChatbot: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
+    const planningContext = {
+      activePlanId,
+      totalTargetPopulation: allocationSummary?.totalTargetPopulation || 12250,
+      totalAllocatedPopulation: allocationSummary?.totalAllocatedPopulation || 12250,
+      unmetDemandTotal: allocationSummary?.unmetDemandTotal || 0,
+      activeScenario: scenario?.isScenarioActive ? scenario.scenarioName : 'Nominal Baseline',
+      roadR12Blocked: !!roadR12Blocked,
+      monitoredHabitations: habitations.map((h) => ({
+        name: h.name,
+        priority: h.priority,
+        population: h.population,
+      })),
+      safeShelters: sites.map((s) => ({
+        name: s.name,
+        effectiveCapacity: s.resourceCapacity?.effectiveCapacity,
+        bottleneck: s.resourceCapacity?.bottleneck,
+      })),
+    };
+
     try {
-      const response = await BriefingService.callAssistant(messages, messageText, currentLanguage);
+      const response = await BriefingService.callAssistant(
+        messages,
+        messageText,
+        currentLanguage,
+        planningContext
+      );
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
@@ -106,7 +139,10 @@ export const FloatingAIChatbot: React.FC = () => {
       {
         id: 'msg-welcome',
         role: 'assistant',
-        text: `Namaste! I am **VISTHAAPAN Sahayak**, your 24/7 AI Disaster Operations Assistant for District Chamoli, Uttarakhand powered by Groq (openai/gpt-oss-20b).\n\nI can explain our Operations Research (OR) evacuation algorithms, live satellite telemetry, shelter carrying capacities, or guide you through the 5 operational workspaces. How can I assist you today?`,
+        text: t(
+          'sahayak.welcome',
+          `Namaste! I am **VISTHAAPAN Sahayak**, your 24/7 AI Disaster Operations Assistant for District Chamoli, Uttarakhand powered by Groq (openai/gpt-oss-20b).\n\nI can explain our Operations Research (OR) evacuation algorithms, live satellite telemetry, shelter carrying capacities, or guide you through the 5 operational workspaces. How can I assist you today?`
+        ),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -138,6 +174,7 @@ export const FloatingAIChatbot: React.FC = () => {
           {/* Floating Action Button */}
           <button
             id="tour-floating-ai"
+            data-tour="floating-ai"
             onClick={toggleChatbot}
             className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-[#002244] via-[#003366] to-[#0b457f] hover:from-[#001830] hover:to-[#002244] text-white rounded-full shadow-2xl border-2 border-white/80 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
             aria-label="Open VISTHAAPAN Sahayak AI Chatbot"
@@ -147,7 +184,7 @@ export const FloatingAIChatbot: React.FC = () => {
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#002244] rounded-full"></span>
             </div>
             <div className="text-left hidden xs:block">
-              <div className="text-xs font-bold leading-none tracking-wide">Sahayak AI</div>
+              <div className="text-xs font-bold leading-none tracking-wide">{t('sahayak.title', 'Sahayak AI')}</div>
               <div className="text-[10px] text-emerald-300 font-mono leading-none mt-0.5">Chamoli Ops</div>
             </div>
           </button>
@@ -157,6 +194,8 @@ export const FloatingAIChatbot: React.FC = () => {
       {/* ── EXPANDED FLOATING CHAT WINDOW ── */}
       {isChatbotOpen && (
         <div
+          id="tour-sahayak-chat"
+          data-tour="sahayak-chat"
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[95] w-[calc(100vw-32px)] sm:w-[410px] max-w-[430px] h-[580px] max-h-[calc(100vh-80px)] bg-white rounded-2xl shadow-2xl border border-slate-300 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-200 font-sans"
           role="dialog"
           aria-labelledby="chatbot-heading"
@@ -173,15 +212,15 @@ export const FloatingAIChatbot: React.FC = () => {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h3 id="chatbot-heading" className="font-bold text-xs sm:text-sm tracking-wide truncate">
-                    VISTHAAPAN Sahayak
+                    {t('sahayak.title', 'VISTHAAPAN Sahayak')}
                   </h3>
                   <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono font-bold flex items-center gap-1 shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    ACTIVE
+                    {t('sahayak.statusReady', 'LIVE GROQ')}
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-300 truncate">
-                  Sahayak AI • Groq GPT-OSS-20B • District Chamoli
+                  {t('sahayak.subtitle', 'Disaster Operations Assistant • Groq (openai/gpt-oss-20b)')}
                 </p>
               </div>
             </div>
@@ -276,7 +315,7 @@ export const FloatingAIChatbot: React.FC = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-[#003366] animate-bounce"></span>
                     <span className="w-1.5 h-1.5 rounded-full bg-[#003366] animate-bounce [animation-delay:0.2s]"></span>
                     <span className="w-1.5 h-1.5 rounded-full bg-[#003366] animate-bounce [animation-delay:0.4s]"></span>
-                    <span className="ml-1 text-[10px]">Sahayak thinking...</span>
+                    <span className="ml-1 text-[10px]">{t('sahayak.thinking', 'Sahayak thinking...')}</span>
                   </div>
                 </div>
               </div>
@@ -297,7 +336,7 @@ export const FloatingAIChatbot: React.FC = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about Chamoli, OR Solver, or Road R12..."
+                placeholder={t('sahayak.placeholder', 'Ask about Chamoli, OR Solver, or Road R12...')}
                 disabled={isTyping}
                 className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#003366] outline-none transition"
               />

@@ -23,10 +23,10 @@ export async function getAIStatus(req: Request, res: Response, next: NextFunctio
 
 export async function generateAIBriefing(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { planningState, language = 'en', officerContext } = req.body;
+    const { planningState, context, language = 'en', officerContext } = req.body;
     const briefing = await LLMService.generateSituationBrief({
-      planningState,
-      language,
+      planningState: planningState || context,
+      language: (req.body.language || language || 'en').toString().toLowerCase(),
       officerContext,
     });
     res.json({
@@ -41,7 +41,8 @@ export async function generateAIBriefing(req: Request, res: Response, next: Next
 
 export async function handleAIChat(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { messages = [], userMessage = '', currentPlanningContext, language = 'en' } = req.body;
+    const { messages = [], currentPlanningContext, language = 'en' } = req.body;
+    const userMessage = (req.body.userMessage || req.body.message || '').toString();
     const chatResult = await LLMService.chatAssistant({
       messages,
       userMessage,

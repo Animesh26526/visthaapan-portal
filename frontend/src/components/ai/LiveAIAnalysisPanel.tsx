@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   type VillageContext,
   BriefingService,
+  generateDeterministicBriefing,
   getNearestSafeSites,
 } from '../../services/briefing.service';
 import { USE_MOCK_API } from '../../services/config';
+import { useLanguage } from '../../i18n';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 import { formatPercent } from '../../utils/formatters';
 
@@ -13,6 +15,7 @@ interface LiveAIAnalysisPanelProps {
 }
 
 export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ context }) => {
+  const { currentLanguage } = useLanguage();
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [analysisText, setAnalysisText] = useState<string>('');
@@ -28,8 +31,10 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
 
   useEffect(() => {
     let isCancelled = false;
+    // Instant localized briefing rendering
+    setAnalysisText(generateDeterministicBriefing(context, activeTopic, currentLanguage));
     setIsGenerating(true);
-    BriefingService.generateCommandBrief(context, 'dossier')
+    BriefingService.generateCommandBrief(context, activeTopic, undefined, currentLanguage)
       .then((brief) => {
         if (!isCancelled) {
           setAnalysisText(brief);
@@ -38,6 +43,7 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
       })
       .catch(() => {
         if (!isCancelled) {
+          setAnalysisText(generateDeterministicBriefing(context, activeTopic, currentLanguage));
           setIsGenerating(false);
         }
       });
@@ -45,7 +51,7 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
     return () => {
       isCancelled = true;
     };
-  }, [context.id, context.roadR12Blocked]);
+  }, [context.id, context.roadR12Blocked, activeTopic, currentLanguage]);
 
   const handleGenerate = async (topic: string, customQuery?: string) => {
     setActiveTopic(topic);
@@ -61,11 +67,11 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
     );
 
     try {
-      const result = await BriefingService.generateCommandBrief(context, topic, query);
+      const result = await BriefingService.generateCommandBrief(context, topic, query, currentLanguage);
       setAnalysisText(result);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Briefing generation failed';
-      setApiError(message);
+      const fallback = generateDeterministicBriefing(context, topic, currentLanguage);
+      setAnalysisText(fallback);
     } finally {
       setIsGenerating(false);
     }
@@ -182,7 +188,7 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
 
       {/* ── BRIEFING CONTENT DISPLAY ── */}
       <div className="p-4 sm:p-5 relative min-h-[220px]">
-        {isGenerating ? (
+        {isGenerating && !analysisText ? (
           <div className="flex flex-col items-center justify-center py-12 text-slate-500 space-y-3">
             <div className="w-8 h-8 border-3 border-[#003366] border-t-transparent rounded-full animate-spin"></div>
             <div className="text-xs font-mono font-medium text-slate-600 animate-pulse">
@@ -194,7 +200,7 @@ export const LiveAIAnalysisPanel: React.FC<LiveAIAnalysisPanelProps> = ({ contex
           </div>
         ) : (
           <div className="space-y-4">
-            <MarkdownRenderer content={analysisText} />
+            <MarkdownRenderer content={analysisText || generateDeterministicBriefing(context, activeTopic, currentLanguage)} />
 
             {/* Actions Bottom Bar */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">

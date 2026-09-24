@@ -38,7 +38,7 @@ export const RelocationPlan: React.FC = () => {
       </div>
 
       {/* 2. STATUTORY DEPLOYMENT SUMMARY BANNER */}
-      <div className="bg-white p-3.5 sm:p-5 rounded-xl border border-slate-200 shadow-xs grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div id="tour-relocation-capacity" data-tour="relocation-capacity" className="bg-white p-3.5 sm:p-5 rounded-xl border border-slate-200 shadow-xs grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div>
           <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Total Citizens Scheduled</span>
           <span className="text-2xl font-bold font-mono text-slate-900 mt-0.5">
@@ -71,7 +71,7 @@ export const RelocationPlan: React.FC = () => {
       </div>
 
       {/* 3. PHASED RELOCATION SCHEDULE ACCORDIONS */}
-      <div className="space-y-4">
+      <div id="tour-relocation-phases" data-tour="relocation-phases" className="space-y-4">
         {mockRelocationPhases.map((phaseGroup, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
             <div className="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">

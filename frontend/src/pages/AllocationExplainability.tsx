@@ -60,7 +60,7 @@ export const AllocationExplainability: React.FC = () => {
       {/* 3. THREE-PANEL EXPLAINABILITY DOSSIER */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
         {/* PANEL 1: WHY WERE THESE HABITATIONS PRIORITIZED? */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-4">
+        <div id="tour-why-priority" data-tour="why-priority" className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
             <span className="material-symbols-outlined text-red-600 text-[20px]">priority_high</span>
             <div>
@@ -91,7 +91,7 @@ export const AllocationExplainability: React.FC = () => {
         </div>
 
         {/* PANEL 2: WHY WERE THESE SAFE SITES SELECTED? */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-4">
+        <div id="tour-why-capacity" data-tour="why-capacity-constraints" className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
             <span className="material-symbols-outlined text-emerald-600 text-[20px]">verified</span>
             <div>
@@ -118,7 +118,7 @@ export const AllocationExplainability: React.FC = () => {
         </div>
 
         {/* PANEL 3: WHY WERE ALTERNATIVES REJECTED? */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-4">
+        <div id="tour-why-restrictions" data-tour="why-hazard-restrictions" className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
             <span className="material-symbols-outlined text-slate-600 text-[20px]">block</span>
             <div>

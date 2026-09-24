@@ -36,6 +36,7 @@ export const SUPPORTED_LANGUAGES: LanguageOption[] = [
 ];
 
 export interface TranslationDictionary {
+  [key: string]: any;
   // Portal metadata
   portalTitle: string;
   portalSubtitle: string;

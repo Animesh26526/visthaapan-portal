@@ -36,8 +36,8 @@ export const AdjudicationWorkspace: React.FC = () => {
                 <span className="text-[#003366] font-bold">WORKSPACE 4</span>
               </div>
               <div className="text-[11px] sm:text-xs font-bold tracking-wide text-slate-900 uppercase truncate">
-                <span className="sm:hidden">Adjudication</span>
-                <span className="hidden sm:inline">Statutory Adjudication &amp; Plan</span>
+                <span className="sm:hidden">Decision Review</span>
+                <span className="hidden sm:inline">Officer Review &amp; Plan</span>
               </div>
             </div>
           </div>

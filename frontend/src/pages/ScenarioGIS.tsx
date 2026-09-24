@@ -381,8 +381,7 @@ export const ScenarioGIS: React.FC = () => {
             <p className="text-xs text-slate-600 leading-relaxed">
               Applying this scenario will promote the simulated dispatch matrix to the authoritative
               operational baseline, incrementing the plan version to{' '}
-              <strong className="text-[#003366]">#VST-2026-CHM-015</strong> and recording a formal
-              Section 34 statutory adjudication order.
+              <strong className="text-[#003366]">#VST-2026-CHM-015</strong> and recording an operational decision update.
             </p>
 
             <div>

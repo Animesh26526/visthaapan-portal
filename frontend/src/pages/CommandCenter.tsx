@@ -1,27 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../stores/useAppStore';
-import { EvidenceService, type CommandCenterSummary } from '../services/evidence.service';
 import { formatNumber, formatPercent, formatPopulation } from '../utils/formatters';
 
 export const CommandCenter: React.FC = () => {
   const navigate = useNavigate();
   const { habitations, sites, allocationSummary, roadR12Blocked, decisions } = useAppStore();
-  const [dbSummary, setDbSummary] = useState<CommandCenterSummary | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    EvidenceService.getCommandCenterSummary()
-      .then((data) => {
-        if (isMounted) setDbSummary(data);
-      })
-      .catch((err) => {
-        console.warn('Could not load command center DB summary:', err);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const totalAtRisk = (habitations || []).reduce((s, h) => s + (h?.population || 0), 0);
   const totalCapacity = (sites || []).reduce((s, si) => s + (si?.resourceCapacity?.effectiveCapacity || 0), 0);
@@ -29,7 +13,7 @@ export const CommandCenter: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-[1600px] mx-auto font-sans">
       {/* ── INCIDENT BANNER ── */}
-      <div id="tour-cc-incident" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-red-50 border border-red-200 px-3 sm:px-4 py-2.5 rounded-sm">
+      <div id="tour-cc-incident" data-tour="cc-incident" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-red-50 border border-red-200 px-3 sm:px-4 py-2.5 rounded-sm">
         <div className="flex items-center gap-2.5 text-xs flex-wrap">
           <span className="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0"></span>
           <span className="font-bold text-red-900 font-mono uppercase tracking-wide">Level 3 Evacuation Directive</span>
@@ -38,79 +22,24 @@ export const CommandCenter: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate('/adjudication?tab=review')}
-            className="px-2.5 py-1 bg-[#003366] text-white hover:bg-[#002244] rounded text-[11px] font-bold flex items-center gap-1 transition shadow-xs"
+            onClick={() => navigate('/decisions/review')}
+            className="px-3 py-1.5 bg-[#003366] text-white hover:bg-[#002244] rounded text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[13px] text-amber-300">gavel</span>
+            <span className="material-symbols-outlined text-[15px] text-amber-300">gavel</span>
             Officer Review
           </button>
           <button
-            onClick={() => navigate('/briefing')}
-            className="px-2.5 py-1 bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 rounded text-[11px] font-bold flex items-center gap-1 transition shadow-xs"
+            onClick={() => navigate('/decisions/review')}
+            className="px-3 py-1.5 bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 rounded text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[13px] text-blue-600">description</span>
-            Generate Brief
+            <span className="material-symbols-outlined text-[15px] text-blue-600">record_voice_over</span>
+            Audio Briefing
           </button>
-        </div>
-      </div>
-
-      {/* ── REAL DATABASE ASSET & PROVENANCE LEDGER STRIP ── */}
-      <div id="tour-cc-database" className="bg-slate-900 text-white rounded-lg p-3 sm:p-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2 mb-3">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold font-mono border border-emerald-500/30">
-              POSTGRESQL 16 + POSTGIS LIVE
-            </span>
-            <span className="text-xs font-mono text-slate-400">National Disaster Informatics Database</span>
-          </div>
-          <span className="text-[10px] font-mono text-slate-400">
-            Jurisdiction: Chamoli DEOC Gopeshwar • Incident Commander: Shri R. K. Sharma, IAS
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs font-mono">
-          <div className="bg-slate-800/80 p-2.5 rounded border border-slate-700">
-            <div className="text-[10px] text-slate-400 uppercase">Canonical Districts</div>
-            <div className="text-xl font-bold text-white mt-0.5">
-              {dbSummary ? dbSummary.totalMonitoredDistricts.toLocaleString() : '785'}
-            </div>
-            <div className="text-[9px] text-emerald-400 mt-0.5">REAL (Census/LGD)</div>
-          </div>
-
-          <div className="bg-slate-800/80 p-2.5 rounded border border-slate-700">
-            <div className="text-[10px] text-slate-400 uppercase">NDEM Disaster Events</div>
-            <div className="text-xl font-bold text-white mt-0.5">
-              {dbSummary ? dbSummary.totalDisasterEventsRecorded.toLocaleString() : '47,621'}
-            </div>
-            <div className="text-[9px] text-emerald-400 mt-0.5">REAL (MHA Portal)</div>
-          </div>
-
-          <div className="bg-slate-800/80 p-2.5 rounded border border-slate-700">
-            <div className="text-[10px] text-slate-400 uppercase">Healthcare Facilities</div>
-            <div className="text-xl font-bold text-purple-300 mt-0.5">
-              {dbSummary ? dbSummary.totalHealthcareFacilities.toLocaleString() : '30,273'}
-            </div>
-            <div className="text-[9px] text-purple-300 mt-0.5 font-bold">BEDS QUARANTINED</div>
-          </div>
-
-          <div className="bg-slate-800/80 p-2.5 rounded border border-slate-700">
-            <div className="text-[10px] text-slate-400 uppercase">Census Demographics</div>
-            <div className="text-xl font-bold text-white mt-0.5">2011 Baseline</div>
-            <div className="text-[9px] text-amber-400 mt-0.5">HISTORICAL BASELINE</div>
-          </div>
-
-          <div className="bg-slate-800/80 p-2.5 rounded border border-slate-700">
-            <div className="text-[10px] text-slate-400 uppercase">DDMP 2026–27 Evidence</div>
-            <div className="text-xl font-bold text-blue-300 mt-0.5">
-              {dbSummary ? dbSummary.ddmpDocumentaryEvidenceRecords : '30'} Records
-            </div>
-            <div className="text-[9px] text-blue-300 mt-0.5">REAL DOCUMENTARY</div>
-          </div>
         </div>
       </div>
 
       {/* ── OPERATIONAL KPI STRIP ── */}
-      <div id="tour-cc-kpis" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div id="tour-cc-kpis" data-tour="cc-kpis" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="gov-card p-3.5">
           <div className="text-[11px] font-semibold text-slate-500">Critical Habitations</div>
           <div className="flex items-baseline gap-1.5 mt-1">
@@ -131,7 +60,7 @@ export const CommandCenter: React.FC = () => {
         <div className="gov-card p-3.5">
           <div className="text-[11px] font-semibold text-slate-500">Safe Capacity</div>
           <div className="text-2xl font-mono font-extrabold text-emerald-700 mt-1">{formatPopulation(totalCapacity)}</div>
-          <div className="text-[11px] text-slate-500 mt-0.5">Across {sites.length} hubs (SIMULATED)</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Across {sites.length} verified safe hubs</div>
         </div>
 
         <div className="gov-card p-3.5">
@@ -146,7 +75,7 @@ export const CommandCenter: React.FC = () => {
             <span className="text-2xl font-mono font-extrabold text-slate-900">{decisions.length}</span>
             <span className="text-xs font-mono text-emerald-700 font-bold">Recorded</span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5">In statutory ledger</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Decision history</div>
         </div>
 
         <div className="gov-card p-3.5">
@@ -162,7 +91,7 @@ export const CommandCenter: React.FC = () => {
       {/* ── MAIN CONTENT: PRIORITY QUEUE + DIRECTIVES ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* LEFT: Priority Habitations */}
-        <div id="tour-cc-habitations" className="lg:col-span-8 gov-card overflow-hidden">
+        <div id="tour-cc-habitations" data-tour="cc-habitations" className="lg:col-span-8 gov-card overflow-hidden">
           <div className="px-3 sm:px-4 py-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-[#d9531e]">warning</span>
@@ -219,7 +148,7 @@ export const CommandCenter: React.FC = () => {
                 { label: 'District EOC Level 1', sub: '24/7 Multi-Agency Joint Control (Gopeshwar)', status: 'ACTIVE', color: 'emerald' },
                 { label: 'SDRF Emergency Unit', sub: 'Deployment Staging: Gauchar Base', status: 'STANDBY', color: 'blue' },
                 { label: 'NDMA Telemetry', sub: 'Automated 15-min radar cycle', status: 'SYNCED', color: 'emerald' },
-                { label: 'ITBP Air-Bridge', sub: 'Helipad Alpha Gauchar standby', status: 'READY', color: 'amber' },
+                { label: 'ITBP Air-Bridge', sub: 'Gauchar Aerodrome Helipad standby', status: 'READY', color: 'amber' },
               ].map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between p-2.5 rounded-sm bg-slate-50 border border-slate-200 text-xs">
                   <div>

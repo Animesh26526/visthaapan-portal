@@ -47,7 +47,7 @@ export const RelocationCapacity: React.FC = () => {
       </div>
 
       {/* 2. CARRYING CAPACITY BOTTLENECK FORMULA BANNER */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-5">
+      <div id="tour-planning-formula" data-tour="planning-capacity" className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-5">
         <div className="space-y-1.5">
           <div className="text-[11px] font-mono uppercase tracking-wider text-[#d9531e] font-bold">
             Mathematical Formulation: Multi-Resource Effective Capacity
@@ -79,7 +79,7 @@ export const RelocationCapacity: React.FC = () => {
       </div>
 
       {/* 3. SITE CARDS GRID (ALL 3 SAFE SITES) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div id="tour-planning-sites" data-tour="planning-effective-capacity" className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {sites.map((site) => {
           const isSelected = site.id === activeSite.id;
           return (
@@ -112,7 +112,7 @@ export const RelocationCapacity: React.FC = () => {
                   </div>
                   <div className="mt-1 flex items-center justify-between text-xs">
                     <span className="text-slate-500 font-medium">Limiting Bottleneck:</span>
-                    <span className="px-2 py-0.5 rounded bg-red-100 text-red-800 font-bold font-mono text-[10px] uppercase">
+                    <span data-tour="planning-bottleneck" className="px-2 py-0.5 rounded bg-red-100 text-red-800 font-bold font-mono text-[10px] uppercase">
                       {site?.resourceCapacity?.bottleneck || 'None'}
                     </span>
                   </div>

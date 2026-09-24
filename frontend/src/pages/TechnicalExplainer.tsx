@@ -80,7 +80,7 @@ export const TechnicalExplainer: React.FC = () => {
       </div>
 
       {/* ── 2. CORE ARCHITECTURAL PRINCIPLE ── */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-2">
+      <div id="tour-system-ai" data-tour="system-ai" className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-2">
         <span className="text-xs font-mono uppercase tracking-wider text-[#d9531e] font-bold">
           Core Architectural Principle: End-to-End Decision Integrity
         </span>
@@ -92,7 +92,7 @@ export const TechnicalExplainer: React.FC = () => {
       </div>
 
       {/* ── 3. FORMULATION & BENCHMARK SECTION ── */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+      <div id="tour-system-solver" data-tour="system-solver" className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
           <span className="text-xs font-mono uppercase tracking-wider text-[#003366] font-bold">
             Operations Research Solver Formulation

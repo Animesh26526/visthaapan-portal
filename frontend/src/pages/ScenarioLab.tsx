@@ -82,6 +82,7 @@ export const ScenarioLab: React.FC = () => {
 
           <button
             id="tour-scen-run"
+            data-tour="scen-run"
             onClick={() => runScenarioReoptimization()}
             disabled={scenario.solverStatus === 'running'}
             className="px-4 py-2 bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold rounded flex items-center gap-1.5 shadow-sm transition disabled:opacity-50"
@@ -107,7 +108,7 @@ export const ScenarioLab: React.FC = () => {
       </div>
 
       {/* ── 2. QUICK PRESET PERTURBATION TEMPLATES ── */}
-      <div id="tour-scen-presets" className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs space-y-2.5">
+      <div id="tour-scen-presets" data-tour="scen-presets" className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-[#003366] uppercase tracking-wider font-mono flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[16px] text-amber-600">bolt</span>
