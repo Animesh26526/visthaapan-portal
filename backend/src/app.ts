@@ -22,10 +22,27 @@ export function createApp(options?: AppOptions): Application {
   // 1. Request ID attribution
   app.use(requestIdMiddleware);
 
-  // 2. CORS configuration (bound to configured frontend origin)
+  // 2. CORS configuration (supports single origin, comma-separated origins, and Vercel domains)
+  const allowedOrigins = config.frontendOrigin.split(',').map((o) => o.trim()).filter(Boolean);
   app.use(
     cors({
-      origin: config.frontendOrigin,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (curl, mobile, health monitors, same-origin)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        // In local development, allow any localhost/127.0.0.1 port
+        if (config.isDev && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+          return callback(null, true);
+        }
+        // Support Vercel preview deployments if vercel.app is configured
+        const isVercel = allowedOrigins.some((o) => o.includes('vercel.app')) && origin.endsWith('.vercel.app');
+        if (isVercel) {
+          return callback(null, true);
+        }
+        return callback(null, false);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],

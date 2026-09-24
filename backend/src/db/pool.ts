@@ -5,11 +5,16 @@ import { logger } from '../utils/logger.js';
 
 const { Pool } = pg;
 
+const isLocalDb = !config.databaseUrl || 
+  config.databaseUrl.includes('localhost') || 
+  config.databaseUrl.includes('127.0.0.1');
+
 export const pool = new Pool({
   connectionString: config.databaseUrl,
   connectionTimeoutMillis: 5000,
   idleTimeoutMillis: 30000,
   max: 20,
+  ssl: isLocalDb ? false : { rejectUnauthorized: false },
 });
 
 pool.on('error', (err: Error) => {

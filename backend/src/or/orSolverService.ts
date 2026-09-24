@@ -252,7 +252,8 @@ export async function prepareSolverInputs(options: OptimizationOptions = {}) {
  */
 async function callOrToolsSolver(payload: any): Promise<any> {
   return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python', [SOLVER_PYTHON_SCRIPT]);
+    const pythonCmd = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    const pythonProcess = spawn(pythonCmd, [SOLVER_PYTHON_SCRIPT]);
 
     let stdout = '';
     let stderr = '';

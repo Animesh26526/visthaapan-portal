@@ -34,6 +34,7 @@
     "test:all": "tsx test/foundation.test.ts && tsx test/db.test.ts && tsx test/pipeline.test.ts && tsx test/enrichment.test.ts && tsx test/ai.test.ts && tsx test/ai_validation.test.ts && tsx test/gis.test.ts && tsx test/capacity.test.ts && tsx test/optimization.test.ts && tsx test/phase9.test.ts && tsx test/phase9_geo_enrichment.test.ts && tsx test/phase10_hazard_intelligence.test.ts && tsx test/operations_relocation_map.test.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

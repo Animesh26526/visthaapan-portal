@@ -347,7 +347,7 @@ export function speechTextNormalizer(rawText: string, lang: SupportedLanguage): 
  * Splits normalized text into fluent, bite-sized sentence chunks (40 to 120 characters).
  * This eliminates the Chromium 15-second timeout and internal buffer drops on Windows/Chrome TTS.
  */
-export function splitIntoSentenceChunks(text: string, lang: SupportedLanguage): string[] {
+export function splitIntoSentenceChunks(text: string, _lang?: SupportedLanguage): string[] {
   if (!text) return [];
 
   // Delimiters:

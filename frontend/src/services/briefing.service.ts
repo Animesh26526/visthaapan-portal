@@ -6,7 +6,7 @@
 
 import { mockSites } from '../mock/data';
 import { apiClient } from './apiClient';
-import { formatPercent, formatPopulation, formatNumber } from '../utils/formatters';
+import { formatPercent, formatPopulation } from '../utils/formatters';
 
 export interface VillageContext {
   id: string;
@@ -18,6 +18,7 @@ export interface VillageContext {
   vulnerabilityScore: number;
   slopeDegrees: number;
   primaryHazard: string;
+  infrastructure?: any;
   coordinates?: {
     lat: number;
     lng: number;
@@ -32,7 +33,8 @@ export interface VillageContext {
 
 export interface ChatMessage {
   id: string;
-  sender: 'user' | 'assistant' | 'system';
+  sender?: 'user' | 'assistant' | 'system';
+  role?: 'user' | 'assistant' | 'system';
   text: string;
   timestamp: string;
   suggestedActions?: { label: string; action: string }[];
@@ -70,7 +72,7 @@ export function getNearestSafeSites(
   };
 
   return mockSites
-    .filter((site) => site.status !== 'EXCLUDED')
+    .filter((site) => (site as any).status !== 'EXCLUDED' && site.logisticsStatus !== 'Closed')
     .map((site) => {
       let baseDistance = site.coordinates
         ? calculateDistance(site.coordinates.lat, site.coordinates.lng)
@@ -103,7 +105,7 @@ export function getNearestSafeSites(
         distanceKm: baseDistance,
         transitTimeMin: transitTime,
         effectiveCapacity: site.resourceCapacity?.effectiveCapacity || 3500,
-        bottleneck: site.resourceCapacity?.bottleneckResource || 'Shelter Space',
+        bottleneck: site.resourceCapacity?.bottleneck || 'Shelter Space',
         routeStatus,
         isRecommended,
       };
@@ -113,7 +115,7 @@ export function getNearestSafeSites(
 
 // Multilingual Dossier Templates for all 13 Supported Indian Languages
 const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: number, cap: number) => string> = {
-  hi: (context, pop, cap) => `#### 1. वर्तमान स्थिति का संक्षिप्त विवरण
+  hi: (_context, pop, cap) => `#### 1. वर्तमान स्थिति का संक्षिप्त विवरण
 चमोली जनपद में जोशीमठ एवं अलकनंदा घाटी क्षेत्र में अत्यधिक भू-धंसाव दर्ज किया गया है। विस्थापन निगरानी प्रणाली द्वारा कुल **${pop.toLocaleString()} नागरिकों** के सुरक्षित स्थानांतरण का विश्लेषण तैयार है।
 
 #### 2. राहत शिविर एवं सुरक्षित क्षमता विश्लेषण
@@ -129,7 +131,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. चरण 1 के अंतर्गत वृद्धजन, दिव्यांग एवं बच्चों के काफिले को तत्काल रवाना किया जाए।
 2. संपर्क मार्ग आर-12 पर भूस्खलन के कारण वैकल्पिक मार्ग आर-12बी पर एसडीआरएफ एवं एनडीआरएफ के एस्कॉर्ट वाहन तैनात रहें।`,
 
-  gu: (context, pop, cap) => `#### 1. પરિસ્થિતિની વિગત
+  gu: (_context, pop, cap) => `#### 1. પરિસ્થિતિની વિગત
 ચમોલી જિલ્લામાં જોશીમઠ અને અલકનંદા ખીણ વિસ્તારમાં ભૂ-ધસાણ પર સતત દેખરેખ રાખવામાં આવી રહી છે. કુલ **${pop.toLocaleString()} સંવેદનશીલ નાગરિકો** ના સલામત સ્થળાંતરની યોજના તૈયાર છે.
 
 #### 2. આશ્રય ક્ષમતા અને વિતરણ
@@ -145,7 +147,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. તબક્કો 1 હેઠળ વરિષ્ઠ નાગરિકો, દિવ્યાંગો અને બાળકોના કાફલાને તાત્કાલિક રવાના કરો.
 2. વૈકલ્પિક માર્ગ આર-12બી પર SDRF અને NDRF એસ્કોર્ટ તૈનાત રાખો.`,
 
-  ta: (context, pop, cap) => `#### 1. தற்போதைய சூழ்நிலை கண்ணோட்டம்
+  ta: (_context, pop, cap) => `#### 1. தற்போதைய சூழ்நிலை கண்ணோட்டம்
 சமோலி மாவட்டத்தில் ஜோஷிமத் மற்றும் அலக்நந்தா பள்ளத்தாக்கு பகுதிகளில் தீவிர நிலச்சரிவு கண்காணிக்கப்படுகிறது. மொத்தம் **${pop.toLocaleString()} குடிமக்களை** பாதுகாப்பான இடங்களுக்கு மாற்றும் திட்டம் தயாராக உள்ளது.
 
 #### 2. நிவாரண முகாம் கொள்ளளவு
@@ -160,7 +162,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. கட்டம் 1-ன் கீழ் முதியவர்கள், மாற்றுத்திறனாளிகள் மற்றும் குழந்தைகளை உடனடியாக வெளியேற்றவும்.
 2. மாற்றுப் பாதை ஆர்-12பி-ல் எஸ்டிஆர்எஃப் பாதுகாப்புப் படைகளை நிலைநிறுத்தவும்.`,
 
-  bn: (context, pop, cap) => `#### 1. বর্তমান পরিস্থিতির সারসংক্ষেপ
+  bn: (_context, pop, cap) => `#### 1. বর্তমান পরিস্থিতির সারসংক্ষেপ
 চামোলি জেলায় জোশীমঠ ও অলকানন্দা উপত্যকায় ভূ-ধস নিরীক্ষণ চলছে। মোট **${pop.toLocaleString()} জন নাগরিকের** নিরাপদ স্থানান্তর পরিকল্পনা প্রস্তুত।
 
 #### 2. আশ্রয় কেন্দ্রের ধারণক্ষমতা
@@ -175,7 +177,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. প্রথম ধাপে প্রবীণ, প্রতিবন্ধী ও শিশুদের কনভয় অবিলম্বে প্রেরণ করুন।
 2. বিকল্প রুট আর-12বি-তে এসডিআরএফ এসকর্ট বজায় রাখুন।`,
 
-  mr: (context, pop, cap) => `#### 1. सद्यस्थितीचा संक्षिप्त आढावा
+  mr: (_context, pop, cap) => `#### 1. सद्यस्थितीचा संक्षिप्त आढावा
 चमोली जिल्ह्यातील जोशीमठ आणि अलकनंदा खोऱ्यात भूस्खलनावर सतत लक्ष ठेवले जात आहे. एकूण **${pop.toLocaleString()} नागरिकांच्या** सुरक्षित स्थलांतराची योजना तयार आहे.
 
 #### 2. निवारा क्षमता आणि विश्लेषण
@@ -190,7 +192,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. टप्पा 1 अंतर्गत ज्येष्ठ नागरिक, दिव्यांग आणि बालकांना तातडीने रवाना करा.
 2. पर्यायी मार्ग आर-12बी वर एसडीआरएफ पथके तैनात ठेवा.`,
 
-  te: (context, pop, cap) => `#### 1. ప్రస్తుత పరిస్థితి సమీక్ష
+  te: (_context, pop, cap) => `#### 1. ప్రస్తుత పరిస్థితి సమీక్ష
 చమోలీ జిల్లాలోని జోషిమఠ్ మరియు అలకనంద లోయ ప్రాంతాల్లో భూమి కుంగుబాటు తీవ్రంగా పర్యవేక్షించబడుతోంది. మొత్తం **${pop.toLocaleString()} మంది పౌరుల** తరలింపు ప్రణాళిక సిద్ధంగా ఉంది.
 
 #### 2. ఆశ్రయ కేంద్రాల సామర్థ్యం
@@ -205,7 +207,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. మొదటి దశలో వృద్ధులు, దివ్యాంగులు మరియు పిల్లలను వెంటనే సురక్షిత ప్రాంతాలకు తరలించండి.
 2. ప్రత్యామ్నాయ మార్గం ఆర్-12బి లో ఎస్డీఆర్ఎఫ్ బలగాలను మోహరించండి.`,
 
-  kn: (context, pop, cap) => `#### 1. ಪ್ರಸ್ತುತ ಪರಿಸ್ಥಿತಿಯ ಅವಲೋಕನ
+  kn: (_context, pop, cap) => `#### 1. ಪ್ರಸ್ತುತ ಪರಿಸ್ಥಿತಿಯ ಅವಲೋಕನ
 ಚಮೋಲಿ ಜಿಲ್ಲೆಯ ಜೋಷಿಮಠ ಮತ್ತು ಅಲಕನಂದಾ ಕಣಿವೆಯಲ್ಲಿ ಭೂಕುಸಿತದ ಪರಿಸ್ಥಿತಿಯನ್ನು ಸೂಕ್ಷ್ಮವಾಗಿ ಗಮನಿಸಲಾಗುತ್ತಿದೆ. ಒಟ್ಟು **${pop.toLocaleString()} ನಾಗರಿಕರನ್ನು** ಸುರಕ್ಷಿತ ಸ್ಥಳಗಳಿಗೆ ಸ್ಥಳಾಂತರಿಸಲು ಯೋಜನೆ ಸಿದ್ಧವಾಗಿದೆ.
 
 #### 2. ಆಶ್ರಯ ತಾಣಗಳ ಸಾಮರ್ಥ್ಯ
@@ -220,7 +222,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. ಹಂತ 1 ರ ಅಡಿಯಲ್ಲಿ ಹಿರಿಯ ನಾಗರಿಕರು, ಅಂಗವಿಕಲರು ಮತ್ತು ಮಕ್ಕಳನ್ನು ತಕ್ಷಣವೇ ಸ್ಥಳಾಂತರಿಸಿ.
 2. ಪರ್ಯಾಯ ರಸ್ತೆ ಆರ್-12ಬಿ ನಲ್ಲಿ ಎಸ್ಡಿಆರ್ಎಫ್ ಬೆಂಗಾವಲು ವಾಹನಗಳನ್ನು ನಿಯೋಜಿಸಿ.`,
 
-  ml: (context, pop, cap) => `#### 1. നിലവിലെ സ്ഥിതിഗതികൾ
+  ml: (_context, pop, cap) => `#### 1. നിലവിലെ സ്ഥിതിഗതികൾ
 ചമോലി ജില്ലയിലെ ജോഷിമഠ്, അളകനന്ദ താഴ്‌വരകളിൽ മണ്ണിടിച്ചിൽ ഭീഷണി നിരീക്ഷിച്ചുവരുന്നു. ആകെ **${pop.toLocaleString()} പൗരന്മാരെ** സുരക്ഷിത സ്ഥാനങ്ങളിലേക്ക് മാറ്റുന്നതിനുള്ള പദ്ധതി തയ്യാറാണ്.
 
 #### 2. ദുരിതാശ്വാസ ക്യാമ്പ് ശേഷി
@@ -235,7 +237,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. ഘട്ടം 1 പ്രകാരം പ്രായമായവർ, ഭിന്നശേഷിക്കാർ, കുട്ടികൾ എന്നിവരെ ഉടൻ സുരക്ഷിത സ്ഥാനങ്ങളിലേക്ക് മാറ്റുക.
 2. ഇതര റോഡ് ആർ-12ബി ൽ എസ്ഡിആർഎഫ് നിരീക്ഷണം ശക്തമാക്കുക.`,
 
-  pa: (context, pop, cap) => `#### 1. ਮੌਜੂਦਾ ਸਥਿਤੀ ਦਾ ਜਾਇਜ਼ਾ
+  pa: (_context, pop, cap) => `#### 1. ਮੌਜੂਦਾ ਸਥਿਤੀ ਦਾ ਜਾਇਜ਼ਾ
 ਚਮੋਲੀ ਜ਼ਿਲ੍ਹੇ ਦੇ ਜੋਸ਼ੀਮਠ ਅਤੇ ਅਲਕਨੰਦਾ ਘਾਟੀ ਵਿੱਚ ਜ਼ਮੀਨ ਖਿਸਕਣ 'ਤੇ ਲਗਾਤਾਰ ਨਜ਼ਰ ਰੱਖੀ ਜਾ ਰਹੀ ਹੈ। ਕੁੱਲ **${pop.toLocaleString()} ਨਾਗਰਿਕਾਂ** ਨੂੰ ਸੁਰੱਖਿਅਤ ਸਥਾਨਾਂ 'ਤੇ ਤਬਦੀਲ ਕਰਨ ਦੀ ਯੋਜਨਾ ਤਿਆਰ ਹੈ।
 
 #### 2. ਰਾਹਤ ਕੈਂਪਾਂ ਦੀ ਸਮਰੱਥਾ
@@ -250,7 +252,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. ਪੜਾਅ 1 ਅਧੀਨ ਬਜ਼ੁਰਗਾਂ, ਦਿਵਿਆਂਗਾਂ ਅਤੇ ਬੱਚਿਆਂ ਨੂੰ ਤੁਰੰਤ ਰਵਾਨਾ ਕਰੋ।
 2. ਬਦਲਵੇਂ ਰਸਤੇ ਆਰ-12ਬੀ 'ਤੇ ਐਸਡੀਆਰਐਫ ਟੀਮਾਂ ਤਾਇਨਾਤ ਰੱਖੋ।`,
 
-  or: (context, pop, cap) => `#### 1. ବର୍ତ୍ତମାନ ପରିସ୍ଥିତିର ସାରାଂଶ
+  or: (_context, pop, cap) => `#### 1. ବର୍ତ୍ତମାନ ପରିସ୍ଥିତିର ସାରାଂଶ
 ଚାମୋଲି ଜିଲ୍ଲାର ଯୋଶୀମଠ ଏବଂ ଅଳକାନନ୍ଦା ଉପତ୍ୟକାରେ ଭୂସ୍ଖଳନ ଉପରେ କଡ଼ା ନଜର ରଖାଯାଇଛି। ସମୁଦାୟ **${pop.toLocaleString()} ନାଗରିକଙ୍କ** ନିରାପଦ ସ୍ଥାନାନ୍ତର ଯୋଜନା ପ୍ରସ୍ତୁତ।
 
 #### 2. ଆଶ୍ରୟ ସ୍ଥଳୀର କ୍ଷମତା
@@ -265,7 +267,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. ପ୍ରଥମ ପର୍ଯ୍ୟାୟରେ ବରିଷ୍ଠ ନାଗରିକ, ଦିବ୍ୟାଙ୍ଗ ଏବଂ ଶିଶୁମାନଙ୍କୁ ତୁରନ୍ତ ସ୍ଥାନାନ୍ତର କରନ୍ତୁ।
 2. ବିକଳ୍ପ ମାର୍ଗ ଆର୍-12ବି ରେ SDRF ଟିମ୍ ମୁତୟନ ରଖନ୍ତୁ।`,
 
-  as: (context, pop, cap) => `#### 1. বৰ্তমান পৰিস্থিতিৰ চমু বিৱৰণ
+  as: (_context, pop, cap) => `#### 1. বৰ্তমান পৰিস্থিতিৰ চমু বিৱৰণ
 চামোলি জিলাৰ যোশীমঠ আৰু অলকানন্দা উপত্যকা অঞ্চলত ভূমিস্খলনৰ ওপৰত তীব্ৰ দৃষ্টি ৰখা হৈছে। মুঠ **${pop.toLocaleString()} জন নাগৰিকৰ** সুৰক্ষিত স্থানান্তৰৰ পৰিকল্পনা সাজু কৰা হৈছে।
 
 #### 2. আশ্ৰয় শিবিৰ আৰু ক্ষমতা বিশ্লেষণ
@@ -280,7 +282,7 @@ const MULTILINGUAL_DOSSIERS: Record<string, (context: VillageContext, pop: numbe
 1. পৰ্যায় ১ ৰ অধীনত জ্যেষ্ঠ নাগৰিক, বিশেষভাৱে সক্ষম আৰু শিশুক তৎকালীনভাৱে প্ৰেৰণ কৰক।
 2. বৈকল্পিক পথ আৰ-১২বি ত এছডিআৰএফ দল নিয়োগ কৰক।`,
 
-  ur: (context, pop, cap) => `#### 1. موجودہ صورتحال کا جائزہ
+  ur: (_context, pop, cap) => `#### 1. موجودہ صورتحال کا جائزہ
 ضلع چمولی کے جوشیمٹھ اور الکنندا وادی میں زمین دھنسنے کے خطرے کی مسلسل نگرانی کی جا رہی ہے۔ کل **${pop.toLocaleString()} متاثرہ شہریوں** کی محفوظ انخلا کی منصوبہ بندی تیار ہے۔
 
 #### 2. پناہ گاہوں کی صلاحیت اور تجزیہ

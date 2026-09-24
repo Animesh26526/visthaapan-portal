@@ -2,14 +2,15 @@ import { app } from './app.js';
 import { config } from './config/env.js';
 import { logger } from './utils/logger.js';
 
-const server = app.listen(config.port, () => {
+const server = app.listen(config.port, '0.0.0.0', () => {
   logger.info({
     service: 'VISTHAAPAN API',
     port: config.port,
+    host: '0.0.0.0',
     prefix: config.apiPrefix,
     environment: config.env,
     frontendOrigin: config.frontendOrigin,
-  }, `🚀 VISTHAAPAN Backend Foundation active at http://localhost:${config.port}${config.apiPrefix}`);
+  }, `🚀 VISTHAAPAN Backend Foundation active at http://0.0.0.0:${config.port}${config.apiPrefix}`);
 });
 
 // Graceful shutdown handling

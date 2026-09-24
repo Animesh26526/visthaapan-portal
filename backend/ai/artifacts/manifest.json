@@ -2,7 +2,7 @@
   "model_version": "v1.0.0-xgb-district-risk",
   "feature_schema_version": "v5.1.0-temporal-biweekly",
   "git_commit": "eac5e0ebca56fb2823b4ca9969ad0455c425a879",
-  "artifact_path": "C:\\Users\\Lenovo\\Desktop\\Projects\\VISTHAAPAN-PORTAL\\visthaapan-portal\\backend\\ai\\artifacts\\v1.0.0-xgb-district-risk.joblib",
+  "artifact_path": "ai/artifacts/v1.0.0-xgb-district-risk.joblib",
   "artifact_checksum": "dc38b740a835888ded5e1db6613e69984739e738610de60975b7779e98943c8c",
   "training_timestamp": "2026-09-18T09:21:57Z",
   "metrics": {

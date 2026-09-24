@@ -22,7 +22,7 @@ export class ApiClientError extends Error {
 
 class ApiClient {
   private getBaseUrl(): string {
-    const envUrl = import.meta.env.VITE_API_BASE_URL;
+    const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
       return envUrl.replace(/\/+$/, '');
     }
