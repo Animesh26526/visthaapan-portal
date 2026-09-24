@@ -1,0 +1,549 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Chandigarh (M Corp.)",
+        "state_code": "CH",
+        "district_name": "Chandigarh",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.786642,
+          30.731291
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Shimla (M Corp.)",
+        "state_code": "HP",
+        "district_name": "Shimla",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.172298,
+          31.104397
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Dehradun (M.Corp)",
+        "state_code": "UK",
+        "district_name": "Dehradun",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          78.041861,
+          30.324322
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Jaipur (M Corp.)",
+        "state_code": "RJ",
+        "district_name": "Jaipur",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.814266,
+          26.921031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Gandhinagar (NAC)",
+        "state_code": "GJ",
+        "district_name": "Gandhinagar",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          72.65419,
+          23.223788
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Daman (M Cl)",
+        "state_code": "DD",
+        "district_name": "Daman",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          72.834008,
+          20.415054
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Silvassa CT",
+        "state_code": "DN",
+        "district_name": "Dadra & Nagar Haveli",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.004485,
+          20.275828
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Ranchi (M Corp.)",
+        "state_code": "JH",
+        "district_name": "Ranchi",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          85.324653,
+          23.367448
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Bhubaneshwar (M Corp.)",
+        "state_code": "OD",
+        "district_name": "Khordha",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          85.846873,
+          20.273451
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Gangtok (NTA)",
+        "state_code": "SK",
+        "district_name": "East",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.613205,
+          27.330482
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Lucknow (M Corp.)",
+        "state_code": "UP",
+        "district_name": "Lucknow",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          80.926893,
+          26.842675
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Raipur (M Corp.)",
+        "state_code": "CG",
+        "district_name": "Raipur",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          81.632853,
+          21.240906
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Dispur",
+        "state_code": "AS",
+        "district_name": "Kamrup",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.785856,
+          26.147292
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Shillong (M)",
+        "state_code": "ML",
+        "district_name": "East Khasi Hills",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.874493,
+          25.577859
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Imphal (M CI) (Part)",
+        "state_code": "MN",
+        "district_name": "Imphal East",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          93.938331,
+          24.807278
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Kohima (TC)",
+        "state_code": "NL",
+        "district_name": "Kohima",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          94.102706,
+          25.662096
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Aizawl (NT)",
+        "state_code": "MZ",
+        "district_name": "Aizawl",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.717941,
+          23.735376
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Patna (M Corp.)",
+        "state_code": "BR",
+        "district_name": "Patna",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          85.155023,
+          25.60927
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "New Delhi",
+        "state_code": "DL",
+        "district_name": "New Delhi",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.198034,
+          28.614875
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Bhopal (M Corp.)",
+        "state_code": "MP",
+        "district_name": "Bhopal",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.426795,
+          23.252935
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Kolkata (M Corp)",
+        "state_code": "WB",
+        "district_name": "Kolkata",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.350648,
+          22.557644
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Itanagar (CT)",
+        "state_code": "AR",
+        "district_name": "Papum Pare",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          93.62285,
+          27.095096
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Panaji(M Cl)",
+        "state_code": "GA",
+        "district_name": "North Goa",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.825499,
+          15.492907
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Kavaratti (CT)",
+        "state_code": "LD",
+        "district_name": "Lakshadweep",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          72.639739,
+          10.57018
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Pondicherry (M)",
+        "state_code": "PY",
+        "district_name": "Pondicherry",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          79.819719,
+          11.935468
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Greater Mumbai (M Corp.) (Part)",
+        "state_code": "MS",
+        "district_name": "Mumbai",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          72.824385,
+          18.964958
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Thiruvananthapuram (M Corp.)",
+        "state_code": "KL",
+        "district_name": "Thiruvananthapuram",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.946507,
+          8.4841
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Bangalore (M Corp.)",
+        "state_code": "KA",
+        "district_name": "Bangalore",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.578532,
+          12.964473
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Chennai (M Corp.)",
+        "state_code": "TN",
+        "district_name": "Chennai",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          80.281275,
+          13.095125
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Port Blair (M Cl)",
+        "state_code": "AN",
+        "district_name": "Andamans",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.735455,
+          11.662418
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Hyderabad (M Corp.) (Part)",
+        "state_code": "AP",
+        "district_name": "Hyderabad",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          78.475144,
+          17.387121
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Srinagar (MC)",
+        "state_code": "JK",
+        "district_name": "Srinagar",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.810799,
+          34.093438
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Jammu  (MC)",
+        "state_code": "JK",
+        "district_name": "Jammu",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.839025,
+          32.750253
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "capital_name": "Leh (NAC)",
+        "state_code": "JK",
+        "district_name": "Leh (Ladakh)",
+        "ctype": "Capital"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.576157,
+          34.160218
+        ]
+      }
+    }
+  ]
+}
