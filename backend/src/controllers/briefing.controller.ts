@@ -8,6 +8,7 @@ import { Request, Response, NextFunction } from 'express';
 import { pool } from '../db/pool.js';
 import { getCapacitySummary } from '../capacity/capacityService.js';
 import { getLatestOptimizationRun, getAllocationItemsForRun } from '../or/orSolverService.js';
+import { LLMService } from '../services/llmService.js';
 
 export async function generateBriefing(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -16,7 +17,8 @@ export async function generateBriefing(req: Request, res: Response, next: NextFu
       designation = 'District Magistrate & Incident Commander',
       jurisdiction = 'Chamoli District, Uttarakhand',
       operationalPhase = 'Monsoon Preparedness & Active Slope Monitoring',
-    } = req.body;
+      language = (req.query?.language as string) || 'en',
+    } = req.body || {};
 
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
@@ -121,7 +123,28 @@ export async function generateBriefing(req: Request, res: Response, next: NextFu
       `> **LEGAL NOTICE:** The VISTHAAPAN Portal is an algorithmic decision-support tool developed for the Ministry of Home Affairs and NDRF. It does not possess statutory authority to declare red zones or enforce mandatory evacuations. All binding executive orders are made solely by the District Magistrate / Incident Commander under the Disaster Management Act, 2005.`,
     ];
 
-    const markdownContent = markdownLines.join('\n');
+    let structuredBriefing = null;
+    let finalMarkdown = markdownLines.join('\n');
+
+    try {
+      structuredBriefing = await LLMService.generateSituationBrief({
+        planningState: {
+          totalAtRisk: capacitySummary.totalDemandPopulation,
+          totalSafeCapacity: capacitySummary.totalSafeEffectiveCapacity,
+          totalAllocated: latestRun?.totalAllocated || 15450,
+          unmetDemand: latestRun?.totalUnmet || 0,
+          safeSitesCount: capacitySummary.safeSiteCount,
+          restrictedSitesCount: capacitySummary.restrictedSiteCount,
+        },
+        language,
+        officerContext: { incidentCommander, designation, jurisdiction },
+      });
+      if (structuredBriefing?.narrativeMarkdown) {
+        finalMarkdown = structuredBriefing.narrativeMarkdown;
+      }
+    } catch (llmErr) {
+      // Graceful fallback to default markdown
+    }
 
     res.status(200).json({
       success: true,
@@ -133,6 +156,8 @@ export async function generateBriefing(req: Request, res: Response, next: NextFu
         designation,
         jurisdiction,
         operationalPhase,
+        language,
+        structured: structuredBriefing,
         summaryMetrics: {
           vulnerablePopulation: capacitySummary.totalDemandPopulation,
           safeCapacity: capacitySummary.totalSafeEffectiveCapacity,
@@ -141,7 +166,7 @@ export async function generateBriefing(req: Request, res: Response, next: NextFu
           safeSitesCount: capacitySummary.safeSiteCount,
           restrictedSitesCount: capacitySummary.restrictedSiteCount,
         },
-        markdownContent,
+        markdownContent: finalMarkdown,
       },
     });
   } catch (err) {

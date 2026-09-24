@@ -150,11 +150,11 @@ export const AllocationExplainability: React.FC = () => {
       {/* 3. AUDIT NOTICE FOOTER */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
         <div className="text-xs text-slate-600">
-          Algorithmic decisions are fully auditable under Section 31 of the Disaster Management Act, 2005.
+          Algorithmic decisions are fully auditable and verified against deterministic Operations Research constraints.
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded border border-slate-200">
           <span className="material-symbols-outlined text-[16px] text-emerald-700">verified</span>
-          <span>Statutory Audit Cleared</span>
+          <span>Audit Review Cleared</span>
         </div>
       </div>
     </div>

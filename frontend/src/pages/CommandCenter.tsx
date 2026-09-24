@@ -29,7 +29,7 @@ export const CommandCenter: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-[1600px] mx-auto font-sans">
       {/* ── INCIDENT BANNER ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-red-50 border border-red-200 px-3 sm:px-4 py-2.5 rounded-sm">
+      <div id="tour-cc-incident" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-red-50 border border-red-200 px-3 sm:px-4 py-2.5 rounded-sm">
         <div className="flex items-center gap-2.5 text-xs flex-wrap">
           <span className="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0"></span>
           <span className="font-bold text-red-900 font-mono uppercase tracking-wide">Level 3 Evacuation Directive</span>
@@ -55,7 +55,7 @@ export const CommandCenter: React.FC = () => {
       </div>
 
       {/* ── REAL DATABASE ASSET & PROVENANCE LEDGER STRIP ── */}
-      <div className="bg-slate-900 text-white rounded-lg p-3 sm:p-4 shadow-sm">
+      <div id="tour-cc-database" className="bg-slate-900 text-white rounded-lg p-3 sm:p-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2 mb-3">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold font-mono border border-emerald-500/30">
@@ -110,7 +110,7 @@ export const CommandCenter: React.FC = () => {
       </div>
 
       {/* ── OPERATIONAL KPI STRIP ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div id="tour-cc-kpis" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="gov-card p-3.5">
           <div className="text-[11px] font-semibold text-slate-500">Critical Habitations</div>
           <div className="flex items-baseline gap-1.5 mt-1">
@@ -162,7 +162,7 @@ export const CommandCenter: React.FC = () => {
       {/* ── MAIN CONTENT: PRIORITY QUEUE + DIRECTIVES ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* LEFT: Priority Habitations */}
-        <div className="lg:col-span-8 gov-card overflow-hidden">
+        <div id="tour-cc-habitations" className="lg:col-span-8 gov-card overflow-hidden">
           <div className="px-3 sm:px-4 py-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-[#d9531e]">warning</span>

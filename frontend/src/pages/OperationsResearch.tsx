@@ -22,7 +22,7 @@ export const OperationsResearch: React.FC = () => {
 
         <div className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
           <span className="w-2 h-2 rounded-full bg-blue-600 inline-block"></span>
-          <span>MILP Formulation Active</span>
+          <span>OR Solver Formulation Active</span>
         </div>
       </div>
 
@@ -30,7 +30,7 @@ export const OperationsResearch: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
           <span className="text-xs font-mono uppercase tracking-wider text-[#d9531e] font-bold">
-            Mixed-Integer Linear Programming (MILP) Formulation
+            Operations Research Mathematical Allocation Formulation
           </span>
           <span className="text-xs font-mono bg-slate-100 px-2.5 py-0.5 rounded text-slate-700 font-semibold">
             SOLVER: DUAL SIMPLEX / BRANCH &amp; BOUND
@@ -82,8 +82,8 @@ export const OperationsResearch: React.FC = () => {
               <span className="font-bold text-red-700">3,400 souls unmet!</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600">Total Logistics Outlay:</span>
-              <span className="font-bold text-slate-900">₹82.4 Lakhs</span>
+              <span className="text-slate-600">Average Transit Time:</span>
+              <span className="font-bold text-red-700">185 min / convoy</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">Average Transit Distance:</span>
@@ -116,7 +116,7 @@ export const OperationsResearch: React.FC = () => {
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed">
-            Simultaneously solves the entire network. High-risk habitations receive guaranteed reservations at optimal shelters, minimizing high-priority stranded populations while reducing net transit distance and fleet costs.
+            Simultaneously solves the entire network. High-risk habitations receive guaranteed reservations at optimal shelters, minimizing high-priority stranded populations while reducing net transit distance and evacuation delays.
           </p>
 
           <div className="p-3 bg-emerald-50 rounded border border-emerald-300 space-y-2 text-xs font-mono">
@@ -125,8 +125,8 @@ export const OperationsResearch: React.FC = () => {
               <span className="font-bold text-emerald-700">0 (100% Relocated!)</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600">Total Logistics Outlay:</span>
-              <span className="font-bold text-emerald-800">₹53.0 Lakhs (Save ₹29.4L)</span>
+              <span className="text-slate-600">Average Transit Time:</span>
+              <span className="font-bold text-emerald-800">105 min (-80 min faster)</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">Average Transit Distance:</span>

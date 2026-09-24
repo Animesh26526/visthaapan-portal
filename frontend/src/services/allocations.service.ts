@@ -1,5 +1,5 @@
 // VISTHAAPAN Allocations Service
-// Handles MILP allocation retrieval, optimization requests, and explainability data
+// Handles Operations Research (OR) allocation retrieval, optimization requests, and explainability data
 
 import type {
   AllocationItem,

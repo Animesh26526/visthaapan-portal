@@ -13,6 +13,8 @@ import { briefingRouter } from './briefing.routes.js';
 import { habitationsRouter } from './habitations.routes.js';
 import { sitesRouter } from './sites.routes.js';
 import { operationsRouter } from './operations.routes.js';
+import { aiRouter } from './ai.routes.js';
+import { generateAIBriefing, handleAIChat } from '../controllers/ai.controller.js';
 import { getApiInfo } from '../controllers/health.controller.js';
 
 export const apiRouter: Router = Router();
@@ -27,7 +29,12 @@ apiRouter.use('/', healthRouter);
 apiRouter.use('/operations', operationsRouter);
 
 // Phase 5 AI Intelligence Engine (GET /api/v1/intelligence)
+apiRouter.post('/intelligence/briefing', generateAIBriefing);
+apiRouter.post('/intelligence/chat', handleAIChat);
 apiRouter.use('/intelligence', intelligenceRouter);
+
+// Groq Cloud AI Engine (GET/POST /api/v1/ai)
+apiRouter.use('/ai', aiRouter);
 
 // Phase 6 GIS Spatial Intelligence Engine (GET /api/v1/gis)
 apiRouter.use('/gis', gisRouter);

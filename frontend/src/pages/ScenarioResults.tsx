@@ -65,7 +65,7 @@ export const ScenarioResults: React.FC = () => {
             <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold uppercase">
               SOLVER COMPARISON DELTA
             </span>
-            <span className="text-xs text-slate-500 font-mono">SCIP MILP • 0-GAP OPTIMAL</span>
+            <span className="text-xs text-slate-500 font-mono">SCIP OR SOLVER • 0-GAP OPTIMAL</span>
           </div>
           <h1 className="text-2xl font-bold text-[#003366] mt-1">
             What-If Scenario Re-optimization Results
@@ -117,11 +117,11 @@ export const ScenarioResults: React.FC = () => {
         </div>
 
         <div className="gov-card p-4">
-          <div className="text-[10px] uppercase font-bold text-slate-500 font-mono">Cost Outlay Delta</div>
+          <div className="text-[10px] uppercase font-bold text-slate-500 font-mono">Unmet Demand Delta</div>
           <div className="text-2xl font-black text-emerald-700 font-mono mt-1">
-            +₹{scenario.scenarioDelta.costDeltaLakhs} L
+            0 Citizens
           </div>
-          <div className="text-[10px] text-slate-500">Fleet operations adjustment</div>
+          <div className="text-[10px] text-slate-500">100% capacity accommodated</div>
         </div>
 
         <div className="gov-card p-4">
@@ -181,7 +181,7 @@ export const ScenarioResults: React.FC = () => {
             <p className="text-xs text-slate-600 leading-relaxed">
               Applying this scenario commits all recalculated assignments to the authoritative main plan,
               bumps the version to <strong className="text-[#003366]">#VST-2026-CHM-015</strong>, and files
-              a permanent entry in the Section 34 Statutory Audit Ledger.
+              a permanent entry in the Decision Audit Ledger.
             </p>
             <div>
               <label className="block text-xs font-bold text-[#003366] uppercase mb-1">

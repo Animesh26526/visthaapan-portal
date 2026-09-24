@@ -14,7 +14,7 @@ interface ArchivedPlan {
   unmetDemand: number;
   totalDistanceKm: number;
   avgEvacMinutes: number;
-  fleetOutlayLakhs: number;
+  capacityUtilizationPct: number;
   rationale: string;
   allocations: Array<{
     habitation: string;
@@ -35,7 +35,7 @@ const ARCHIVED_PLANS: ArchivedPlan[] = [
     unmetDemand: 0,
     totalDistanceKm: 442.1,
     avgEvacMinutes: 124,
-    fleetOutlayLakhs: 58.4,
+    capacityUtilizationPct: 92.4,
     rationale:
       'Baseline operations order utilizing optimal Google OR-Tools SCIP solver formulation with Gauchar, Karnaprayag, and Rudraprayag primary hubs. Pipalkoti transit shelter excluded due to slope instability.',
     allocations: [
@@ -58,7 +58,7 @@ const ARCHIVED_PLANS: ArchivedPlan[] = [
     unmetDemand: 0,
     totalDistanceKm: 418.5,
     avgEvacMinutes: 118,
-    fleetOutlayLakhs: 54.2,
+    capacityUtilizationPct: 88.6,
     rationale:
       'Pre-monsoon preparedness iteration prior to InSAR telemetry update. Gauchar and Karnaprayag hubs at standard capacity.',
     allocations: [
@@ -80,7 +80,7 @@ const ARCHIVED_PLANS: ArchivedPlan[] = [
     unmetDemand: 300,
     totalDistanceKm: 385.0,
     avgEvacMinutes: 108,
-    fleetOutlayLakhs: 48.0,
+    capacityUtilizationPct: 82.1,
     rationale:
       'Initial rapid assessment following preliminary crack detection in Upper Joshimath. Deficit resolved in revision #013.',
     allocations: [
@@ -110,7 +110,7 @@ export const PreviousPlans: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded bg-[#003366] text-white text-[10px] font-bold uppercase font-mono tracking-wider">
-              Statutory Plan Registry &amp; Comparison Tool
+              Plan Registry &amp; Comparison Tool
             </span>
             <span className="text-xs text-slate-500 font-mono">
               TAMPER-EVIDENT VERSION CHAIN
@@ -298,8 +298,8 @@ export const PreviousPlans: React.FC = () => {
                 <strong>{planA.avgEvacMinutes} min</strong>
               </div>
               <div className="flex justify-between">
-                <span>Fleet Outlay Budget:</span>
-                <strong>₹{planA.fleetOutlayLakhs} Lakhs</strong>
+                <span>Capacity Utilization:</span>
+                <strong>{planA.capacityUtilizationPct}%</strong>
               </div>
             </div>
 
@@ -347,8 +347,8 @@ export const PreviousPlans: React.FC = () => {
                 <strong>{planB.avgEvacMinutes} min</strong>
               </div>
               <div className="flex justify-between">
-                <span>Fleet Outlay Budget:</span>
-                <strong>₹{planB.fleetOutlayLakhs} Lakhs</strong>
+                <span>Capacity Utilization:</span>
+                <strong>{planB.capacityUtilizationPct}%</strong>
               </div>
             </div>
 

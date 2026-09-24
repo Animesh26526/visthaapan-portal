@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../../stores/useAppStore';
 import { BriefingService, type ChatMessage } from '../../services/briefing.service';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
+import { useLanguage } from '../../i18n';
 
 export const FloatingAIChatbot: React.FC = () => {
   const {
@@ -11,12 +12,13 @@ export const FloatingAIChatbot: React.FC = () => {
     chatbotInitialPrompt,
     openChatbotWithPrompt,
   } = useAppStore();
+  const { currentLanguage } = useLanguage();
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg-welcome',
       role: 'assistant',
-      text: `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant.\n\nI can explain our mathematical evacuation algorithms (MILP), live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`,
+      text: `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant powered by Groq (openai/gpt-oss-20b).\n\nI can explain our Operations Research (OR) evacuation algorithms, live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -27,9 +29,9 @@ export const FloatingAIChatbot: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const suggestionChips = [
-    'How does the MILP relocation engine work?',
+    'How does the OR relocation engine work?',
     'What happens when Road R12 is blocked?',
-    'What are the 3 safe relocation hubs in Chamoli?',
+    'What are the audited safe relocation hubs in Chamoli?',
     'Guide me through the 5 workspaces',
   ];
 
@@ -78,7 +80,7 @@ export const FloatingAIChatbot: React.FC = () => {
     setIsTyping(true);
 
     try {
-      const response = await BriefingService.callAssistant(messages, messageText);
+      const response = await BriefingService.callAssistant(messages, messageText, currentLanguage);
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
@@ -90,7 +92,7 @@ export const FloatingAIChatbot: React.FC = () => {
       const fallbackMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        text: `### 🛡️ VISTHAAPAN System Intelligence\n\nI am actively monitoring the **Chamoli Disaster Relocation Operation** (19,500 at-risk residents across Malari, Helang, Raini, and Joshimath).\n\nYou can launch the **Operations Dashboard** to view live evacuation rosters, audit shelter capacities, or trigger MILP re-optimization.\n\n*Crafted with precision for SIH by **KyuNahiHoRahiCoding**.*`,
+        text: `### 🛡️ VISTHAAPAN System Intelligence\n\nI am actively monitoring the **Chamoli Disaster Relocation Operation** (12,250 at-risk residents across Joshimath, Raini, Tapovan, Helang, and Pandukeshwar).\n\nYou can navigate the **5 Workspaces** via the top navbar to view live GIS overlays, audit shelter capacities, or review the deterministic OR relocation plan.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, fallbackMessage]);
@@ -104,7 +106,7 @@ export const FloatingAIChatbot: React.FC = () => {
       {
         id: 'msg-welcome',
         role: 'assistant',
-        text: `Namaste! I am **VISTHAAPAN Sahayak**, your AI Disaster Operations Assistant powered by **Gemini 3.5 Flash Lite**.\n\nI can explain our mathematical evacuation algorithms (MILP), live satellite telemetry in Chamoli District, or guide you through the 5 operational workspaces. How can I assist you today?`,
+        text: `Namaste! I am **VISTHAAPAN Sahayak**, your 24/7 AI Disaster Operations Assistant for District Chamoli, Uttarakhand powered by Groq (openai/gpt-oss-20b).\n\nI can explain our Operations Research (OR) evacuation algorithms, live satellite telemetry, shelter carrying capacities, or guide you through the 5 operational workspaces. How can I assist you today?`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -146,7 +148,7 @@ export const FloatingAIChatbot: React.FC = () => {
             </div>
             <div className="text-left hidden xs:block">
               <div className="text-xs font-bold leading-none tracking-wide">Sahayak AI</div>
-              <div className="text-[10px] text-emerald-300 font-mono leading-none mt-0.5">Gemini 3.5</div>
+              <div className="text-[10px] text-emerald-300 font-mono leading-none mt-0.5">Chamoli Ops</div>
             </div>
           </button>
         </div>
@@ -175,11 +177,11 @@ export const FloatingAIChatbot: React.FC = () => {
                   </h3>
                   <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono font-bold flex items-center gap-1 shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Gemini 3.5
+                    ACTIVE
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-300 truncate">
-                  Disaster Ops Assistant • District Chamoli
+                  Sahayak AI • Groq GPT-OSS-20B • District Chamoli
                 </p>
               </div>
             </div>
@@ -274,7 +276,7 @@ export const FloatingAIChatbot: React.FC = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-[#003366] animate-bounce"></span>
                     <span className="w-1.5 h-1.5 rounded-full bg-[#003366] animate-bounce [animation-delay:0.2s]"></span>
                     <span className="w-1.5 h-1.5 rounded-full bg-[#003366] animate-bounce [animation-delay:0.4s]"></span>
-                    <span className="ml-1 text-[10px]">Gemini thinking...</span>
+                    <span className="ml-1 text-[10px]">Sahayak thinking...</span>
                   </div>
                 </div>
               </div>
@@ -295,7 +297,7 @@ export const FloatingAIChatbot: React.FC = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about Chamoli, MILP, or Road R12..."
+                placeholder="Ask about Chamoli, OR Solver, or Road R12..."
                 disabled={isTyping}
                 className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#003366] outline-none transition"
               />

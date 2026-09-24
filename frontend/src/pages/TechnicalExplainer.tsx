@@ -39,17 +39,17 @@ export const TechnicalExplainer: React.FC = () => {
       title: 'Operations Research SCIP Mathematical Dispatch',
       tag: 'OPERATIONS RESEARCH',
       description:
-        'Solves the competing multi-settlement allocation problem as a deterministic Mixed-Integer Linear Program (MILP), guaranteeing optimal high-priority life safety at provably minimal cost.',
+        'Solves the competing multi-settlement allocation problem as a deterministic Operations Research optimization model, guaranteeing optimal high-priority life safety with minimal transit exposure.',
       formula:
         'min Z = ∑ᵢ ∑ⱼ (cᵢⱼ · xᵢⱼ) + ∑ᵢ (Pᵢ · uᵢ)   subject to: ∑ⱼ xᵢⱼ + uᵢ = Dᵢ, ∑ᵢ xᵢⱼ ≤ C_eff(j)',
     },
     {
       step: '06',
-      title: 'Statutory Executive Adjudication Gate',
+      title: 'Officer Executive Review Gate',
       tag: 'GOVERNANCE',
       description:
-        'Algorithms recommend; the District Magistrate and Incident Commander decides. Statutory ACCEPT, MODIFY, or REJECT actions recorded in the immutable Section 34 legal ledger.',
-      formula: 'StatutoryLedger ← SignOrder(Decision, Rationale, Timestamp, OfficerID, SHA256)',
+        'Algorithms recommend; designated response officers decide. Officer ACCEPT, MODIFY, or REJECT actions recorded in the immutable decision audit ledger.',
+      formula: 'DecisionAuditLedger ← SignOrder(Decision, Rationale, Timestamp, OfficerID, SHA256)',
     },
   ];
 
@@ -62,14 +62,14 @@ export const TechnicalExplainer: React.FC = () => {
             <span className="px-2.5 py-0.5 rounded bg-[#003366] text-white text-[10px] font-bold uppercase font-mono tracking-wider">
               VISTHAAPAN SYSTEM ARCHITECTURE &amp; OR SPECIFICATION
             </span>
-            <span className="text-xs text-slate-500 font-mono">SCIP MILP FORMULATION</span>
+            <span className="text-xs text-slate-500 font-mono">SCIP OR FORMULATION</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#003366] mt-1 tracking-tight">
             System Overview &amp; Operations Research Formulations
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed mt-0.5">
             Architectural blueprint connecting AI hazard intelligence, safe shelter carrying-capacity audits,
-            and the Google OR-Tools SCIP Mixed-Integer Linear Programming dispatch network into an integrated decision pipeline.
+            and the Google OR-Tools SCIP deterministic Operations Research dispatch network into an integrated decision pipeline.
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export const TechnicalExplainer: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
           <span className="text-xs font-mono uppercase tracking-wider text-[#003366] font-bold">
-            Mixed-Integer Linear Programming (MILP) Formulation
+            Operations Research Solver Formulation
           </span>
           <span className="text-xs font-mono bg-blue-50 text-blue-900 border border-blue-200 px-2.5 py-0.5 rounded font-bold">
             SOLVER: SCIP (Solving Constraint Integer Programs)
@@ -136,7 +136,7 @@ export const TechnicalExplainer: React.FC = () => {
                 Fills nearest shelter without looking ahead. Rapidly causes early shelter saturation and leaves critical high-risk wards stranded.
               </p>
               <div className="space-y-1 pt-1 text-slate-700">
-                <div className="flex justify-between"><span>Total Fleet Outlay:</span><strong className="text-red-700">₹89.2 Lakhs</strong></div>
+                <div className="flex justify-between"><span>Average Convoy Transit Time:</span><strong className="text-red-700">185 min</strong></div>
                 <div className="flex justify-between"><span>Network Transit Distance:</span><strong>680.5 km</strong></div>
                 <div className="flex justify-between"><span>Stranded Citizens:</span><strong className="text-red-700">1,420 Deficit</strong></div>
                 <div className="flex justify-between"><span>Shelter Sanitation Breaches:</span><strong className="text-red-700">3 Hubs Overflowed</strong></div>
@@ -153,7 +153,7 @@ export const TechnicalExplainer: React.FC = () => {
                 Evaluates the entire network globally. Guarantees 100% capacity feasibility, minimizes convoy fuel, and prioritizes urgent wards.
               </p>
               <div className="space-y-1 pt-1 text-slate-800">
-                <div className="flex justify-between"><span>Total Fleet Outlay:</span><strong className="text-emerald-800">₹58.4 Lakhs (34.5% Savings)</strong></div>
+                <div className="flex justify-between"><span>Average Convoy Transit Time:</span><strong className="text-emerald-800">110 min (40% Faster)</strong></div>
                 <div className="flex justify-between"><span>Network Transit Distance:</span><strong className="text-emerald-800">442.1 km (-238.4 km)</strong></div>
                 <div className="flex justify-between"><span>Stranded Citizens:</span><strong className="text-emerald-800">0 (100% Accommodated)</strong></div>
                 <div className="flex justify-between"><span>Shelter Sanitation Breaches:</span><strong className="text-emerald-800">0 (Zero Bottleneck Violations)</strong></div>

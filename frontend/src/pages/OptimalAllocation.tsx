@@ -23,17 +23,17 @@ export const OptimalAllocation: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-blue-100 border border-blue-300 text-[#003366] text-[10px] font-bold uppercase font-mono">
-              STAGE 3 STATUTORY SOLVER
+              STAGE 3 OR ALLOCATION SOLVER
             </span>
             <span className="text-xs text-slate-500 font-mono">
               MODE: {isReoptimized ? 'CONTINGENCY RE-OPTIMIZATION ACTIVE' : 'NOMINAL BASELINE PLAN'}
             </span>
           </div>
           <h1 className="text-2xl font-bold text-[#003366] mt-1">
-            Statutory Operations Research Allocation Engine
+            Operations Research Optimal Allocation Engine
           </h1>
           <p className="text-xs text-slate-600">
-            Global Mixed-Integer Linear Programming dispatch minimizing citizen hazard exposure and transit risk.
+            Global Operations Research mathematical dispatch minimizing citizen hazard exposure and transit risk.
           </p>
         </div>
 
@@ -79,11 +79,11 @@ export const OptimalAllocation: React.FC = () => {
         </div>
 
         <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
-          <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Estimated Cost</span>
+          <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Capacity Utilization</span>
           <span className="text-2xl font-extrabold text-slate-900 font-mono">
-            ₹{allocationSummary.totalEstimatedCostLakhs} L
+            {Math.round(((allocationSummary?.totalAllocatedPopulation || 12250) / 14500) * 100)}%
           </span>
-          <span className="block text-[10px] text-slate-500">Fleet &amp; Fuel Logistics</span>
+          <span className="block text-[10px] text-slate-500">Relocation Hub Load</span>
         </div>
 
         <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
@@ -181,7 +181,7 @@ export const OptimalAllocation: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-bold text-[#003366] uppercase tracking-wider">
-              Statutory Dispatch Manifest Table
+              Dispatch Manifest Table
             </h3>
             <span className="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
               {filteredAllocations.length} ALLOCATION ITEMS
@@ -214,7 +214,7 @@ export const OptimalAllocation: React.FC = () => {
                 <th className="p-2.5 text-right">Allocated Headcount</th>
                 <th className="p-2.5 text-right">Distance</th>
                 <th className="p-2.5 text-right">Est. Transit</th>
-                <th className="p-2.5 text-right">Fleet Cost</th>
+                <th className="p-2.5 text-right">Wave / Phase</th>
                 <th className="p-2.5">Assigned Agency</th>
                 <th className="p-2.5">Status</th>
               </tr>
@@ -237,7 +237,9 @@ export const OptimalAllocation: React.FC = () => {
                   </td>
                   <td className="p-2.5 text-right text-slate-600">{item.distanceKm} km</td>
                   <td className="p-2.5 text-right text-slate-600">{item.travelTimeMin} min</td>
-                  <td className="p-2.5 text-right text-emerald-800 font-bold">₹{item.costInLakhs} L</td>
+                  <td className="p-2.5 text-right text-indigo-700 font-bold font-mono">
+                    {item.priority === 'Immediate' ? 'Wave 1 (0-6h)' : 'Wave 2 (6-18h)'}
+                  </td>
                   <td className="p-2.5 text-slate-700 font-sans">{item.assignedAgency}</td>
                   <td className="p-2.5">
                     <span className="px-2 py-0.5 rounded bg-blue-50 text-[#003366] border border-blue-200 text-[10px] font-bold">

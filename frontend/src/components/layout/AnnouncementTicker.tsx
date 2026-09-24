@@ -85,10 +85,11 @@ export const AnnouncementTicker: React.FC = () => {
       {/* Marquee Content */}
       <div className="flex-1 overflow-hidden relative flex items-center h-full">
         <div
-          className={`flex items-center gap-8 whitespace-nowrap will-change-transform ${
-            isPaused ? '' : 'animate-marquee'
-          }`}
-          style={{ animationDuration: '40s' }}
+          className="flex items-center gap-8 whitespace-nowrap will-change-transform animate-marquee"
+          style={{
+            animationDuration: '40s',
+            animationPlayState: isPaused ? 'paused' : 'running',
+          }}
         >
           {/* Double repeat for seamless infinite looping */}
           {[...DEFAULT_ALERTS, ...DEFAULT_ALERTS].map((alert, idx) => (

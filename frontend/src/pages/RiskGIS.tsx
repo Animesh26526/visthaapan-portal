@@ -2,6 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polygon, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// Fix Leaflet Default Icon in Webpack/Vite
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 import { useAppStore } from '../stores/useAppStore';
 import { GisService } from '../services/gis.service';
 import { OperationsService } from '../services/operations.service';
@@ -236,20 +244,32 @@ function getDistrictRiskPolygonStyle(riskTier: string | null, riskScore: number 
 function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   const [centerLat, centerLng] = center;
+  const isFirstMount = React.useRef(true);
 
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      map.setView([centerLat, centerLng], zoom, { animate: false });
+      return;
+    }
     map.setView([centerLat, centerLng], zoom, { animate: true });
   }, [centerLat, centerLng, zoom, map]);
 
   useEffect(() => {
     if (!map) return;
-    const t = setTimeout(() => map.invalidateSize(), 100);
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 500);
     const observer = new ResizeObserver(() => {
       map.invalidateSize();
     });
-    observer.observe(map.getContainer());
+    const container = map.getContainer();
+    if (container) {
+      observer.observe(container);
+    }
     return () => {
-      clearTimeout(t);
+      clearTimeout(t1);
+      clearTimeout(t2);
       observer.disconnect();
     };
   }, [map]);
@@ -537,9 +557,9 @@ export const RiskGIS: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-100px)] min-h-[620px] flex flex-col bg-[#f8fafc] select-none font-sans">
+    <div className="relative w-full h-[calc(100vh-5.5rem)] min-h-[650px] flex flex-col bg-[#f8fafc] select-none font-sans">
       {/* ── TOP OPERATIONAL TOOLBAR ── */}
-      <div className="sticky top-[104px] py-2 w-full bg-white border-b border-slate-200 px-3 sm:px-4 space-y-2 shadow-xs z-30 shrink-0">
+      <div id="tour-gis-toolbar" className="sticky top-0 py-2 w-full bg-white border-b border-slate-200 px-3 sm:px-4 space-y-2 shadow-xs z-30 shrink-0">
         {/* ROW 1: SCOPE SELECTOR, PHASE FILTER, SEARCH BAR, TILE PICKER */}
         <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-2 flex-wrap">
@@ -724,7 +744,7 @@ export const RiskGIS: React.FC = () => {
             {/* 1. Hazard Zones */}
             <button
               onClick={() => setShowHazardZones(!showHazardZones)}
-              className={`h-6 px-2.5 rounded border flex items-center gap-1 font-bold text-[11px] transition ${
+              className={`h-7 px-2.5 rounded border flex items-center gap-1.5 font-bold text-[11px] transition ${
                 showHazardZones ? 'bg-red-50 border-red-300 text-red-700 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}
             >
@@ -735,7 +755,7 @@ export const RiskGIS: React.FC = () => {
             {/* 2. Vulnerable Habitations */}
             <button
               onClick={() => setShowHabitations(!showHabitations)}
-              className={`h-6 px-2.5 rounded border flex items-center gap-1 font-bold text-[11px] transition ${
+              className={`h-7 px-2.5 rounded border flex items-center gap-1.5 font-bold text-[11px] transition ${
                 showHabitations ? 'bg-orange-50 border-orange-300 text-orange-800 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}
             >
@@ -746,7 +766,7 @@ export const RiskGIS: React.FC = () => {
             {/* 3. Relocation Sites */}
             <button
               onClick={() => setShowRelocationSites(!showRelocationSites)}
-              className={`h-6 px-2.5 rounded border flex items-center gap-1 font-bold text-[11px] transition ${
+              className={`h-7 px-2.5 rounded border flex items-center gap-1.5 font-bold text-[11px] transition ${
                 showRelocationSites ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}
             >
@@ -757,7 +777,7 @@ export const RiskGIS: React.FC = () => {
             {/* 4. Relocation Routes (OSM Mapped Network) */}
             <button
               onClick={() => setShowRelocationRoutes(!showRelocationRoutes)}
-              className={`h-6 px-2.5 rounded border flex items-center gap-1 font-bold text-[11px] transition ${
+              className={`h-7 px-2.5 rounded border flex items-center gap-1.5 font-bold text-[11px] transition ${
                 showRelocationRoutes ? 'bg-blue-50 border-blue-300 text-[#003366] shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}
             >
@@ -768,7 +788,7 @@ export const RiskGIS: React.FC = () => {
             {/* 5. Boundaries (SOI) */}
             <button
               onClick={() => setShowSoiDistricts(!showSoiDistricts)}
-              className={`h-6 px-2 rounded border flex items-center gap-1 font-medium text-[11px] transition ${
+              className={`h-7 px-2.5 rounded border flex items-center gap-1.5 font-medium text-[11px] transition ${
                 showSoiDistricts ? 'bg-slate-100 border-slate-300 text-slate-700' : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}
             >
@@ -784,7 +804,7 @@ export const RiskGIS: React.FC = () => {
             </span>
             <button
               onClick={() => setShowOsmRoads(!showOsmRoads)}
-              className={`h-6 px-2 rounded border text-[10px] font-medium transition ${
+              className={`h-7 px-2.5 rounded border text-[11px] font-medium transition ${
                 showOsmRoads ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-500'
               }`}
               title="Full OpenStreetMap classified road network (subtle background)"
@@ -793,7 +813,7 @@ export const RiskGIS: React.FC = () => {
             </button>
             <button
               onClick={() => setShowOsmFacilities(!showOsmFacilities)}
-              className={`h-6 px-2 rounded border text-[10px] font-medium transition ${
+              className={`h-7 px-2.5 rounded border text-[11px] font-medium transition ${
                 showOsmFacilities ? 'bg-rose-100 border-rose-300 text-rose-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-500'
               }`}
               title="OpenStreetMap critical facilities"
@@ -802,7 +822,7 @@ export const RiskGIS: React.FC = () => {
             </button>
             <button
               onClick={() => setShowCensusSettlements(!showCensusSettlements)}
-              className={`h-6 px-2 rounded border text-[10px] font-medium transition ${
+              className={`h-7 px-2.5 rounded border text-[11px] font-medium transition ${
                 showCensusSettlements ? 'bg-teal-100 border-teal-300 text-teal-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-500'
               }`}
               title="Census 2011 Settlements (300 geocoded baseline points)"
@@ -811,7 +831,7 @@ export const RiskGIS: React.FC = () => {
             </button>
             <button
               onClick={() => setShowHazardEvidence(!showHazardEvidence)}
-              className={`h-6 px-2 rounded border text-[10px] font-medium transition ${
+              className={`h-7 px-2.5 rounded border text-[11px] font-medium transition ${
                 showHazardEvidence ? 'bg-red-100 border-red-300 text-red-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-500'
               }`}
               title="Historical GSI Landslide & NCS Earthquake Points"
@@ -868,9 +888,9 @@ export const RiskGIS: React.FC = () => {
       )}
 
       {/* ── MAP CONTAINER + OPERATIONAL DRAWER ── */}
-      <div className="relative flex-1 w-full flex overflow-hidden">
+      <div className="relative flex-1 w-full flex overflow-hidden min-h-[500px]">
         {/* LEAFLET MAP VIEW */}
-        <div className="relative flex-1 h-full w-full">
+        <div id="tour-gis-map" className="relative flex-1 h-full w-full min-h-[500px]">
           <MapContainer
             center={mapView.center}
             zoom={mapView.zoom}
@@ -878,7 +898,7 @@ export const RiskGIS: React.FC = () => {
             zoomControl={false}
             attributionControl={true}
             preferCanvas={true}
-            style={{ background: '#e2e8f0' }}
+            style={{ width: '100%', height: '100%', minHeight: '500px', background: '#e2e8f0' }}
           >
             <MapController center={mapView.center} zoom={mapView.zoom} />
 

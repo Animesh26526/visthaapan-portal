@@ -81,8 +81,8 @@ export const AllocationEngineWorkspace: React.FC = () => {
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">tune</span>
-            <span className="sm:hidden">MILP Solver</span>
-            <span className="hidden sm:inline">MILP Optimization Solver</span>
+            <span className="sm:hidden">OR Solver</span>
+            <span className="hidden sm:inline">OR Optimization Solver</span>
           </button>
 
           <button

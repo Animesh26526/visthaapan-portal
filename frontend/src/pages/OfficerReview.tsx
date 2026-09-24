@@ -27,7 +27,7 @@ export const OfficerReview: React.FC = () => {
 
   const situationBriefText = `Attention District Emergency Operations Center Chamoli. This is the automated AI Situation Brief for Operational Plan ${activePlanId}. Priority wards in Joshimath and Raini remain under active surveillance due to measured ground deformation and IMD precipitation advisories. Total target relocation demand stands at ${formatPopulation(
     allocationSummary.totalTargetPopulation
-  )} citizens across high-risk habitations. Deterministic Mixed-Integer Linear Programming has assigned evacuees across safe hubs in Gauchar, Karnaprayag, and Rudraprayag, with Pipalkoti transit hub excluded due to slope hazard. NH-07 Rishikesh-Badrinath highway is open with single-lane monitoring at Helang. All resource feasibility constraints are satisfied with zero deficit. Section 30 and 34 statutory authorizations are awaiting District Magistrate digital review.`;
+  )} citizens across high-risk habitations. Deterministic Operations Research optimization has assigned evacuees across safe hubs in Gauchar, Karnaprayag, and Rudraprayag, with Pipalkoti transit hub excluded due to slope hazard. NH-07 Rishikesh-Badrinath highway is open with single-lane monitoring at Helang. All resource feasibility constraints are satisfied with zero deficit. Section 30 and 34 statutory authorizations are awaiting District Magistrate digital review.`;
 
   // Speech synthesis cleanup
   useEffect(() => {
@@ -121,21 +121,21 @@ export const OfficerReview: React.FC = () => {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded bg-[#003366] text-white text-[10px] font-bold uppercase font-mono tracking-wider">
-              Statutory Adjudication Gate: Human-in-the-Loop
+              Planning Review: Human-in-the-Loop
             </span>
             <span className="text-xs text-slate-500 font-mono">
-              NDMA DM-ACT-2005 COMPLIANCE
+              OPERATIONAL DECISION AUDIT
             </span>
             <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold">
               PLAN VERSION {activePlanId}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#003366] mt-1 tracking-tight">
-            Officer Review: Statutory Command Adjudication
+            Officer Review &amp; Planning Decision
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed mt-0.5">
-            Algorithmic recommendations provide mathematical decision-support. Final legal and executive
-            authorization rests exclusively with the designated District Magistrate &amp; Incident Commander.
+            Algorithmic recommendations provide mathematical decision-support. Final planning and operational
+            review rests with designated emergency response officers.
           </p>
         </div>
 
@@ -152,7 +152,7 @@ export const OfficerReview: React.FC = () => {
       </div>
 
       {/* ── 2. OFFICER IDENTIFICATION CARD ── */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div id="tour-review-authority" className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-[#003366] text-amber-400 border-2 border-amber-400 flex items-center justify-center font-bold text-base shadow shrink-0">
             DM
@@ -177,7 +177,7 @@ export const OfficerReview: React.FC = () => {
       </div>
 
       {/* ── 3. AI SITUATION BRIEF WITH SPEECH SYNTHESIS (TTS) ── */}
-      <div className="bg-gradient-to-r from-blue-900 to-[#002244] text-white rounded-lg p-4 sm:p-5 shadow-sm space-y-3">
+      <div id="tour-review-brief" className="bg-gradient-to-r from-blue-900 to-[#002244] text-white rounded-lg p-4 sm:p-5 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center text-amber-400">
@@ -239,7 +239,7 @@ export const OfficerReview: React.FC = () => {
       </div>
 
       {/* ── 4. ADJUDICATION FORM ── */}
-      <form onSubmit={handleSubmitDecision} className="bg-white border border-slate-200 rounded-lg shadow-xs p-5 space-y-5">
+      <form id="tour-review-actions" onSubmit={handleSubmitDecision} className="bg-white border border-slate-200 rounded-lg shadow-xs p-5 space-y-5">
         <div>
           <h3 className="text-xs font-bold text-[#003366] uppercase tracking-wider mb-2 font-mono">
             1. Executive Determination Selection
@@ -324,7 +324,7 @@ export const OfficerReview: React.FC = () => {
             2. Mandatory Administrative &amp; Ground Rationale
           </label>
           <p className="text-[11px] text-slate-500 mb-2">
-            This justification is archived in the Statutory Decision History Ledger for audit review and executive scrutiny.
+            This justification is archived in the Decision History &amp; Audit Ledger for review and operational transparency.
           </p>
           <textarea
             rows={4}
@@ -336,7 +336,7 @@ export const OfficerReview: React.FC = () => {
           />
         </div>
 
-        {/* Statutory Legal Declaration Checkbox */}
+        {/* Officer Review Confirmation Checkbox */}
         <div className="p-3 bg-slate-50 rounded border border-slate-200 flex items-start gap-2 text-xs text-slate-700">
           <input
             type="checkbox"
@@ -345,9 +345,8 @@ export const OfficerReview: React.FC = () => {
             className="mt-0.5 rounded text-[#003366]"
           />
           <span>
-            I hereby certify that I have exercised due executive oversight in accordance with powers vested under
-            Section 30 and Section 34 of the Disaster Management Act 2005. This digital signature commits district
-            emergency assets and operational dispatch orders.
+            I hereby confirm that I have reviewed the allocation recommendations, resource constraints, and route
+            conditions. Recording this action logs a verified administrative entry in the operational decision ledger.
           </span>
         </div>
 

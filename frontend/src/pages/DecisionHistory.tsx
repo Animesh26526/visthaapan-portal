@@ -74,7 +74,7 @@ export const DecisionHistory: React.FC = () => {
         <div className="lg:col-span-8 bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <h3 className="text-xs font-bold text-[#003366] uppercase tracking-wider font-mono">
-              Chronological Statutory Decision Records
+              Chronological Decision Audit Records
             </h3>
             <span className="text-[10px] font-mono text-slate-500">CLICK TO INSPECT DETAIL</span>
           </div>
@@ -135,7 +135,7 @@ export const DecisionHistory: React.FC = () => {
 
             <div className="space-y-2 text-xs">
               <div className="p-2.5 bg-slate-50 rounded border border-slate-200">
-                <span className="block text-[10px] text-slate-500 font-bold uppercase font-mono">Statutory Authority</span>
+                <span className="block text-[10px] text-slate-500 font-bold uppercase font-mono">Decision Authority</span>
                 <span className="font-bold text-slate-900">{activeDecision.officerName}</span>
                 <span className="block text-[11px] text-slate-600">{activeDecision.officerRole}</span>
               </div>

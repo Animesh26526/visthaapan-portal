@@ -10,7 +10,6 @@ export * from './scenarios.service';
 export * from './intelligence.service';
 export * from './briefing.service';
 export * from './decisions.service';
-export * from './geminiService';
 export * from './gis.service';
 export * from './capacity.service';
 export * from './evidence.service';

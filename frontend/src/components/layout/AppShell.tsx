@@ -23,7 +23,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* ── 3. MAIN FULL-WIDTH WORKSPACE CONTENT ── */}
       <main className="flex-1 w-full max-w-full min-w-0 bg-[#f8fafc] flex flex-col overflow-x-hidden">
-        <div className="flex-1 w-full max-w-full min-w-0">{children}</div>
+        <div className="flex-1 w-full max-w-full min-w-0 flex flex-col">{children}</div>
 
         {/* ── 4. OFFICIAL GOVERNMENT FOOTER ── */}
         <footer className="border-t border-slate-200 bg-white/95 backdrop-blur-xs px-4 py-3 w-full flex flex-col sm:flex-row items-center justify-between gap-2 shadow-xs mt-auto">
@@ -40,7 +40,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-600"></span>
             <span>Plan: <strong>#VST-2026-CHM-014</strong></span>
             <span className="text-slate-300">•</span>
-            <span>SCIP MILP 0-Gap</span>
+            <span>SCIP OR 0-Gap</span>
           </div>
         </footer>
       </main>

@@ -45,17 +45,17 @@ export const LandingHome: React.FC = () => {
         'Rigorous resource bottleneck audits across water, power, and medical packs',
         'SHAP feature importance breakdown explaining algorithmic risk scores',
         'Demographic immobility profiling for elderly, children, and disabled citizens',
-        'OR vs Greedy heuristic empirical benchmark demonstrating 34% cost savings',
+        'OR vs Greedy heuristic empirical benchmark demonstrating 40% transit efficiency gain',
       ],
     },
     {
       num: '03',
-      title: 'Mathematical Allocation Engine (MILP)',
+      title: 'Mathematical Allocation Engine (OR Solver)',
       route: '/allocation-engine',
       icon: 'alt_route',
       badge: 'OPERATIONS RESEARCH',
       color: '#0f766e',
-      summary: 'Deterministic Mixed-Integer Linear Programming solver computing optimal, multi-wave evacuation assignments with zero shelter capacity overflows.',
+      summary: 'Deterministic Operations Research optimization solver computing optimal, multi-wave evacuation assignments with zero shelter capacity overflows.',
       features: [
         'Sub-second mathematical optimization solving 19,500 citizen assignments',
         'Dynamic Road R12 obstruction simulation & immediate automated rerouting',
@@ -90,7 +90,7 @@ export const LandingHome: React.FC = () => {
         'Immutable data lineage tracking with verified sync timestamps and confidence ratings',
         'Historical time-series trend analysis of rainfall vs ground displacement',
         'Automated data quality verification scores across all telemetry feeds',
-        'Technical architectural blue-prints detailing MILP formulations and REST pipelines',
+        'Technical architectural blue-prints detailing OR mathematical formulations and REST pipelines',
       ],
     },
   ];
@@ -135,7 +135,7 @@ export const LandingHome: React.FC = () => {
 
           {/* Description Paragraph */}
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal max-w-3xl mx-auto">
-            India&apos;s authoritative spatial decision-support system engineered for Himalayan multi-hazard emergencies under the Disaster Management Act 2005. Powered by Mixed-Integer Linear Programming (MILP), InSAR satellite subsidence radar, and dynamic road perturbation models to ensure equitable, rapid, and verifiable population relocation.
+            India&apos;s authoritative spatial decision-support system engineered for Himalayan multi-hazard emergencies under the Disaster Management Act 2005. Powered by Operations Research (OR) mathematical solvers, InSAR satellite subsidence radar, and dynamic road perturbation models to ensure equitable, rapid, and verifiable population relocation.
           </p>
 
           {/* Live District Telemetry Strip */}
@@ -191,7 +191,7 @@ export const LandingHome: React.FC = () => {
           <div className="gov-card p-4 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
             <div className="flex items-center justify-between text-[#003366] mb-2">
               <span className="material-symbols-outlined text-[24px]">alt_route</span>
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#003366]">MILP</span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#003366]">OR</span>
             </div>
             <div className="font-extrabold text-slate-900 text-base">Mathematical Solvers</div>
             <p className="text-xs text-slate-500 mt-1 leading-snug">

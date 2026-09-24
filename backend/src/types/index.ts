@@ -23,6 +23,9 @@ export interface AppConfig {
   dbName: string;
   dbUser: string;
   dbPassword?: string;
+  groqApiKey?: string;
+  groqModel: string;
+  groqBaseUrl: string;
 }
 
 export interface ApiSuccessResponse<T = unknown> {

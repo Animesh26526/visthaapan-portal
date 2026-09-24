@@ -62,11 +62,11 @@ export const RelocationPlan: React.FC = () => {
         </div>
 
         <div>
-          <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Total Transit Budget</span>
-          <span className="text-2xl font-bold font-mono text-slate-900 mt-0.5">
-            ₹{allocationSummary.totalEstimatedCostLakhs} L
+          <span className="block text-[10px] text-slate-500 uppercase font-mono font-bold">Total Allocated Population</span>
+          <span className="text-2xl font-bold font-mono text-[#003366] mt-0.5">
+            {formatPopulation(allocationSummary.totalAllocatedPopulation)}
           </span>
-          <span className="block text-[10px] text-slate-500">SDRF Emergency Outlay</span>
+          <span className="block text-[10px] text-slate-500">Planned Safe Transit</span>
         </div>
       </div>
 
@@ -127,14 +127,14 @@ export const RelocationPlan: React.FC = () => {
         ))}
       </div>
 
-      {/* 4. EXECUTIVE ADJUDICATION STATUS NOTICE */}
+      {/* 4. EXECUTIVE REVIEW STATUS NOTICE */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-white border border-slate-200 rounded-lg shadow-xs">
         <div className="text-xs text-slate-600">
-          The operational plan is compiled. Statutory authorization is conducted under the <strong>Officer Adjudication</strong> tab above.
+          The operational plan is compiled. Formal review and decision recording is conducted under the <strong>Officer Review</strong> tab.
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded border border-slate-200">
           <span className="material-symbols-outlined text-[16px] text-[#003366]">verified</span>
-          <span>Orders Pending Sign-off</span>
+          <span>Review Ready for Decision</span>
         </div>
       </div>
     </div>

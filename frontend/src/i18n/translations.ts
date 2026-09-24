@@ -35,7 +35,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     intelAnalytics: 'Executive Analytics',
     intelEvidence: 'Evidence Dossier',
     intelQuality: 'Data Quality & Provenance',
-    intelOverview: 'System Overview & MILP',
+    intelOverview: 'System Overview & OR Solver',
 
     tickerCriticalAlert: 'CRITICAL ALERT',
     tickerWeather: 'WEATHER ADVISORY',

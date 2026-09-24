@@ -47,6 +47,11 @@ const dbUser = process.env.DB_USER?.trim() || 'visthaapan';
 const dbPassword = process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : 'visthaapan_dev';
 const databaseUrl = process.env.DATABASE_URL?.trim() || `postgresql://${dbUser}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}`;
 
+// Groq Cloud LLM Configuration (Phase 9+ GPT-OSS-20B Integration)
+const groqApiKey = process.env.GROQ_API_KEY?.trim() || '';
+const groqModel = process.env.GROQ_MODEL?.trim() || 'openai/gpt-oss-20b';
+const groqBaseUrl = (process.env.GROQ_BASE_URL?.trim() || 'https://api.groq.com/openai/v1').replace(/\/+$/, '');
+
 export const config: AppConfig = {
   env,
   port,
@@ -62,4 +67,7 @@ export const config: AppConfig = {
   dbName,
   dbUser,
   dbPassword,
+  groqApiKey,
+  groqModel,
+  groqBaseUrl,
 };

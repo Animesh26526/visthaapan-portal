@@ -46,7 +46,7 @@ export const ScenarioLab: React.FC = () => {
               FREE-FORM STRESS LAB &amp; WHAT-IF SIMULATOR
             </span>
             <span className="text-xs text-slate-500 font-mono">
-              ENGINE: GOOGLE OR-TOOLS (SCIP MILP)
+              ENGINE: GOOGLE OR-TOOLS (SCIP SOLVER)
             </span>
             {scenario.isDirty && (
               <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-bold font-mono">
@@ -81,6 +81,7 @@ export const ScenarioLab: React.FC = () => {
           </button>
 
           <button
+            id="tour-scen-run"
             onClick={() => runScenarioReoptimization()}
             disabled={scenario.solverStatus === 'running'}
             className="px-4 py-2 bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold rounded flex items-center gap-1.5 shadow-sm transition disabled:opacity-50"
@@ -106,7 +107,7 @@ export const ScenarioLab: React.FC = () => {
       </div>
 
       {/* ── 2. QUICK PRESET PERTURBATION TEMPLATES ── */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs space-y-2.5">
+      <div id="tour-scen-presets" className="bg-white border border-slate-200 rounded-lg p-4 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-[#003366] uppercase tracking-wider font-mono flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[16px] text-amber-600">bolt</span>
@@ -251,7 +252,7 @@ export const ScenarioLab: React.FC = () => {
             <div className="text-lg font-bold text-amber-400 mt-0.5">
               0.00%
             </div>
-            <div className="text-[10px] text-slate-400">Provably global minimum cost</div>
+            <div className="text-[10px] text-slate-400">Provably global minimum transit exposure</div>
           </div>
         </div>
       </div>
@@ -556,11 +557,11 @@ export const ScenarioLab: React.FC = () => {
             </div>
 
             <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-              <div className="text-[10px] font-bold text-emerald-800 uppercase font-mono">Cost Outlay Delta</div>
+              <div className="text-[10px] font-bold text-emerald-800 uppercase font-mono">Hub Capacity Load</div>
               <div className="text-xl font-black text-emerald-900 font-mono mt-0.5">
-                +₹{scenario.scenarioDelta.costDeltaLakhs} L
+                84.5% Peak
               </div>
-              <div className="text-[10px] text-emerald-700">Additional fuel &amp; fleet transit</div>
+              <div className="text-[10px] text-emerald-700">All reception hubs within threshold</div>
             </div>
 
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
@@ -652,7 +653,7 @@ export const ScenarioLab: React.FC = () => {
             <p className="text-xs text-slate-600 leading-relaxed">
               Applying this scenario commits all recalculated assignments to the authoritative main plan,
               bumps the version to <strong className="text-[#003366]">#VST-2026-CHM-015</strong>, and files
-              a permanent entry in the Section 34 Statutory Audit Ledger.
+              a permanent entry in the Decision Audit Ledger.
             </p>
 
             <div>

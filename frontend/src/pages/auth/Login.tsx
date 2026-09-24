@@ -78,7 +78,7 @@ export const Login: React.FC = () => {
                     Official Sovereign Mandate
                   </div>
                   <p className="text-xs text-slate-700 mt-0.5 font-medium leading-relaxed">
-                    Mixed-Integer Linear Programming (MILP) solver and InSAR satellite subsidence radar for equitable, rapid, and verifiable Himalayan population relocation.
+                    Operations Research (OR) mathematical allocation engine and InSAR satellite subsidence radar for equitable, rapid, and verifiable Himalayan population relocation.
                   </p>
                 </div>
 
@@ -130,7 +130,7 @@ export const Login: React.FC = () => {
                       <span className="font-bold text-[#d9531e] font-mono">5,090 Unmet</span>
                     </div>
                     <div className="px-2">
-                      <span className="block text-[9px] font-semibold text-slate-500 uppercase">MILP Solver</span>
+                      <span className="block text-[9px] font-semibold text-slate-500 uppercase">OR Solver</span>
                       <span className="font-bold text-emerald-700 font-mono">Converged</span>
                     </div>
                   </div>

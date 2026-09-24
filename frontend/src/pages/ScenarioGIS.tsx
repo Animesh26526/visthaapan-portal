@@ -42,7 +42,7 @@ export const ScenarioGIS: React.FC = () => {
     cancelScenario,
   } = useAppStore();
 
-  const [showBaselineOverlay, setShowBaselineOverlay] = useState(true);
+  const [showBaselineOverlay, setShowBaselineOverlay] = useState(false);
   const [rationaleModalOpen, setRationaleModalOpen] = useState(false);
   const [rationaleText, setRationaleText] = useState(
     'Scenario rerouting approved following ground corridor status report. Diversion to secondary hubs confirmed.'

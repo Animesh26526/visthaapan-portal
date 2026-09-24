@@ -593,9 +593,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         affectedHabitations: ['Joshimath', 'Raini', 'Tapovan', 'Helang'],
         affectedSites: ['Gauchar Relocation Site', 'Karnaprayag Plateau Hub', 'Rudraprayag Egress Camp'],
         rationale,
-        statutoryReference: 'Section 30 & 34 Disaster Management Act 2005',
+        statutoryReference: 'Disaster Management Operational Review',
         previousAllocationSummary: `${state.allocationSummary.totalAllocatedPopulation.toLocaleString()} Allocated | ${state.allocationSummary.unmetDemandTotal.toLocaleString()} Deficit`,
-        newAllocationSummary: `Officer Action [${action}] committed to Statutory Ledger under ${state.activePlanId}.`,
+        newAllocationSummary: `Officer Action [${action}] committed to Decision Ledger under ${state.activePlanId}.`,
       });
 
       set({ decisions: [recorded, ...state.decisions] });

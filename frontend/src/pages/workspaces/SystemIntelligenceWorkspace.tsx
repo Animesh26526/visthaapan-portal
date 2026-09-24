@@ -100,8 +100,8 @@ export const SystemIntelligenceWorkspace: React.FC = () => {
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">architecture</span>
-            <span className="sm:hidden">Architecture &amp; MILP</span>
-            <span className="hidden sm:inline">System Architecture &amp; MILP</span>
+            <span className="sm:hidden">Architecture &amp; OR Solver</span>
+            <span className="hidden sm:inline">System Architecture &amp; OR Solver</span>
           </button>
         </div>
       </div>

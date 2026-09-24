@@ -43,6 +43,7 @@ export interface TranslationDictionary {
   districtBadge: string;
 
   // Navbar Menu Items
+  navHome?: string;
   navOperations: string;
   navPlanning: string;
   navScenario: string;
